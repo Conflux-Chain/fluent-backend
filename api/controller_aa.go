@@ -18,6 +18,18 @@ func NewAccountAbstractController(services service.Services) *AccountAbstractCon
 	return &AccountAbstractController{services}
 }
 
+// SendAuth sends a transaction to set code for the given EIP-7702 auth message.
+//
+// @ID				aaAuthSend
+// @Summary			Sends EIP-7702 transaction
+// @Description		Sends a transaction with the given EIP-7702 auth message.
+// @Tags			AccountAbstract
+// @Accept			json
+// @Produce			json
+// @Param			auth	body	SetCodeAuth	true	"Standard EIP-7702 auth message"
+// @Success			200	{object}	api.BusinessError{data=string}	"Transaction hash"
+// @Failure			600	{object}	api.BusinessError{data=string}	"Internal server error"
+// @Router			/aa/auth	[post]
 func (controller *AccountAbstractController) SendAuth(c *gin.Context) (any, error) {
 	var input SetCodeAuth
 
@@ -45,8 +57,24 @@ func (controller *AccountAbstractController) SendAuth(c *gin.Context) (any, erro
 	})
 }
 
+// GetAuthStatus returns the EIP-7702 auth result of given transaction hash.
+//
+// @ID				aaAuthStatus
+// @Summary			Query EIP-7702 auth result
+// @Description		Query the EIP-7702 auth result of given transaction hash. Note, if transaction not found (code 1001), user could send a transaction again.
+// @Tags			AccountAbstract
+// @Accept			json
+// @Produce			json
+// @Param			txHash	path	string	true	"EIP-7702 transaction hash"
+// @Success			200	{object}	api.BusinessError{data=SetCodeResult}	"Auth result"
+// @Failure			600	{object}	api.BusinessError{data=string}			"Internal server error"
+// @Router			/aa/auth/{txHash}	[get]
 func (controller *AccountAbstractController) GetAuthStatus(c *gin.Context) (any, error) {
-	txHash := c.Param("txhash")
+	txHash := c.Param("txHash")
+	if len(txHash) == 0 {
+		return nil, api.ErrValidationStr("Tx hash not specified")
+	}
+
 	if len(txHash) != 66 {
 		return nil, api.ErrValidationStr("Invalid tx hash")
 	}
