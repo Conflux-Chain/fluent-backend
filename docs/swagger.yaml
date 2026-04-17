@@ -1,0 +1,123 @@
+definitions:
+  api.BusinessError:
+    properties:
+      code:
+        description: Code error code, 0 indicates success, otherwise business error
+          (e.g. user not found) or internal server error.
+        type: integer
+      data:
+        description: Data is the return value if success. Otherwise, it is concret
+          failure reason in string type.
+      message:
+        description: Message error message associated with `Code`.
+        type: string
+    type: object
+  api.SetCodeAuth:
+    properties:
+      chainId:
+        type: integer
+      contract:
+        type: string
+      nonce:
+        type: integer
+      r:
+        type: string
+      s:
+        type: string
+      v:
+        type: integer
+    required:
+    - contract
+    - r
+    - s
+    type: object
+  api.SetCodeResult:
+    properties:
+      error:
+        description: failure reason
+        type: string
+      executed:
+        description: whether tx executed
+        type: boolean
+      success:
+        description: whether set code successfully
+        type: boolean
+    type: object
+info:
+  contact: {}
+paths:
+  /aa/auth:
+    post:
+      consumes:
+      - application/json
+      description: Sends a transaction with the given EIP-7702 auth message.
+      operationId: aaAuthSend
+      parameters:
+      - description: Standard EIP-7702 auth message
+        in: body
+        name: auth
+        required: true
+        schema:
+          $ref: '#/definitions/api.SetCodeAuth'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Transaction hash
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "600":
+          description: Internal server error
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: Sends EIP-7702 transaction
+      tags:
+      - AccountAbstract
+  /aa/auth/{txHash}:
+    get:
+      consumes:
+      - application/json
+      description: Query the EIP-7702 auth result of given transaction hash. Note,
+        if transaction not found (code 1001), user could send a transaction again.
+      operationId: aaAuthStatus
+      parameters:
+      - description: EIP-7702 transaction hash
+        in: path
+        name: txHash
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Auth result
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                data:
+                  $ref: '#/definitions/api.SetCodeResult'
+              type: object
+        "600":
+          description: Internal server error
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: Query EIP-7702 auth result
+      tags:
+      - AccountAbstract
+swagger: "2.0"
