@@ -72,7 +72,7 @@ func NewAccountAbstract(client *web3go.Client, delegatedContract common.Address)
 	}, nil
 }
 
-func (aa *AccountAbstract) SendSetCodeTransaction(auth gethTypes.SetCodeAuthorization) (common.Hash, *api.BusinessError) {
+func (aa *AccountAbstract) SendSetCodeTransaction(auth gethTypes.SetCodeAuthorization) (common.Hash, error) {
 	if err := aa.validateAuth(auth); err != nil {
 		return common.Hash{}, err
 	}
@@ -96,7 +96,7 @@ func (aa *AccountAbstract) SendSetCodeTransaction(auth gethTypes.SetCodeAuthoriz
 	return txHash, nil
 }
 
-func (aa *AccountAbstract) validateAuth(auth gethTypes.SetCodeAuthorization) *api.BusinessError {
+func (aa *AccountAbstract) validateAuth(auth gethTypes.SetCodeAuthorization) error {
 	// validate chain ID
 	if chainId := auth.ChainID.Uint64(); chainId > 0 && chainId != aa.chainId {
 		return api.ErrValidationStrf("Invalid chain ID, expected = %v, got = %v", aa.chainId, chainId)
@@ -174,7 +174,7 @@ func (aa *AccountAbstract) getDelegatedContract(authority common.Address) (commo
 	return common.BytesToAddress(code[3:]), nil
 }
 
-func (aa *AccountAbstract) GetSetCodeResult(txHash common.Hash) (types.LocalizedSetAuthTrace, bool, *api.BusinessError) {
+func (aa *AccountAbstract) GetSetCodeResult(txHash common.Hash) (types.LocalizedSetAuthTrace, bool, error) {
 	tx, err := aa.client.Eth.TransactionByHash(txHash)
 	if err != nil {
 		return types.LocalizedSetAuthTrace{}, false, NewRPCError(err, "Failed to retrieve transaction by hash %v", txHash)
