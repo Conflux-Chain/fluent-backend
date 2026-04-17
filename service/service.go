@@ -1,6 +1,7 @@
 package service
 
 import (
+	"os"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -14,6 +15,7 @@ type Config struct {
 		URL            string
 		RequestTimeout time.Duration `default:"3s"`
 		PrivateKey     string
+		LogEnabled     bool
 	}
 
 	AccountAbstract struct {
@@ -34,6 +36,10 @@ func New(config Config) (Services, error) {
 	opt.RequestTimeout = config.RPC.RequestTimeout
 	if len(config.RPC.PrivateKey) > 0 {
 		opt.SignerManager = signers.MustNewSignerManagerByPrivateKeyStrings([]string{config.RPC.PrivateKey})
+	}
+
+	if config.RPC.LogEnabled {
+		opt.Logger = os.Stdout
 	}
 
 	client, err := web3go.NewClientWithOption(config.RPC.URL, opt)
