@@ -43,6 +43,17 @@ func NewAccountAbstract(client *web3go.Client, delegatedContract common.Address)
 		return nil, errors.New("No signer found")
 	}
 
+	// check sender balance
+	sender := signers[0].Address()
+	balance, err := client.Eth.Balance(sender, nil)
+	if err != nil {
+		return nil, errors.WithMessage(err, "Failed to retrieve balance of AA tx sender")
+	}
+
+	if balance.Sign() == 0 {
+		return nil, errors.Errorf("AA tx sender balance is 0, address = %v", sender)
+	}
+
 	// retrieve chain ID
 	chainId, err := client.Eth.ChainId()
 	if err != nil {
