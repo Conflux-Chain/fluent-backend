@@ -18,9 +18,12 @@ import (
 var (
 	emptyAddress        = common.Address{}
 	delegatedCodePrefix = "0xef0100" // EIP-7702 standard
-	setCodeTxTo         = common.HexToAddress("0x7702770277027702770277027702770277027702")
+	// setCodeTxTo is the well-known EIP-7702 sentinel address used as the transaction recipient
+	// when submitting a set-code (type-4) transaction on Conflux eSpace.
+	setCodeTxTo = common.HexToAddress("0x7702770277027702770277027702770277027702")
 )
 
+// AccountAbstract provides account abstraction relevant functions.
 type AccountAbstract struct {
 	client *web3go.Client
 
@@ -31,6 +34,14 @@ type AccountAbstract struct {
 	mu sync.Mutex
 }
 
+// NewAccountAbstract creates an AccountAbstract service instance.
+//
+// If delegatedContract is empty, there is no restriction on the delegated contract address specified in auth messages.
+// Otherwise, only the specified delegated contract address is allowed.
+//
+// Note, the service's fee-payer account (the signer used by the underlying client) must have sufficient balance to cover
+// gas costs for set-code transactions. NewAccountAbstract checks the balance of the fee-payer account at startup and
+// returns an error if the balance is zero. Please ensure the fee-payer account is properly funded before starting the service.
 func NewAccountAbstract(client *web3go.Client, delegatedContract common.Address) (*AccountAbstract, error) {
 	// get the default signer
 	sm, err := client.GetSignerManager()
@@ -72,6 +83,12 @@ func NewAccountAbstract(client *web3go.Client, delegatedContract common.Address)
 	}, nil
 }
 
+// SendSetCodeTransaction validates auth and broadcasts an EIP-7702 set-code transaction signed by
+// the service's configured fee-payer account.
+//
+// A mutex serialises calls to avoid nonce collisions at the RPC level. The nonce is managed by the fullnode.
+//
+// The auth message must be pre-signed by the EOA owner (authority) before being passed here.
 func (aa *AccountAbstract) SendSetCodeTransaction(auth gethTypes.SetCodeAuthorization) (common.Hash, error) {
 	if err := aa.validateAuth(auth); err != nil {
 		return common.Hash{}, err
@@ -125,7 +142,8 @@ func (aa *AccountAbstract) validateAuth(auth gethTypes.SetCodeAuthorization) err
 	}
 
 	if auth.Address == emptyAddress {
-		// no delegated contract yet
+		// auth.Address == zero means the authority wants to revoke an existing delegation.
+		// Reject early if there is nothing to revoke.
 		if onChainCode == emptyAddress {
 			return api.ErrValidationStr("Authority is not delegated to any contract yet")
 		}
@@ -146,6 +164,9 @@ func (aa *AccountAbstract) validateAuth(auth gethTypes.SetCodeAuthorization) err
 	return nil
 }
 
+// getDelegatedContract reads the on-chain code of authority and extracts the 20-byte contract
+// address from the EIP-7702 delegation designator (prefix 0xef0100 + address).
+// Returns emptyAddress when the authority has no code (not yet delegated).
 func (aa *AccountAbstract) getDelegatedContract(authority common.Address) (common.Address, error) {
 	code, err := aa.client.Eth.CodeAt(authority, nil)
 	if err != nil {
@@ -174,7 +195,14 @@ func (aa *AccountAbstract) getDelegatedContract(authority common.Address) (commo
 	return common.BytesToAddress(code[3:]), nil
 }
 
+// GetSetCodeResult queries the result of a previously broadcasted EIP-7702 set-code transaction.
+//
+// Return values:
+//   - (trace, true, nil)  – transaction executed, inspect set-code result for success/failure detail.
+//   - ({}, false, nil)    – transaction found but not yet executed, and caller should poll later.
+//   - ({}, false, err)    – error retrieving transaction, receipt or set-code result.
 func (aa *AccountAbstract) GetSetCodeResult(txHash common.Hash) (types.LocalizedSetAuthTrace, bool, error) {
+	// retrieve transaction at first
 	tx, err := aa.client.Eth.TransactionByHash(txHash)
 	if err != nil {
 		return types.LocalizedSetAuthTrace{}, false, NewRPCError(err, "Failed to retrieve transaction by hash %v", txHash)
@@ -188,6 +216,7 @@ func (aa *AccountAbstract) GetSetCodeResult(txHash common.Hash) (types.Localized
 		return types.LocalizedSetAuthTrace{}, false, api.ErrValidationStrf("Invalid tx sender, expected = %v, got = %v", aa.sender, tx.From)
 	}
 
+	// retrieve transaction receipt
 	receipt, err := aa.client.Eth.TransactionReceipt(txHash)
 	if err != nil {
 		return types.LocalizedSetAuthTrace{}, false, NewRPCError(err, "Failed to retrieve transaction receipt")
@@ -204,7 +233,7 @@ func (aa *AccountAbstract) GetSetCodeResult(txHash common.Hash) (types.Localized
 		logger := logrus.WithField("tx", txHash)
 
 		if receipt.TxExecErrorMsg != nil {
-			logger.WithField("error", *receipt.TxExecErrorMsg)
+			logger = logger.WithField("error", *receipt.TxExecErrorMsg)
 		}
 
 		logger.Error("Set code transaction failed")

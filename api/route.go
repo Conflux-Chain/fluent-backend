@@ -16,9 +16,9 @@ type Config struct {
 	SwaggerEnabled bool
 }
 
-// @title           Swagger Example API
+// @title           Fluent Backend API
 // @version         1.0
-// @description     This is a sample server for demonstrating Swagger in Golang.
+// @description     REST API for upgrading an EOA (Externally Owned Account) to an EIP-7702 Account Abstraction smart-contract wallet.
 // @BasePath /api
 func MustServe(config Config, services service.Services) {
 	api.MustServe(config.Config, func(router *gin.Engine) {

@@ -17,7 +17,7 @@ const docTemplate = `{
     "paths": {
         "/aa/auth": {
             "post": {
-                "description": "Sends a transaction with the given EIP-7702 auth message.",
+                "description": "Validates the signed EIP-7702 authorization and broadcasts a set-code transaction.\nThe service will sponsor the set-code transaction gas fee, and user needs to poll GET /aa/auth/{txHash} for the result.",
                 "consumes": [
                     "application/json"
                 ],
@@ -27,11 +27,11 @@ const docTemplate = `{
                 "tags": [
                     "AccountAbstract"
                 ],
-                "summary": "Sends EIP-7702 transaction",
+                "summary": "Submit EIP-7702 authorization",
                 "operationId": "aaAuthSend",
                 "parameters": [
                     {
-                        "description": "Standard EIP-7702 auth message",
+                        "description": "Signed EIP-7702 authorization message",
                         "name": "auth",
                         "in": "body",
                         "required": true,
@@ -42,7 +42,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Transaction hash",
+                        "description": "Transaction hash (0x-prefixed hex)",
                         "schema": {
                             "allOf": [
                                 {
@@ -82,7 +82,7 @@ const docTemplate = `{
         },
         "/aa/auth/{txHash}": {
             "get": {
-                "description": "Query the EIP-7702 auth result of given transaction hash. Note, if transaction not found (code 1001), user could send a transaction again.",
+                "description": "Returns the executed result of an EIP-7702 set-code transaction. Returns executed=false while the transaction is still pending.\nIf the transaction is not found (business error code 1001), re-submit via POST /aa/auth.",
                 "consumes": [
                     "application/json"
                 ],
@@ -92,12 +92,12 @@ const docTemplate = `{
                 "tags": [
                     "AccountAbstract"
                 ],
-                "summary": "Query EIP-7702 auth result",
+                "summary": "Query EIP-7702 set-code result",
                 "operationId": "aaAuthStatus",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "EIP-7702 transaction hash",
+                        "description": "0x-prefixed 32-byte transaction hash (66 characters)",
                         "name": "txHash",
                         "in": "path",
                         "required": true
@@ -105,7 +105,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Auth result",
+                        "description": "Set-code result (check executed and success fields)",
                         "schema": {
                             "allOf": [
                                 {
@@ -170,21 +170,27 @@ const docTemplate = `{
             ],
             "properties": {
                 "chainId": {
+                    "description": "ChainID is the chain ID the authorization is bound to. 0 means the auth is valid on any chain.",
                     "type": "integer"
                 },
                 "contract": {
+                    "description": "Contract is the 20-byte hex address (with 0x prefix) of the smart-contract to delegate the EOA to.\nSet to \"0x0000000000000000000000000000000000000000\" to revoke an existing delegation.",
                     "type": "string"
                 },
                 "nonce": {
+                    "description": "Nonce is the current on-chain nonce of the signing authority (EOA). Must match exactly.",
                     "type": "integer"
                 },
                 "r": {
+                    "description": "R is the R component of the EIP-7702 authorization signature, as a 0x-prefixed hex string.",
                     "type": "string"
                 },
                 "s": {
+                    "description": "S is the S component of the EIP-7702 authorization signature, as a 0x-prefixed hex string.",
                     "type": "string"
                 },
                 "v": {
+                    "description": "V is the recovery identifier of the EIP-7702 authorization signature (0 or 1).",
                     "type": "integer"
                 }
             }
@@ -193,15 +199,15 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "error": {
-                    "description": "failure reason",
+                    "description": "Error contains the failure reason reported by the EVM when Success is false.",
                     "type": "string"
                 },
                 "executed": {
-                    "description": "whether tx executed",
+                    "description": "Executed indicates whether the transaction has been executed.",
                     "type": "boolean"
                 },
                 "success": {
-                    "description": "whether set code successfully",
+                    "description": "Success indicates whether the set-code authorization succeeded. Only meaningful when Executed is true.",
                     "type": "boolean"
                 }
             }
