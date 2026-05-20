@@ -144,7 +144,7 @@ const docTemplate = `{
             }
         },
         "/aa/gastank/prepare": {
-            "get": {
+            "post": {
                 "description": "Returns paymasterData used to estimate gas for a normal UserOperation in REFUND mode.",
                 "consumes": [
                     "application/json"
@@ -209,7 +209,7 @@ const docTemplate = `{
             }
         },
         "/aa/gastank/prepare/deposit": {
-            "get": {
+            "post": {
                 "description": "Returns paymasterData used to estimate UserOperation gas in CREDIT mode for token deposit flow.",
                 "consumes": [
                     "application/json"
@@ -359,8 +359,7 @@ const docTemplate = `{
         "api.GasTankPrepareDepositRequest": {
             "type": "object",
             "required": [
-                "amount",
-                "token"
+                "amount"
             ],
             "properties": {
                 "amount": {
@@ -375,10 +374,6 @@ const docTemplate = `{
         },
         "api.GasTankPrepareRequest": {
             "type": "object",
-            "required": [
-                "sender",
-                "token"
-            ],
             "properties": {
                 "sender": {
                     "description": "Smart account address in hex format with 0x prefix.",

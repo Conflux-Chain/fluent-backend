@@ -22,7 +22,6 @@ definitions:
         type: string
     required:
     - amount
-    - token
     type: object
   api.GasTankPrepareRequest:
     properties:
@@ -32,9 +31,6 @@ definitions:
       token:
         description: ERC20 token address to pay gas fee.
         type: string
-    required:
-    - sender
-    - token
     type: object
   api.SetCodeAuth:
     properties:
@@ -210,7 +206,7 @@ paths:
       tags:
       - AccountAbstract
   /aa/gastank/prepare:
-    get:
+    post:
       consumes:
       - application/json
       description: Returns paymasterData used to estimate gas for a normal UserOperation
@@ -248,7 +244,7 @@ paths:
       tags:
       - GasTank
   /aa/gastank/prepare/deposit:
-    get:
+    post:
       consumes:
       - application/json
       description: Returns paymasterData used to estimate UserOperation gas in CREDIT

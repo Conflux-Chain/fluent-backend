@@ -141,7 +141,7 @@ func (controller *AccountAbstractController) GasTankPrepareDeposit(c *gin.Contex
 
 	token := common.HexToAddress(input.Token)
 	amount, ok := new(big.Int).SetString(input.Amount, 10)
-	if !ok {
+	if !ok || amount.Sign() <= 0 {
 		return nil, api.ErrValidationStr("Invalid amount")
 	}
 
