@@ -21,10 +21,13 @@ type Config struct {
 	AccountAbstract struct {
 		DelegatedContract common.Address
 	}
+
+	GasTank GasTankPaymasterConfig
 }
 
 type Services struct {
 	AccountAbstract *AccountAbstract
+	GasTank         *GasTankPaymaster
 }
 
 func New(config Config) (Services, error) {
@@ -52,7 +55,13 @@ func New(config Config) (Services, error) {
 		return Services{}, errors.WithMessage(err, "Failed to create account abstract service")
 	}
 
+	gasTank, err := NewGasTankPaymaster(config.GasTank, client)
+	if err != nil {
+		return Services{}, errors.WithMessage(err, "Failed to create gas tank paymaster service")
+	}
+
 	return Services{
 		AccountAbstract: aa,
+		GasTank:         gasTank,
 	}, nil
 }

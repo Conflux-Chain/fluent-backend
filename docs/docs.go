@@ -142,6 +142,201 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/aa/gastank/prepare": {
+            "post": {
+                "description": "Returns paymasterData used to estimate gas for a normal UserOperation in REFUND mode.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GasTank"
+                ],
+                "summary": "Prepare paymasterData for REFUND mode estimation",
+                "operationId": "aaGasTankPrepare",
+                "parameters": [
+                    {
+                        "description": "Paymaster data request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.GasTankPrepareRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paymaster and data (0x-prefixed hex)",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "600": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/aa/gastank/prepare/deposit": {
+            "post": {
+                "description": "Returns paymasterData used to estimate UserOperation gas in CREDIT mode for token deposit flow.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GasTank"
+                ],
+                "summary": "Prepare paymasterData for CREDIT mode deposit estimation",
+                "operationId": "aaGasTankPrepareDeposit",
+                "parameters": [
+                    {
+                        "description": "Paymaster data request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.GasTankPrepareDepositRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paymaster and data (0x-prefixed hex)",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "600": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/aa/gastank/sign": {
+            "post": {
+                "description": "Calculates maxTokenCost for the given UserOperation, adds paymaster signature, and returns reassembled paymasterData.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GasTank"
+                ],
+                "summary": "Sign paymasterData for UserOperation",
+                "operationId": "aaGasTankSign",
+                "parameters": [
+                    {
+                        "description": "UserOperation for maxTokenCost estimation and paymaster signing",
+                        "name": "userOp",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.UserOperation"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Signed and reassembled paymasterData (0x-prefixed hex)",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "600": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -157,6 +352,35 @@ const docTemplate = `{
                 },
                 "message": {
                     "description": "Message error message associated with ` + "`" + `Code` + "`" + `.",
+                    "type": "string"
+                }
+            }
+        },
+        "api.GasTankPrepareDepositRequest": {
+            "type": "object",
+            "required": [
+                "amount"
+            ],
+            "properties": {
+                "amount": {
+                    "description": "Amount of tokens to deposit for gas fee payment.",
+                    "type": "string"
+                },
+                "token": {
+                    "description": "ERC20 token address to deposit for gas fee payment.",
+                    "type": "string"
+                }
+            }
+        },
+        "api.GasTankPrepareRequest": {
+            "type": "object",
+            "properties": {
+                "sender": {
+                    "description": "Smart account address in hex format with 0x prefix.",
+                    "type": "string"
+                },
+                "token": {
+                    "description": "ERC20 token address to pay gas fee.",
                     "type": "string"
                 }
             }
@@ -209,6 +433,68 @@ const docTemplate = `{
                 "success": {
                     "description": "Success indicates whether the set-code authorization succeeded. Only meaningful when Executed is true.",
                     "type": "boolean"
+                }
+            }
+        },
+        "api.UserOperation": {
+            "type": "object",
+            "properties": {
+                "callData": {
+                    "type": "string"
+                },
+                "callGasLimit": {
+                    "type": "string",
+                    "maxLength": 34,
+                    "minLength": 4
+                },
+                "maxFeePerGas": {
+                    "type": "string",
+                    "maxLength": 34,
+                    "minLength": 4
+                },
+                "maxPriorityFeePerGas": {
+                    "type": "string",
+                    "maxLength": 34,
+                    "minLength": 4
+                },
+                "nonce": {
+                    "type": "string",
+                    "minLength": 4
+                },
+                "paymaster": {
+                    "description": "Paymaster",
+                    "type": "string"
+                },
+                "paymasterData": {
+                    "description": "at least validAfter (6) || validUntil (6) || signature (65)",
+                    "type": "string",
+                    "minLength": 156
+                },
+                "paymasterPostOpGasLimit": {
+                    "type": "string",
+                    "maxLength": 34,
+                    "minLength": 4
+                },
+                "paymasterVerificationGasLimit": {
+                    "type": "string",
+                    "maxLength": 34,
+                    "minLength": 4
+                },
+                "preVerificationGas": {
+                    "type": "string",
+                    "maxLength": 34,
+                    "minLength": 4
+                },
+                "sender": {
+                    "type": "string"
+                },
+                "signature": {
+                    "type": "string"
+                },
+                "verificationGasLimit": {
+                    "type": "string",
+                    "maxLength": 34,
+                    "minLength": 4
                 }
             }
         }

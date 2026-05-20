@@ -6,6 +6,7 @@ require (
 	github.com/Conflux-Chain/go-conflux-util v0.7.7
 	github.com/ethereum/go-ethereum v1.15.11
 	github.com/gin-gonic/gin v1.9.0
+	github.com/go-playground/validator/v10 v10.11.2
 	github.com/holiman/uint256 v1.3.2
 	github.com/openweb3/web3go v0.3.4
 	github.com/pkg/errors v0.9.1
@@ -53,7 +54,6 @@ require (
 	github.com/go-openapi/swag v0.19.15 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
-	github.com/go-playground/validator/v10 v10.11.2 // indirect
 	github.com/go-telegram/bot v1.2.2 // indirect
 	github.com/goccy/go-json v0.10.5 // indirect
 	github.com/gofrs/flock v0.8.1 // indirect
