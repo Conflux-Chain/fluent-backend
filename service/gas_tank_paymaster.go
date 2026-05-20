@@ -34,6 +34,10 @@ type GasTankPaymaster struct {
 }
 
 func NewGasTankPaymaster(config GasTankPaymasterConfig, client *web3go.Client) (*GasTankPaymaster, error) {
+	if config.Address == (common.Address{}) {
+		return nil, errors.New("GasTankPaymaster address is required")
+	}
+
 	// get the default signer
 	sm, err := client.GetSignerManager()
 	if err != nil {
@@ -78,7 +82,7 @@ func (paymaster *GasTankPaymaster) Prepare(sender, token common.Address) ([]byte
 	}
 
 	if balance.Sign() == 0 {
-		return nil, api.ErrValidationStr("Insufficient token balance")
+		return nil, ErrGasTankInsufficientBalance
 	}
 
 	data := GasTankPaymasterData{

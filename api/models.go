@@ -35,16 +35,16 @@ type SetCodeResult struct {
 
 type GasTankPrepareDepositRequest struct {
 	// ERC20 token address to deposit for gas fee payment.
-	Token string `json:"token" binding:"required,len=42"`
+	Token string `json:"token" binding:"hex,len=42"`
 	// Amount of tokens to deposit for gas fee payment.
 	Amount string `json:"amount" binding:"required"`
 }
 
 type GasTankPrepareRequest struct {
 	// Smart account address in hex format with 0x prefix.
-	Sender string `json:"sender" binding:"required,len=42"`
+	Sender string `json:"sender" binding:"hex,len=42"`
 	// ERC20 token address to pay gas fee.
-	Token string `json:"token" binding:"required,len=42"`
+	Token string `json:"token" binding:"hex,len=42"`
 }
 
 type UserOperation struct {

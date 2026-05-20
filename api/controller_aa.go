@@ -131,7 +131,7 @@ func (controller *AccountAbstractController) GetAuthStatus(c *gin.Context) (any,
 // @Param			request		body	GasTankPrepareDepositRequest	true	"Paymaster data request"
 // @Success			200	{object}	api.BusinessError{data=string}	"Paymaster and data (0x-prefixed hex)"
 // @Failure			600	{object}	api.BusinessError{data=string}	"Internal server error"
-// @Router			/aa/gastank/prepare/deposit	[get]
+// @Router			/aa/gastank/prepare/deposit	[post]
 func (controller *AccountAbstractController) GasTankPrepareDeposit(c *gin.Context) (any, error) {
 	var input GasTankPrepareDepositRequest
 
@@ -164,7 +164,7 @@ func (controller *AccountAbstractController) GasTankPrepareDeposit(c *gin.Contex
 // @Param			request		body	GasTankPrepareRequest	true	"Paymaster data request"
 // @Success			200	{object}	api.BusinessError{data=string}	"Paymaster and data (0x-prefixed hex)"
 // @Failure			600	{object}	api.BusinessError{data=string}	"Internal server error"
-// @Router			/aa/gastank/prepare	[get]
+// @Router			/aa/gastank/prepare	[post]
 func (controller *AccountAbstractController) GasTankPrepare(c *gin.Context) (any, error) {
 	var input GasTankPrepareRequest
 
