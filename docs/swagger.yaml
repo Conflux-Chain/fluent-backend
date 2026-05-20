@@ -12,6 +12,30 @@ definitions:
         description: Message error message associated with `Code`.
         type: string
     type: object
+  api.GasTankPrepareDepositRequest:
+    properties:
+      amount:
+        description: Amount of tokens to deposit for gas fee payment.
+        type: string
+      token:
+        description: ERC20 token address to deposit for gas fee payment.
+        type: string
+    required:
+    - amount
+    - token
+    type: object
+  api.GasTankPrepareRequest:
+    properties:
+      sender:
+        description: Smart account address in hex format with 0x prefix.
+        type: string
+      token:
+        description: ERC20 token address to pay gas fee.
+        type: string
+    required:
+    - sender
+    - token
+    type: object
   api.SetCodeAuth:
     properties:
       chainId:
@@ -57,6 +81,53 @@ definitions:
         description: Success indicates whether the set-code authorization succeeded.
           Only meaningful when Executed is true.
         type: boolean
+    type: object
+  api.UserOperation:
+    properties:
+      callData:
+        type: string
+      callGasLimit:
+        maxLength: 34
+        minLength: 4
+        type: string
+      maxFeePerGas:
+        maxLength: 34
+        minLength: 4
+        type: string
+      maxPriorityFeePerGas:
+        maxLength: 34
+        minLength: 4
+        type: string
+      nonce:
+        minLength: 4
+        type: string
+      paymaster:
+        description: Paymaster
+        type: string
+      paymasterData:
+        description: at least validAfter (6) || validUntil (6) || signature (65)
+        minLength: 156
+        type: string
+      paymasterPostOpGasLimit:
+        maxLength: 34
+        minLength: 4
+        type: string
+      paymasterVerificationGasLimit:
+        maxLength: 34
+        minLength: 4
+        type: string
+      preVerificationGas:
+        maxLength: 34
+        minLength: 4
+        type: string
+      sender:
+        type: string
+      signature:
+        type: string
+      verificationGasLimit:
+        maxLength: 34
+        minLength: 4
+        type: string
     type: object
 info:
   contact: {}
@@ -138,4 +209,118 @@ paths:
       summary: Query EIP-7702 set-code result
       tags:
       - AccountAbstract
+  /aa/gastank/prepare:
+    get:
+      consumes:
+      - application/json
+      description: Returns paymasterData used to estimate gas for a normal UserOperation
+        in REFUND mode.
+      operationId: aaGasTankPrepare
+      parameters:
+      - description: Paymaster data request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.GasTankPrepareRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Paymaster and data (0x-prefixed hex)
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "600":
+          description: Internal server error
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: Prepare paymasterData for REFUND mode estimation
+      tags:
+      - GasTank
+  /aa/gastank/prepare/deposit:
+    get:
+      consumes:
+      - application/json
+      description: Returns paymasterData used to estimate UserOperation gas in CREDIT
+        mode for token deposit flow.
+      operationId: aaGasTankPrepareDeposit
+      parameters:
+      - description: Paymaster data request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.GasTankPrepareDepositRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Paymaster and data (0x-prefixed hex)
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "600":
+          description: Internal server error
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: Prepare paymasterData for CREDIT mode deposit estimation
+      tags:
+      - GasTank
+  /aa/gastank/sign:
+    post:
+      consumes:
+      - application/json
+      description: Calculates maxTokenCost for the given UserOperation, adds paymaster
+        signature, and returns reassembled paymasterData.
+      operationId: aaGasTankSign
+      parameters:
+      - description: UserOperation for maxTokenCost estimation and paymaster signing
+        in: body
+        name: userOp
+        required: true
+        schema:
+          $ref: '#/definitions/api.UserOperation'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Signed and reassembled paymasterData (0x-prefixed hex)
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "600":
+          description: Internal server error
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: Sign paymasterData for UserOperation
+      tags:
+      - GasTank
 swagger: "2.0"

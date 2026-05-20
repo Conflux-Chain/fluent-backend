@@ -10,6 +10,9 @@ var (
 
 	// account abstract
 	ErrAccountAbstractTxNotFound = api.NewBusinessError(1001, "Set code transaction not found")
+
+	// Gas tank
+	ErrGasTankInsufficientBalance = api.NewBusinessError(2001, "Insufficient token balance in gas tank")
 )
 
 func NewRPCError(err error, message string, args ...any) *api.BusinessError {

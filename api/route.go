@@ -32,8 +32,13 @@ func MustServe(config Config, services service.Services) {
 
 		aaController := NewAccountAbstractController(services)
 
-		// account abstract
+		// account abstract - auth
 		api.POST("/aa/auth", middleware.Metrics("api.aa.auth.send"), middleware.Wrap(aaController.SendAuth))
 		api.GET("/aa/auth/:txHash", middleware.Metrics("api.aa.auth.status"), middleware.Wrap(aaController.GetAuthStatus))
+
+		// Gas tank
+		api.GET("/aa/gastank/prepare/deposit", middleware.Metrics("api.aa.gastank.prepare.deposit"), middleware.Wrap(aaController.GasTankPrepareDeposit))
+		api.GET("/aa/gastank/prepare", middleware.Metrics("api.aa.gastank.prepare"), middleware.Wrap(aaController.GasTankPrepare))
+		api.POST("/aa/gastank/sign", middleware.Metrics("api.aa.gastank.signature"), middleware.Wrap(aaController.GasTankSign))
 	})
 }
