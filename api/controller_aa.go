@@ -192,11 +192,13 @@ func (controller *AccountAbstractController) GasTankPrepare(c *gin.Context) (any
 // @ID				aaGasTankSign
 // @Summary			Sign paymasterData for UserOperation
 // @Description		Calculates maxTokenCost for the given UserOperation, adds paymaster signature, and returns reassembled paymasterData.
+// @Description		Encoding format (182 bytes): paymaster(20) || paymasterVerificationGasLimit(16) || paymasterPostOpGasLimit(16) || mode(1) || token(20) || maxTokenCost(32) || validAfter(6) || validUntil(6) || signature(65). maxTokenCost is bytes[73:105] (0-based, big-endian uint256).
+// @Description		CREDIT mode reminder: in input UserOperation.paymasterData, maxTokenCost is the token deposit amount and should be the amount to deposit.
 // @Tags			GasTank
 // @Accept			json
 // @Produce			json
 // @Param			userOp	body	UserOperation	true	"UserOperation for maxTokenCost estimation and paymaster signing"
-// @Success			200	{object}	api.BusinessError{data=string}	"Signed and reassembled paymasterData (0x-prefixed hex)"
+// @Success			200	{object}	api.BusinessError{data=string}	"Signed and reassembled paymasterData (0x-prefixed hex, 182 bytes)"
 // @Failure			600	{object}	api.BusinessError{data=string}	"Internal server error"
 // @Router			/aa/gastank/sign	[post]
 func (controller *AccountAbstractController) GasTankSign(c *gin.Context) (any, error) {

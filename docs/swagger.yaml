@@ -285,8 +285,10 @@ paths:
     post:
       consumes:
       - application/json
-      description: Calculates maxTokenCost for the given UserOperation, adds paymaster
-        signature, and returns reassembled paymasterData.
+      description: |-
+        Calculates maxTokenCost for the given UserOperation, adds paymaster signature, and returns reassembled paymasterData.
+        Encoding format (182 bytes): paymaster(20) || paymasterVerificationGasLimit(16) || paymasterPostOpGasLimit(16) || mode(1) || token(20) || maxTokenCost(32) || validAfter(6) || validUntil(6) || signature(65). maxTokenCost is bytes[73:105] (0-based, big-endian uint256).
+        CREDIT mode reminder: in input UserOperation.paymasterData, maxTokenCost is the token deposit amount and should be the amount to deposit.
       operationId: aaGasTankSign
       parameters:
       - description: UserOperation for maxTokenCost estimation and paymaster signing
@@ -299,7 +301,8 @@ paths:
       - application/json
       responses:
         "200":
-          description: Signed and reassembled paymasterData (0x-prefixed hex)
+          description: Signed and reassembled paymasterData (0x-prefixed hex, 182
+            bytes)
           schema:
             allOf:
             - $ref: '#/definitions/api.BusinessError'

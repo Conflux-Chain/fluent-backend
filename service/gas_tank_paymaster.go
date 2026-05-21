@@ -47,17 +47,17 @@ func NewGasTankPaymaster(config GasTankPaymasterConfig, client *web3go.Client) (
 	}
 
 	// init ABI
-	erc20ABI, err := abi.JSON(strings.NewReader(contract.ERC20ABI))
+	erc20ABI, err := abi.JSON(strings.NewReader(contract.ERC20MetaData.ABI))
 	if err != nil {
 		return nil, errors.WithMessage(err, "Failed to parse ERC20 ABI")
 	}
 
-	gasTankABI, err := abi.JSON(strings.NewReader(contract.GasTankPaymasterABI))
+	gasTankABI, err := abi.JSON(strings.NewReader(contract.GasTankPaymasterMetaData.ABI))
 	if err != nil {
 		return nil, errors.WithMessage(err, "Failed to parse GasTankPaymaster ABI")
 	}
 
-	smartAccountABI, err := abi.JSON(strings.NewReader(contract.SimpleSmartAccount7702ABI))
+	smartAccountABI, err := abi.JSON(strings.NewReader(contract.SimpleSmartAccount7702MetaData.ABI))
 	if err != nil {
 		return nil, errors.WithMessage(err, "Failed to parse SimpleSmartAccount7702 ABI")
 	}
@@ -73,7 +73,7 @@ func NewGasTankPaymaster(config GasTankPaymasterConfig, client *web3go.Client) (
 		return nil, errors.New("No signer found")
 	}
 
-	// init contract caller
+	// init contract caller, note, the 2nd return value signer fn is ignored
 	caller, _ := client.ToClientForContract()
 	gasTankCaller, err := contract.NewGasTankPaymasterCaller(config.Address, caller)
 	if err != nil {
