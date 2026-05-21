@@ -1,13 +1,16 @@
 package service
 
 import (
+	"bytes"
 	"fmt"
 	"math/big"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/Conflux-Chain/fluent-backend/contract"
 	"github.com/Conflux-Chain/go-conflux-util/api"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/openweb3/web3go"
 	"github.com/openweb3/web3go/interfaces"
@@ -31,11 +34,32 @@ type GasTankPaymaster struct {
 	config GasTankPaymasterConfig
 	caller *contract.GasTankPaymasterCaller
 	signer interfaces.Signer
+
+	erc20ABI        abi.ABI
+	gasTankABI      abi.ABI
+	smartAccountABI abi.ABI
 }
 
 func NewGasTankPaymaster(config GasTankPaymasterConfig, client *web3go.Client) (*GasTankPaymaster, error) {
+	// validate config
 	if config.Address == (common.Address{}) {
 		return nil, errors.New("GasTankPaymaster address is required")
+	}
+
+	// init ABI
+	erc20ABI, err := abi.JSON(strings.NewReader(contract.ERC20ABI))
+	if err != nil {
+		return nil, errors.WithMessage(err, "Failed to parse ERC20 ABI")
+	}
+
+	gasTankABI, err := abi.JSON(strings.NewReader(contract.GasTankPaymasterABI))
+	if err != nil {
+		return nil, errors.WithMessage(err, "Failed to parse GasTankPaymaster ABI")
+	}
+
+	smartAccountABI, err := abi.JSON(strings.NewReader(contract.SimpleSmartAccount7702ABI))
+	if err != nil {
+		return nil, errors.WithMessage(err, "Failed to parse SimpleSmartAccount7702 ABI")
 	}
 
 	// get the default signer
@@ -49,17 +73,20 @@ func NewGasTankPaymaster(config GasTankPaymasterConfig, client *web3go.Client) (
 		return nil, errors.New("No signer found")
 	}
 
+	// init contract caller
 	caller, _ := client.ToClientForContract()
-
 	gasTankCaller, err := contract.NewGasTankPaymasterCaller(config.Address, caller)
 	if err != nil {
 		return nil, errors.WithMessage(err, "Failed to create GasTankPaymasterCaller")
 	}
 
 	return &GasTankPaymaster{
-		config: config,
-		caller: gasTankCaller,
-		signer: signers[0],
+		config:          config,
+		caller:          gasTankCaller,
+		signer:          signers[0],
+		erc20ABI:        erc20ABI,
+		gasTankABI:      gasTankABI,
+		smartAccountABI: smartAccountABI,
 	}, nil
 }
 
@@ -102,14 +129,14 @@ func (paymaster *GasTankPaymaster) Sign(userOp contract.PackedUserOperation) ([]
 		return nil, api.ErrValidationStr("InitCode is not supported")
 	}
 
-	// Parse and validate paymaster data. Note, the paymaster contract will validate the mode and token.
+	// Parse and validate paymaster data.
 	paymasterData, err := parseGasTankPaymasterData(userOp.PaymasterAndData)
 	if err != nil {
 		return nil, err
 	}
 
-	if paymasterData.Address != paymaster.config.Address {
-		return nil, api.ErrValidationStr("Invalid paymaster address")
+	if err = paymaster.validatePaymasterData(&paymasterData); err != nil {
+		return nil, err
 	}
 
 	// calculate the max token cost
@@ -117,14 +144,14 @@ func (paymaster *GasTankPaymaster) Sign(userOp contract.PackedUserOperation) ([]
 
 	// validate sender balance in refund mode
 	if paymasterData.Mode == gasTankPaymasterModeRefund {
-		if err := paymaster.validateSenderBalance(userOp.Sender, paymasterData.Token, maxTokenCost); err != nil {
+		if err = paymaster.validateSenderBalance(userOp.Sender, paymasterData.Token, maxTokenCost); err != nil {
 			return nil, err
 		}
 	}
 
-	// validate deposit amount in credit mode
+	// validate calldata in credit mode
 	if paymasterData.Mode == gasTankPaymasterModeCredit {
-		if err := paymaster.validateDepositAmount(userOp.CallData, maxTokenCost); err != nil {
+		if err = paymaster.validateCallData(userOp.CallData, &paymasterData, maxTokenCost); err != nil {
 			return nil, err
 		}
 	}
@@ -162,6 +189,30 @@ func (paymaster *GasTankPaymaster) calculateMaxTokenCost(userOp *contract.Packed
 	return new(big.Int).Div(new(big.Int).Mul(maxGasCost, big.NewInt(6)), big.NewInt(100))
 }
 
+func (paymaster *GasTankPaymaster) validatePaymasterData(paymasterData *GasTankPaymasterData) error {
+	// address
+	if paymasterData.Address != paymaster.config.Address {
+		return api.ErrValidationStr("Invalid paymaster address")
+	}
+
+	// mode
+	if paymasterData.Mode != gasTankPaymasterModeRefund && paymasterData.Mode != gasTankPaymasterModeCredit {
+		return api.ErrValidationStr("Invalid paymaster mode")
+	}
+
+	// token
+	allowed, err := paymaster.caller.IsTokenAllowed(nil, paymasterData.Token)
+	if err != nil {
+		return ErrRPCError.WithData(errors.WithMessage(err, "Failed to check if token is allowed"))
+	}
+
+	if !allowed {
+		return api.ErrValidationStr("Token is not allowed")
+	}
+
+	return nil
+}
+
 func (paymaster *GasTankPaymaster) validateSenderBalance(sender, token common.Address, maxTokenCost *big.Int) error {
 	balance, err := paymaster.caller.BalanceOf(nil, sender, token)
 	if err != nil {
@@ -175,26 +226,55 @@ func (paymaster *GasTankPaymaster) validateSenderBalance(sender, token common.Ad
 	return nil
 }
 
-func (paymaster *GasTankPaymaster) validateDepositAmount(calldata []byte, maxTokenCost *big.Int) error {
-	if len(calldata) != 580 {
-		return api.ErrValidationStrf("Invalid callData length for approve + deposit, expected 580, got %d", len(calldata))
-	}
-
-	// executeBatch(Call[]): approve(address,uint256) + depositToken(address,uint256)
-	const offsetApproveAmount = 296
-	const offsetDepositAmount = 520
-	approveAmount := new(big.Int).SetBytes(calldata[offsetApproveAmount : offsetApproveAmount+32])
-	depositAmount := new(big.Int).SetBytes(calldata[offsetDepositAmount : offsetDepositAmount+32])
-
-	if approveAmount.Cmp(depositAmount) != 0 {
-		return api.ErrValidationStr("Approve amount must be equal to deposit amount")
-	}
+func (paymaster *GasTankPaymaster) validateCallData(userOpCallData []byte, paymasterData *GasTankPaymasterData, maxTokenCost *big.Int) error {
+	depositAmount := paymasterData.MaxTokenCost
 
 	if depositAmount.Cmp(maxTokenCost) < 0 {
 		return ErrGasTankInsufficientBalance.WithData(fmt.Sprintf("maxTokenCost = %v, depositAmount = %v", maxTokenCost, depositAmount))
 	}
 
+	packedCallData, err := paymaster.packApproveAndDeposit(paymasterData.Token, depositAmount)
+	if err != nil {
+		return errors.WithMessage(err, "Failed to pack approve + deposit calldata")
+	}
+
+	if !bytes.Equal(userOpCallData, packedCallData) {
+		return api.ErrValidationStr("Invalid user operation calldata")
+	}
+
 	return nil
+}
+
+func (paymaster *GasTankPaymaster) packApproveAndDeposit(token common.Address, amount *big.Int) ([]byte, error) {
+	approveCallData, err := paymaster.erc20ABI.Pack("approve", paymaster.config.Address, amount)
+	if err != nil {
+		return nil, errors.WithMessage(err, "Failed to pack approve call data")
+	}
+
+	depositTokenCallData, err := paymaster.gasTankABI.Pack("depositToken", token, amount)
+	if err != nil {
+		return nil, errors.WithMessage(err, "Failed to pack depositToken call data")
+	}
+
+	calls := []contract.Execution{
+		{
+			Target:   token,
+			Value:    big.NewInt(0),
+			CallData: approveCallData,
+		},
+		{
+			Target:   paymaster.config.Address,
+			Value:    big.NewInt(0),
+			CallData: depositTokenCallData,
+		},
+	}
+
+	executeBatchCallData, err := paymaster.smartAccountABI.Pack("executeBatch", calls)
+	if err != nil {
+		return nil, errors.WithMessage(err, "Failed to pack executeBatch call data")
+	}
+
+	return executeBatchCallData, nil
 }
 
 type GasTankPaymasterData struct {
