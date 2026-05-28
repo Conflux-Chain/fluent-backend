@@ -65,10 +65,6 @@ func (controller *TokenPayController) GetETHPrice(c *gin.Context) (any, error) {
 
 	token := common.HexToAddress(input.Token)
 
-	if !controller.services.TokenPay.IsTokenAllowed(token) {
-		return nil, api.ErrValidationStr("Unsupported token")
-	}
-
 	price, err := controller.services.PriceOracle.GetETHPrice(token)
 	if err != nil {
 		return nil, err

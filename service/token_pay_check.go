@@ -75,8 +75,8 @@ func (tp *TokenPay) check(transferTokenTx, businessTx *types.Transaction) (check
 	// limit the max gas cost for risk control
 	totalGasLimit := new(big.Int).Add(senderGasLimit, fundingGasLimit)
 	totalGasCost := new(big.Int).Mul(totalGasLimit, gasPrice)
-	if maxGasCost := new(big.Int).SetUint64(tp.config.MaxGasCost); maxGasCost.Cmp(totalGasCost) < 0 {
-		return checkResult{}, ErrTokenPayGasCostTooHigh.WithData(fmt.Sprintf("max = %v, actual = %v", maxGasCost, totalGasCost))
+	if tp.config.maxGasCostBig.Cmp(totalGasCost) < 0 {
+		return checkResult{}, ErrTokenPayGasCostTooHigh.WithData(fmt.Sprintf("max = %v, actual = %v", tp.config.maxGasCostBig, totalGasCost))
 	}
 
 	// ensure the transferred token amount could cover the gas fees of 3 txs: funding ETH, transfer token and business
@@ -155,7 +155,7 @@ func (tp *TokenPay) staticCheckTransferTokenTx(tx *types.Transaction) (sender, t
 	}
 	token = *toAddr
 
-	if _, ok := tp.allowedTokens[token]; !ok {
+	if _, ok := tp.config.normalizedTokens[token]; !ok {
 		return common.Address{}, common.Address{}, nil, errors.Errorf("Transferred token is not allowed: %v", token.Hex())
 	}
 
@@ -190,8 +190,8 @@ func (tp *TokenPay) staticCheckTransferTokenCalldata(calldata []byte) (*big.Int,
 	}
 
 	// recipient
-	if transferTo := hexutil.Encode(calldata[4:36]); transferTo != tp.abiEncodedTokenRecipient {
-		return nil, errors.Errorf("Invalid transferTo address: expected = %v, got = %v", tp.abiEncodedTokenRecipient, transferTo)
+	if transferTo := hexutil.Encode(calldata[4:36]); transferTo != tp.config.abiEncodedRecipient {
+		return nil, errors.Errorf("Invalid transferTo address: expected = %v, got = %v", tp.config.abiEncodedRecipient, transferTo)
 	}
 
 	// amount
@@ -208,7 +208,7 @@ func (tp *TokenPay) dynamicCheckTransferTokenTx(tx *types.Transaction, sender, t
 		return NewRPCError(err, "Failed to retrieve current gas price")
 	}
 
-	minGasPrice := new(big.Int).Mul(currentGasPrice, new(big.Int).SetUint64(tp.config.MinGasPriceRatioPercentage))
+	minGasPrice := new(big.Int).Mul(currentGasPrice, tp.config.minGasPriceRatioPercentageBig)
 	minGasPrice.Div(minGasPrice, big100)
 
 	if txGasPrice := tx.GasPrice(); txGasPrice.Cmp(minGasPrice) < 0 {
@@ -237,7 +237,7 @@ func (tp *TokenPay) dynamicCheckTransferTokenTx(tx *types.Transaction, sender, t
 	}
 
 	// token balance
-	balance, err := tp.allowedTokens[token].BalanceOf(nil, sender)
+	balance, err := tp.config.normalizedTokens[token].Caller.BalanceOf(nil, sender)
 	if err != nil {
 		return NewRPCError(err, "Failed to retrieve token balance")
 	}

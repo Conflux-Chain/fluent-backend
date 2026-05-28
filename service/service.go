@@ -35,6 +35,7 @@ type Services struct {
 }
 
 func New(config Config) (Services, error) {
+	// RPC client
 	if len(config.RPC.URL) == 0 {
 		return Services{}, errors.New("RPC URL not specified")
 	}
@@ -54,6 +55,12 @@ func New(config Config) (Services, error) {
 		return Services{}, errors.WithMessage(err, "Failed to create RPC client")
 	}
 
+	// normalize config
+	if err = config.TokenPay.Normalize(client); err != nil {
+		return Services{}, errors.WithMessage(err, "Failed to normalize token-pay config")
+	}
+
+	// services
 	txSender, err := NewTxSender(client)
 	if err != nil {
 		return Services{}, errors.WithMessage(err, "Failed to create transaction sender")
@@ -61,17 +68,13 @@ func New(config Config) (Services, error) {
 
 	aa := NewAccountAbstract(txSender, config.AccountAbstract.DelegatedContract)
 
-	priceOracle := &PriceOracle{}
-
 	gasTank, err := NewGasTankPaymaster(config.GasTank, client)
 	if err != nil {
 		return Services{}, errors.WithMessage(err, "Failed to create gas tank paymaster service")
 	}
 
-	tokenPay, err := NewTokenPay(config.TokenPay, txSender, priceOracle)
-	if err != nil {
-		return Services{}, errors.WithMessage(err, "Failed to create token pay service")
-	}
+	priceOracle := NewPriceOracle(config.TokenPay.normalizedTokens)
+	tokenPay := NewTokenPay(config.TokenPay, txSender, priceOracle)
 
 	return Services{
 		AccountAbstract: aa,

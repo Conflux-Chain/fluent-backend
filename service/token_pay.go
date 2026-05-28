@@ -11,21 +11,88 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/openweb3/web3go"
 	"github.com/openweb3/web3go/types"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
-type TokenPayConfig struct {
-	Tokens    map[string]common.Address // name => token address
-	Recipient common.Address
+type ERC20TokenStub struct {
+	Caller   *contract.ERC20Caller
+	Name     string
+	Symbol   string
+	Decimals uint8
+}
 
-	MinGasPriceRatioPercentage uint64 `default:"80"`                  // 80% of current gas price
-	MaxGasCost                 uint64 `default:"100000000000000000"`  // 0.1 CFX
-	MinSponsorBalance          uint64 `default:"1000000000000000000"` // 1 CFX
+type TokenPayConfig struct {
+	Recipient           common.Address
+	abiEncodedRecipient string
+
+	Tokens           map[string]common.Address // name => token address
+	normalizedTokens map[common.Address]ERC20TokenStub
+
+	MinGasPriceRatioPercentage    uint64 `default:"80"` // 80% of current gas price
+	minGasPriceRatioPercentageBig *big.Int
+	MaxGasCost                    uint64 `default:"100000000000000000"` // 0.1 CFX
+	maxGasCostBig                 *big.Int
+	MinSponsorBalance             uint64 `default:"1000000000000000000"` // 1 CFX
+	minSponsorBalanceBig          *big.Int
 
 	CheckReceiptInterval        time.Duration `default:"1s"`
 	CheckFundingReceiptInterval time.Duration `default:"30ms"`
+}
+
+func (config *TokenPayConfig) Normalize(client *web3go.Client) error {
+	if config.Recipient == (common.Address{}) {
+		return errors.New("Recipient not specified")
+	}
+
+	var buf [32]byte
+	copy(buf[12:], config.Recipient.Bytes())
+	config.abiEncodedRecipient = hexutil.Encode(buf[:])
+
+	if len(config.Tokens) == 0 {
+		return errors.New("Tokens not specified")
+	}
+
+	caller, _ := client.ToClientForContract()
+
+	config.normalizedTokens = make(map[common.Address]ERC20TokenStub)
+
+	for _, tokenAddr := range config.Tokens {
+		erc20Caller, err := contract.NewERC20Caller(tokenAddr, caller)
+		if err != nil {
+			return errors.WithMessage(err, "Failed to create ERC20 caller")
+		}
+
+		name, err := erc20Caller.Name(nil)
+		if err != nil {
+			return errors.WithMessage(err, "Failed to get token name")
+		}
+
+		symbol, err := erc20Caller.Symbol(nil)
+		if err != nil {
+			return errors.WithMessage(err, "Failed to get token symbol")
+		}
+
+		decimals, err := erc20Caller.Decimals(nil)
+		if err != nil {
+			return errors.WithMessage(err, "Failed to get token decimals")
+		}
+
+		config.normalizedTokens[tokenAddr] = ERC20TokenStub{
+			Caller:   erc20Caller,
+			Name:     name,
+			Symbol:   symbol,
+			Decimals: decimals,
+		}
+	}
+
+	config.minGasPriceRatioPercentageBig = new(big.Int).SetUint64(config.MinGasPriceRatioPercentage)
+	config.maxGasCostBig = new(big.Int).SetUint64(config.MaxGasCost)
+	config.minSponsorBalanceBig = new(big.Int).SetUint64(config.MinSponsorBalance)
+
+	return nil
 }
 
 type TokenPay struct {
@@ -35,55 +102,22 @@ type TokenPay struct {
 
 	priceOracle *PriceOracle
 
-	txSigner                 gethTypes.Signer
-	allowedTokens            map[common.Address]*contract.ERC20Caller
-	abiEncodedTokenRecipient string
+	txSigner gethTypes.Signer
 
 	inflight sync.Map
 }
 
-func NewTokenPay(config TokenPayConfig, sender *TxSender, priceOracle *PriceOracle) (*TokenPay, error) {
-	// validate config
-	if len(config.Tokens) == 0 {
-		return nil, errors.New("Tokens not specified")
-	}
-
-	if config.Recipient == (common.Address{}) {
-		return nil, errors.New("Recipient not specified")
-	}
-
-	// allowed tokens
-	caller, _ := sender.client.ToClientForContract()
-	allowedTokens := make(map[common.Address]*contract.ERC20Caller)
-	for _, tokenAddr := range config.Tokens {
-		erc20Caller, err := contract.NewERC20Caller(tokenAddr, caller)
-		if err != nil {
-			return nil, errors.WithMessage(err, "Failed to create ERC20 caller")
-		}
-
-		allowedTokens[tokenAddr] = erc20Caller
-	}
-
-	// abi encoded token recipient
-	var buf [32]byte
-	copy(buf[12:], config.Recipient.Bytes())
-
+func NewTokenPay(config TokenPayConfig, sender *TxSender, priceOracle *PriceOracle) *TokenPay {
 	return &TokenPay{
-		TxSender:                 sender,
-		config:                   config,
-		priceOracle:              priceOracle,
-		txSigner:                 gethTypes.LatestSignerForChainID(sender.chainIdBig.ToInt()),
-		allowedTokens:            allowedTokens,
-		abiEncodedTokenRecipient: hexutil.Encode(buf[:]),
-	}, nil
+		TxSender:    sender,
+		config:      config,
+		priceOracle: priceOracle,
+		txSigner:    gethTypes.LatestSignerForChainID(sender.chainIdBig.ToInt()),
+	}
 }
 
 func (tp *TokenPay) Config() TokenPayConfig {
 	return tp.config
-}
-
-func (tp *TokenPay) IsTokenAllowed(token common.Address) bool {
-	return tp.allowedTokens[token] != nil
 }
 
 func (tp *TokenPay) Sponsor(rawTransferTokenTx, rawBusinessTx []byte) error {
@@ -104,8 +138,8 @@ func (tp *TokenPay) Sponsor(rawTransferTokenTx, rawBusinessTx []byte) error {
 		return NewRPCError(err, "Failed to retrieve sponsor balance")
 	}
 
-	if new(big.Int).SetUint64(tp.config.MinSponsorBalance).Cmp(sponsorBalance) > 0 {
-		return ErrTokenPaySponsorBalanceNotEnough.WithData(fmt.Sprintf("min = %v, actual = %v", tp.config.MinSponsorBalance, sponsorBalance))
+	if tp.config.minSponsorBalanceBig.Cmp(sponsorBalance) > 0 {
+		return ErrTokenPaySponsorBalanceNotEnough.WithData(fmt.Sprintf("min = %v, actual = %v", tp.config.minSponsorBalanceBig, sponsorBalance))
 	}
 
 	// check the validity of given 2 txs
