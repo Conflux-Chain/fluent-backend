@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Conflux-Chain/fluent-backend/contract"
 	"github.com/Conflux-Chain/go-conflux-util/api"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -35,7 +36,7 @@ type TokenPay struct {
 	priceOracle *PriceOracle
 
 	txSigner                 gethTypes.Signer
-	allowedTokens            map[common.Address]string // token address => token name
+	allowedTokens            map[common.Address]*contract.ERC20Caller
 	abiEncodedTokenRecipient string
 
 	inflight sync.Map
@@ -52,9 +53,15 @@ func NewTokenPay(config TokenPayConfig, sender *TxSender, priceOracle *PriceOrac
 	}
 
 	// allowed tokens
-	allowedTokens := make(map[common.Address]string)
-	for name, tokenAddr := range config.Tokens {
-		allowedTokens[tokenAddr] = name
+	caller, _ := sender.client.ToClientForContract()
+	allowedTokens := make(map[common.Address]*contract.ERC20Caller)
+	for _, tokenAddr := range config.Tokens {
+		erc20Caller, err := contract.NewERC20Caller(tokenAddr, caller)
+		if err != nil {
+			return nil, errors.WithMessage(err, "Failed to create ERC20 caller")
+		}
+
+		allowedTokens[tokenAddr] = erc20Caller
 	}
 
 	// abi encoded token recipient
@@ -76,8 +83,7 @@ func (tp *TokenPay) Config() TokenPayConfig {
 }
 
 func (tp *TokenPay) IsTokenAllowed(token common.Address) bool {
-	_, ok := tp.allowedTokens[token]
-	return ok
+	return tp.allowedTokens[token] != nil
 }
 
 func (tp *TokenPay) Sponsor(rawTransferTokenTx, rawBusinessTx []byte) error {

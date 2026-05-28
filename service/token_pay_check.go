@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/Conflux-Chain/fluent-backend/contract"
 	"github.com/Conflux-Chain/go-conflux-util/api"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -238,13 +237,7 @@ func (tp *TokenPay) dynamicCheckTransferTokenTx(tx *types.Transaction, sender, t
 	}
 
 	// token balance
-	caller, _ := tp.client.ToClientForContract()
-	erc20Caller, err := contract.NewERC20Caller(token, caller)
-	if err != nil {
-		return errors.WithMessage(err, "Failed to create ERC20 caller")
-	}
-
-	balance, err := erc20Caller.BalanceOf(nil, sender)
+	balance, err := tp.allowedTokens[token].BalanceOf(nil, sender)
 	if err != nil {
 		return NewRPCError(err, "Failed to retrieve token balance")
 	}
