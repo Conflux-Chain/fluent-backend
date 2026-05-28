@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/Conflux-Chain/fluent-backend/service"
 	"github.com/Conflux-Chain/go-conflux-util/api"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -14,6 +15,31 @@ type TokenPayController struct {
 
 func NewTokenPayController(services service.Services) *TokenPayController {
 	return &TokenPayController{services}
+}
+
+// Config returns the token-pay configuration exposed to clients.
+//
+// @ID				tokenPayConfig
+// @Summary			Get token-pay configuration
+// @Description		Returns the supported ERC20 token list and the configured recipient address for token-pay.
+// @Tags			TokenPay
+// @Accept			json
+// @Produce			json
+// @Success			200	{object}	api.BusinessError{data=TokenPayConfig}	"Token-pay configuration"
+// @Failure			600	{object}	api.BusinessError{data=string}	"Internal server error"
+// @Router			/tokenpay/config	[get]
+func (controller *TokenPayController) Config(c *gin.Context) (any, error) {
+	config := controller.services.TokenPay.Config()
+
+	var tokens []common.Address
+	for _, token := range config.Tokens {
+		tokens = append(tokens, token)
+	}
+
+	return TokenPayConfig{
+		Tokens:    tokens,
+		Recipient: config.Recipient.Hex(),
+	}, nil
 }
 
 // Submit accepts two user-signed raw transactions (transfer token + business), validates

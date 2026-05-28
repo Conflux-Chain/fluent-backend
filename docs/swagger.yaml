@@ -78,6 +78,20 @@ definitions:
           Only meaningful when Executed is true.
         type: boolean
     type: object
+  api.TokenPayConfig:
+    properties:
+      recipient:
+        description: Recipient is the configured recipient address that receives token
+          payments.
+        type: string
+      tokens:
+        description: Tokens is the list of ERC20 token contracts supported for token-pay.
+        items:
+          items:
+            type: integer
+          type: array
+        type: array
+    type: object
   api.TokenPayRequest:
     properties:
       rawBusinessTx:
@@ -329,6 +343,37 @@ paths:
       summary: Sign paymasterData for UserOperation
       tags:
       - GasTank
+  /tokenpay/config:
+    get:
+      consumes:
+      - application/json
+      description: Returns the supported ERC20 token list and the configured recipient
+        address for token-pay.
+      operationId: tokenPayConfig
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Token-pay configuration
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                data:
+                  $ref: '#/definitions/api.TokenPayConfig'
+              type: object
+        "600":
+          description: Internal server error
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: Get token-pay configuration
+      tags:
+      - TokenPay
   /tokenpay/submit:
     post:
       consumes:

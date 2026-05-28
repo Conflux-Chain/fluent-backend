@@ -103,6 +103,13 @@ func (userOp *UserOperation) ToPackedUserOperation() contract.PackedUserOperatio
 	}
 }
 
+type TokenPayConfig struct {
+	// Tokens is the list of ERC20 token contracts supported for token-pay.
+	Tokens []common.Address `json:"tokens"`
+	// Recipient is the configured recipient address that receives token payments.
+	Recipient string `json:"recipient"`
+}
+
 type TokenPayRequest struct {
 	RawTransferTokenTx string `json:"rawTransferTokenTx" binding:"hex"`
 	RawBusinessTx      string `json:"rawBusinessTx" binding:"hex"`

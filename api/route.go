@@ -43,6 +43,7 @@ func MustServe(config Config, services service.Services) {
 		api.POST("/aa/gastank/sign", middleware.Metrics("api.aa.gastank.signature"), middleware.Wrap(aaController.GasTankSign))
 
 		// token pay
+		api.GET("/tokenpay/config", middleware.Metrics("api.tokenpay.config"), middleware.Wrap(tokenPayController.Config))
 		api.POST("/tokenpay/submit", middleware.Metrics("api.tokenpay.submit"), middleware.Wrap(tokenPayController.Submit))
 	})
 }

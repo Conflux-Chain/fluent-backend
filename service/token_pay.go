@@ -71,6 +71,10 @@ func NewTokenPay(config TokenPayConfig, sender *TxSender, priceOracle *PriceOrac
 	}, nil
 }
 
+func (tp *TokenPay) Config() TokenPayConfig {
+	return tp.config
+}
+
 func (tp *TokenPay) Sponsor(rawTransferTokenTx, rawBusinessTx []byte) error {
 	// unmarshal given txs
 	var transferTokenTx, businessTx gethTypes.Transaction

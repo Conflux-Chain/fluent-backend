@@ -327,6 +327,60 @@
                 }
             }
         },
+        "/tokenpay/config": {
+            "get": {
+                "description": "Returns the supported ERC20 token list and the configured recipient address for token-pay.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "TokenPay"
+                ],
+                "summary": "Get token-pay configuration",
+                "operationId": "tokenPayConfig",
+                "responses": {
+                    "200": {
+                        "description": "Token-pay configuration",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/api.TokenPayConfig"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "600": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/tokenpay/submit": {
             "post": {
                 "description": "Submits two raw transactions (transfer token and business) for sponsored execution.\nBackend validates both transactions first. If validation passes, it sends a funding ETH transaction.\nAfter funding is confirmed asynchronously, backend broadcasts transfer-token tx then business tx.\nClients can poll on-chain status of both submitted transactions (transfer-token and business) by their tx hashes.\nThe whole flow is considered completed only when both transactions are successfully executed.\nIf transfer-token execution fails, the user may be blacklisted by risk control.\nIf transactions remain pending for a long time, contact administrator for investigation.",
@@ -475,6 +529,25 @@
                 "success": {
                     "description": "Success indicates whether the set-code authorization succeeded. Only meaningful when Executed is true.",
                     "type": "boolean"
+                }
+            }
+        },
+        "api.TokenPayConfig": {
+            "type": "object",
+            "properties": {
+                "recipient": {
+                    "description": "Recipient is the configured recipient address that receives token payments.",
+                    "type": "string"
+                },
+                "tokens": {
+                    "description": "Tokens is the list of ERC20 token contracts supported for token-pay.",
+                    "type": "array",
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        }
+                    }
                 }
             }
         },
