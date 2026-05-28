@@ -392,6 +392,69 @@ const docTemplate = `{
                 }
             }
         },
+        "/tokenpay/price": {
+            "get": {
+                "description": "Returns the ETH price quoted in the specified token, i.e. how many token units are required for 1 ETH.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "TokenPay"
+                ],
+                "summary": "Get ETH price by token",
+                "operationId": "tokenPayGetETHPrice",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ERC20 token address (0x-prefixed, 42 characters)",
+                        "name": "token",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ETH price in token smallest units",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "600": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/tokenpay/submit": {
             "post": {
                 "description": "Submits two raw transactions (transfer token and business) for sponsored execution.\nBackend validates both transactions first. If validation passes, it sends a funding ETH transaction.\nAfter funding is confirmed asynchronously, backend broadcasts transfer-token tx then business tx.\nClients can poll on-chain status of both submitted transactions (transfer-token and business) by their tx hashes.\nThe whole flow is considered completed only when both transactions are successfully executed.\nIf transfer-token execution fails, the user may be blacklisted by risk control.\nIf transactions remain pending for a long time, contact administrator for investigation.",

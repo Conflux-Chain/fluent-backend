@@ -75,6 +75,11 @@ func (tp *TokenPay) Config() TokenPayConfig {
 	return tp.config
 }
 
+func (tp *TokenPay) IsTokenAllowed(token common.Address) bool {
+	_, ok := tp.allowedTokens[token]
+	return ok
+}
+
 func (tp *TokenPay) Sponsor(rawTransferTokenTx, rawBusinessTx []byte) error {
 	// unmarshal given txs
 	var transferTokenTx, businessTx gethTypes.Transaction

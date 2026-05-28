@@ -42,6 +42,41 @@ func (controller *TokenPayController) Config(c *gin.Context) (any, error) {
 	}, nil
 }
 
+// GetETHPrice returns how many units of the specified token equal 1 ETH.
+//
+// The returned value is an integer quote in the token's smallest unit (for example, wei-like units for ERC20).
+//
+// @ID				tokenPayGetETHPrice
+// @Summary			Get ETH price by token
+// @Description		Returns the ETH price quoted in the specified token, i.e. how many token units are required for 1 ETH.
+// @Tags			TokenPay
+// @Accept			json
+// @Produce			json
+// @Param			token	query	string	true	"ERC20 token address (0x-prefixed, 42 characters)"
+// @Success			200	{object}	api.BusinessError{data=string}	"ETH price in token smallest units"
+// @Failure			600	{object}	api.BusinessError{data=string}	"Internal server error"
+// @Router			/tokenpay/price	[get]
+func (controller *TokenPayController) GetETHPrice(c *gin.Context) (any, error) {
+	var input TokenPayPriceRequest
+
+	if err := c.ShouldBindQuery(&input); err != nil {
+		return nil, api.ErrValidation(err)
+	}
+
+	token := common.HexToAddress(input.Token)
+
+	if !controller.services.TokenPay.IsTokenAllowed(token) {
+		return nil, api.ErrValidationStr("Unsupported token")
+	}
+
+	price, err := controller.services.PriceOracle.GetETHPrice(token)
+	if err != nil {
+		return nil, err
+	}
+
+	return price.String(), nil
+}
+
 // Submit accepts two user-signed raw transactions (transfer token + business), validates
 // both transactions on the backend, then starts sponsor flow.
 //

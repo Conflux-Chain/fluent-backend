@@ -44,6 +44,7 @@ func MustServe(config Config, services service.Services) {
 
 		// token pay
 		api.GET("/tokenpay/config", middleware.Metrics("api.tokenpay.config"), middleware.Wrap(tokenPayController.Config))
+		api.GET("/tokenpay/price", middleware.Metrics("api.tokenpay.price"), middleware.Wrap(tokenPayController.GetETHPrice))
 		api.POST("/tokenpay/submit", middleware.Metrics("api.tokenpay.submit"), middleware.Wrap(tokenPayController.Submit))
 	})
 }

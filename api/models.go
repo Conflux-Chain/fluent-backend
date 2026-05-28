@@ -110,6 +110,10 @@ type TokenPayConfig struct {
 	Recipient string `json:"recipient"`
 }
 
+type TokenPayPriceRequest struct {
+	Token string `json:"token" form:"token" binding:"hex,len=42"`
+}
+
 type TokenPayRequest struct {
 	RawTransferTokenTx string `json:"rawTransferTokenTx" binding:"hex"`
 	RawBusinessTx      string `json:"rawBusinessTx" binding:"hex"`

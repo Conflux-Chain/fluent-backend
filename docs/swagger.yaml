@@ -374,6 +374,43 @@ paths:
       summary: Get token-pay configuration
       tags:
       - TokenPay
+  /tokenpay/price:
+    get:
+      consumes:
+      - application/json
+      description: Returns the ETH price quoted in the specified token, i.e. how many
+        token units are required for 1 ETH.
+      operationId: tokenPayGetETHPrice
+      parameters:
+      - description: ERC20 token address (0x-prefixed, 42 characters)
+        in: query
+        name: token
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ETH price in token smallest units
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "600":
+          description: Internal server error
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: Get ETH price by token
+      tags:
+      - TokenPay
   /tokenpay/submit:
     post:
       consumes:

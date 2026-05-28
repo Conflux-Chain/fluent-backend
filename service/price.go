@@ -10,6 +10,6 @@ type PriceOracle struct{}
 
 // GetETHPrice returns the price of ETH in terms of the given quote token.
 func (oracle *PriceOracle) GetETHPrice(quoteToken common.Address) (*big.Int, error) {
-	// TODO 1 CFX/USDT
-	return big.NewInt(1_000_000_000_000_000_000), nil
+	// TODO 0.01 CFX/USDT
+	return big.NewInt(10_000_000_000_000_000), nil
 }

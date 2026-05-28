@@ -29,6 +29,7 @@ type Config struct {
 
 type Services struct {
 	AccountAbstract *AccountAbstract
+	PriceOracle     *PriceOracle
 	GasTank         *GasTankPaymaster
 	TokenPay        *TokenPay
 }
@@ -60,18 +61,21 @@ func New(config Config) (Services, error) {
 
 	aa := NewAccountAbstract(txSender, config.AccountAbstract.DelegatedContract)
 
+	priceOracle := &PriceOracle{}
+
 	gasTank, err := NewGasTankPaymaster(config.GasTank, client)
 	if err != nil {
 		return Services{}, errors.WithMessage(err, "Failed to create gas tank paymaster service")
 	}
 
-	tokenPay, err := NewTokenPay(config.TokenPay, txSender, &PriceOracle{})
+	tokenPay, err := NewTokenPay(config.TokenPay, txSender, priceOracle)
 	if err != nil {
 		return Services{}, errors.WithMessage(err, "Failed to create token pay service")
 	}
 
 	return Services{
 		AccountAbstract: aa,
+		PriceOracle:     priceOracle,
 		GasTank:         gasTank,
 		TokenPay:        tokenPay,
 	}, nil
