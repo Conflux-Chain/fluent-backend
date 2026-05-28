@@ -105,7 +105,7 @@ func (paymaster *GasTankPaymaster) PrepareDeposit(token common.Address, amount *
 func (paymaster *GasTankPaymaster) Prepare(sender, token common.Address) ([]byte, error) {
 	balance, err := paymaster.caller.BalanceOf(nil, sender, token)
 	if err != nil {
-		return nil, ErrRPCError.WithData(errors.WithMessage(err, "Failed to retrieve sender token balance"))
+		return nil, NewRPCError(err, "Failed to retrieve sender token balance")
 	}
 
 	if balance.Sign() == 0 {
@@ -166,7 +166,7 @@ func (paymaster *GasTankPaymaster) Sign(userOp contract.PackedUserOperation) ([]
 	// compute the paymaster signature
 	hash, err := paymaster.caller.GetPaymasterHash(nil, userOp)
 	if err != nil {
-		return nil, ErrRPCError.WithData(errors.WithMessage(err, "Failed to retrieve paymaster hash from blockchain"))
+		return nil, NewRPCError(err, "Failed to retrieve paymaster hash from blockchain")
 	}
 
 	if paymasterData.Signature, err = paymaster.signer.SignHash(hash); err != nil {
@@ -203,7 +203,7 @@ func (paymaster *GasTankPaymaster) validatePaymasterData(paymasterData *GasTankP
 	// token
 	allowed, err := paymaster.caller.IsTokenAllowed(nil, paymasterData.Token)
 	if err != nil {
-		return ErrRPCError.WithData(errors.WithMessage(err, "Failed to check if token is allowed"))
+		return NewRPCError(err, "Failed to check if token is allowed")
 	}
 
 	if !allowed {
@@ -216,7 +216,7 @@ func (paymaster *GasTankPaymaster) validatePaymasterData(paymasterData *GasTankP
 func (paymaster *GasTankPaymaster) validateSenderBalance(sender, token common.Address, maxTokenCost *big.Int) error {
 	balance, err := paymaster.caller.BalanceOf(nil, sender, token)
 	if err != nil {
-		return ErrRPCError.WithData(errors.WithMessage(err, "Failed to retrieve sender token balance"))
+		return NewRPCError(err, "Failed to retrieve sender token balance")
 	}
 
 	if balance.Cmp(maxTokenCost) < 0 {
@@ -241,6 +241,9 @@ func (paymaster *GasTankPaymaster) validateCallData(userOpCallData []byte, payma
 	if !bytes.Equal(userOpCallData, packedCallData) {
 		return api.ErrValidationStr("Invalid user operation calldata")
 	}
+
+	// TODO 需要进一步检查链上 sender 的 token 余额是否充足。否则，depositToken 时因为 balance 不够而 revert，
+	// 然后在 paymaster 的 postOp 阶段就不能扣除 USDT 了。
 
 	return nil
 }
