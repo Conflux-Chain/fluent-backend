@@ -31,6 +31,7 @@ func MustServe(config Config, services service.Services) {
 		api := router.Group("api")
 
 		aaController := NewAccountAbstractController(services)
+		tokenPayController := NewTokenPayController(services)
 
 		// account abstract - auth
 		api.POST("/aa/auth", middleware.Metrics("api.aa.auth.send"), middleware.Wrap(aaController.SendAuth))
@@ -40,5 +41,8 @@ func MustServe(config Config, services service.Services) {
 		api.POST("/aa/gastank/prepare/deposit", middleware.Metrics("api.aa.gastank.prepare.deposit"), middleware.Wrap(aaController.GasTankPrepareDeposit))
 		api.POST("/aa/gastank/prepare", middleware.Metrics("api.aa.gastank.prepare"), middleware.Wrap(aaController.GasTankPrepare))
 		api.POST("/aa/gastank/sign", middleware.Metrics("api.aa.gastank.signature"), middleware.Wrap(aaController.GasTankSign))
+
+		// token pay
+		api.POST("/tokenpay/submit", middleware.Metrics("api.tokenpay.submit"), middleware.Wrap(tokenPayController.Submit))
 	})
 }

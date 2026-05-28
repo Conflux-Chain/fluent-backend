@@ -2,16 +2,12 @@ package service
 
 import (
 	"fmt"
-	"math/big"
-	"sync"
 
 	"github.com/Conflux-Chain/go-conflux-util/api"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/openweb3/web3go"
 	"github.com/openweb3/web3go/types"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -25,13 +21,9 @@ var (
 
 // AccountAbstract provides account abstraction relevant functions.
 type AccountAbstract struct {
-	client *web3go.Client
+	*TxSender
 
-	sender            common.Address
-	chainId           uint64
 	delegatedContract common.Address
-
-	mu sync.Mutex
 }
 
 // NewAccountAbstract creates an AccountAbstract service instance.
@@ -42,45 +34,11 @@ type AccountAbstract struct {
 // Note, the service's fee-payer account (the signer used by the underlying client) must have sufficient balance to cover
 // gas costs for set-code transactions. NewAccountAbstract checks the balance of the fee-payer account at startup and
 // returns an error if the balance is zero. Please ensure the fee-payer account is properly funded before starting the service.
-func NewAccountAbstract(client *web3go.Client, delegatedContract common.Address) (*AccountAbstract, error) {
-	// get the default signer
-	sm, err := client.GetSignerManager()
-	if err != nil {
-		return nil, errors.WithMessage(err, "Failed to get signer manager from RPC client")
-	}
-
-	signers := sm.List()
-	if len(signers) == 0 {
-		return nil, errors.New("No signer found")
-	}
-
-	// check sender balance
-	sender := signers[0].Address()
-	balance, err := client.Eth.Balance(sender, nil)
-	if err != nil {
-		return nil, errors.WithMessage(err, "Failed to retrieve balance of AA tx sender")
-	}
-
-	if balance.Sign() == 0 {
-		return nil, errors.Errorf("AA tx sender balance is 0, address = %v", sender)
-	}
-
-	// retrieve chain ID
-	chainId, err := client.Eth.ChainId()
-	if err != nil {
-		return nil, errors.WithMessage(err, "Failed to retrieve chain ID")
-	}
-
-	if chainId == nil {
-		return nil, errors.New("Chain ID unavailable on fullnode")
-	}
-
+func NewAccountAbstract(sender *TxSender, delegatedContract common.Address) *AccountAbstract {
 	return &AccountAbstract{
-		client:            client,
-		sender:            signers[0].Address(),
-		chainId:           *chainId,
+		TxSender:          sender,
 		delegatedContract: delegatedContract,
-	}, nil
+	}
 }
 
 // SendSetCodeTransaction validates auth and broadcasts an EIP-7702 set-code transaction signed by
@@ -94,23 +52,10 @@ func (aa *AccountAbstract) SendSetCodeTransaction(auth gethTypes.SetCodeAuthoriz
 		return common.Hash{}, err
 	}
 
-	tx := types.TransactionArgs{
-		From:              &aa.sender,
+	return aa.Send(types.TransactionArgs{
 		To:                &setCodeTxTo,
 		AuthorizationList: []gethTypes.SetCodeAuthorization{auth},
-		ChainID:           (*hexutil.Big)(new(big.Int).SetUint64(aa.chainId)),
-	}
-
-	// use mutex to ensure correct tx nonce, and need to enhance for high QPS case
-	aa.mu.Lock()
-	defer aa.mu.Unlock()
-
-	txHash, err := aa.client.Eth.SendTransactionByArgs(tx)
-	if err != nil {
-		return common.Hash{}, NewRPCError(err, "Failed to send transaction")
-	}
-
-	return txHash, nil
+	})
 }
 
 func (aa *AccountAbstract) validateAuth(auth gethTypes.SetCodeAuthorization) error {
@@ -138,7 +83,7 @@ func (aa *AccountAbstract) validateAuth(auth gethTypes.SetCodeAuthorization) err
 	// validate delegated contract
 	onChainCode, err := aa.getDelegatedContract(authority)
 	if err != nil {
-		return ErrRPCError.WithData(err.Error())
+		return err
 	}
 
 	if auth.Address == emptyAddress {
@@ -170,7 +115,7 @@ func (aa *AccountAbstract) validateAuth(auth gethTypes.SetCodeAuthorization) err
 func (aa *AccountAbstract) getDelegatedContract(authority common.Address) (common.Address, error) {
 	code, err := aa.client.Eth.CodeAt(authority, nil)
 	if err != nil {
-		return emptyAddress, errors.WithMessage(err, "Failed to retrieve authority code")
+		return emptyAddress, NewRPCError(err, "Failed to retrieve authority code")
 	}
 
 	codeLen := len(code)

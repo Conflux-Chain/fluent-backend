@@ -326,6 +326,59 @@
                     }
                 }
             }
+        },
+        "/tokenpay/submit": {
+            "post": {
+                "description": "Submits two raw transactions (transfer token and business) for sponsored execution.\nBackend validates both transactions first. If validation passes, it sends a funding ETH transaction.\nAfter funding is confirmed asynchronously, backend broadcasts transfer-token tx then business tx.\nClients can poll on-chain status of both submitted transactions (transfer-token and business) by their tx hashes.\nThe whole flow is considered completed only when both transactions are successfully executed.\nIf transfer-token execution fails, the user may be blacklisted by risk control.\nIf transactions remain pending for a long time, contact administrator for investigation.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "TokenPay"
+                ],
+                "summary": "Submit token-pay transactions",
+                "operationId": "tokenPaySubmit",
+                "parameters": [
+                    {
+                        "description": "Raw transfer-token tx and raw business tx",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.TokenPayRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Submission accepted",
+                        "schema": {
+                            "$ref": "#/definitions/api.BusinessError"
+                        }
+                    },
+                    "600": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -422,6 +475,17 @@
                 "success": {
                     "description": "Success indicates whether the set-code authorization succeeded. Only meaningful when Executed is true.",
                     "type": "boolean"
+                }
+            }
+        },
+        "api.TokenPayRequest": {
+            "type": "object",
+            "properties": {
+                "rawBusinessTx": {
+                    "type": "string"
+                },
+                "rawTransferTokenTx": {
+                    "type": "string"
                 }
             }
         },

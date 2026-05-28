@@ -102,3 +102,8 @@ func (userOp *UserOperation) ToPackedUserOperation() contract.PackedUserOperatio
 		Signature:          hexutil.MustDecode(userOp.Signature),
 	}
 }
+
+type TokenPayRequest struct {
+	RawTransferTokenTx string `json:"rawTransferTokenTx" binding:"hex"`
+	RawBusinessTx      string `json:"rawBusinessTx" binding:"hex"`
+}

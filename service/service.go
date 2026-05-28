@@ -23,11 +23,14 @@ type Config struct {
 	}
 
 	GasTank GasTankPaymasterConfig
+
+	TokenPay TokenPayConfig
 }
 
 type Services struct {
 	AccountAbstract *AccountAbstract
 	GasTank         *GasTankPaymaster
+	TokenPay        *TokenPay
 }
 
 func New(config Config) (Services, error) {
@@ -50,18 +53,26 @@ func New(config Config) (Services, error) {
 		return Services{}, errors.WithMessage(err, "Failed to create RPC client")
 	}
 
-	aa, err := NewAccountAbstract(client, config.AccountAbstract.DelegatedContract)
+	txSender, err := NewTxSender(client)
 	if err != nil {
-		return Services{}, errors.WithMessage(err, "Failed to create account abstract service")
+		return Services{}, errors.WithMessage(err, "Failed to create transaction sender")
 	}
+
+	aa := NewAccountAbstract(txSender, config.AccountAbstract.DelegatedContract)
 
 	gasTank, err := NewGasTankPaymaster(config.GasTank, client)
 	if err != nil {
 		return Services{}, errors.WithMessage(err, "Failed to create gas tank paymaster service")
 	}
 
+	tokenPay, err := NewTokenPay(config.TokenPay, txSender, &PriceOracle{})
+	if err != nil {
+		return Services{}, errors.WithMessage(err, "Failed to create token pay service")
+	}
+
 	return Services{
 		AccountAbstract: aa,
 		GasTank:         gasTank,
+		TokenPay:        tokenPay,
 	}, nil
 }
