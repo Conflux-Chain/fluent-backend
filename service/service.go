@@ -50,10 +50,12 @@ func New(config Config) (Services, error) {
 		return Services{}, errors.WithMessage(err, "Failed to create RPC client")
 	}
 
-	aa, err := NewAccountAbstract(client, config.AccountAbstract.DelegatedContract)
+	txSender, err := NewTxSender(client)
 	if err != nil {
-		return Services{}, errors.WithMessage(err, "Failed to create account abstract service")
+		return Services{}, errors.WithMessage(err, "Failed to create transaction sender")
 	}
+
+	aa := NewAccountAbstract(txSender, config.AccountAbstract.DelegatedContract)
 
 	gasTank, err := NewGasTankPaymaster(config.GasTank, client)
 	if err != nil {
