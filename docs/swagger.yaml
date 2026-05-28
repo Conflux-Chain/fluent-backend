@@ -78,6 +78,13 @@ definitions:
           Only meaningful when Executed is true.
         type: boolean
     type: object
+  api.TokenPayRequest:
+    properties:
+      rawBusinessTx:
+        type: string
+      rawTransferTokenTx:
+        type: string
+    type: object
   api.UserOperation:
     properties:
       callData:
@@ -322,4 +329,43 @@ paths:
       summary: Sign paymasterData for UserOperation
       tags:
       - GasTank
+  /tokenpay/submit:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Submits two raw transactions (transfer token and business) for sponsored execution.
+        Backend validates both transactions first. If validation passes, it sends a funding ETH transaction.
+        After funding is confirmed asynchronously, backend broadcasts transfer-token tx then business tx.
+        Clients can poll on-chain status of both submitted transactions (transfer-token and business) by their tx hashes.
+        The whole flow is considered completed only when both transactions are successfully executed.
+        If transfer-token execution fails, the user may be blacklisted by risk control.
+        If transactions remain pending for a long time, contact administrator for investigation.
+      operationId: tokenPaySubmit
+      parameters:
+      - description: Raw transfer-token tx and raw business tx
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.TokenPayRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Submission accepted
+          schema:
+            $ref: '#/definitions/api.BusinessError'
+        "600":
+          description: Internal server error
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: Submit token-pay transactions
+      tags:
+      - TokenPay
 swagger: "2.0"

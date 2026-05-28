@@ -71,37 +71,37 @@ func NewTokenPay(config TokenPayConfig, sender *TxSender, priceOracle *PriceOrac
 	}, nil
 }
 
-func (tp *TokenPay) Sponsor(rawTransferTokenTx, rawBusinessTx []byte) (common.Hash, error) {
+func (tp *TokenPay) Sponsor(rawTransferTokenTx, rawBusinessTx []byte) error {
 	// unmarshal given txs
 	var transferTokenTx, businessTx gethTypes.Transaction
 
 	if err := transferTokenTx.UnmarshalBinary(rawTransferTokenTx); err != nil {
-		return common.Hash{}, api.ErrValidation(errors.WithMessage(err, "Failed to decode transfer token tx"))
+		return api.ErrValidation(errors.WithMessage(err, "Failed to decode transfer token tx"))
 	}
 
 	if err := businessTx.UnmarshalBinary(rawBusinessTx); err != nil {
-		return common.Hash{}, api.ErrValidation(errors.WithMessage(err, "Failed to decode business tx"))
+		return api.ErrValidation(errors.WithMessage(err, "Failed to decode business tx"))
 	}
 
 	// check sponsor balance
 	sponsorBalance, err := tp.client.Eth.Balance(tp.TxSender.sender, nil)
 	if err != nil {
-		return common.Hash{}, NewRPCError(err, "Failed to retrieve sponsor balance")
+		return NewRPCError(err, "Failed to retrieve sponsor balance")
 	}
 
 	if new(big.Int).SetUint64(tp.config.MinSponsorBalance).Cmp(sponsorBalance) > 0 {
-		return common.Hash{}, ErrTokenPaySponsorBalanceNotEnough.WithData(fmt.Sprintf("min = %v, actual = %v", tp.config.MinSponsorBalance, sponsorBalance))
+		return ErrTokenPaySponsorBalanceNotEnough.WithData(fmt.Sprintf("min = %v, actual = %v", tp.config.MinSponsorBalance, sponsorBalance))
 	}
 
 	// check the validity of given 2 txs
 	result, err := tp.check(&transferTokenTx, &businessTx)
 	if err != nil {
-		return common.Hash{}, err
+		return err
 	}
 
 	// allow only 1 sponsor tx per sender
 	if _, loaded := tp.inflight.LoadOrStore(result.Sender, struct{}{}); loaded {
-		return common.Hash{}, fmt.Errorf("Another transaction in process, sender = %v, nonce = %v", result.Sender, result.Nonce)
+		return fmt.Errorf("Another transaction in process, sender = %v, nonce = %v", result.Sender, result.Nonce)
 	}
 
 	// send funding ETH tx
@@ -122,7 +122,7 @@ func (tp *TokenPay) Sponsor(rawTransferTokenTx, rawBusinessTx []byte) (common.Ha
 	if err != nil {
 		// clear the inflight record if failed to send funding tx
 		tp.inflight.Delete(result.Sender)
-		return common.Hash{}, err
+		return err
 	}
 
 	go tp.monitor(TokenPayMonitorContext{
@@ -132,7 +132,7 @@ func (tp *TokenPay) Sponsor(rawTransferTokenTx, rawBusinessTx []byte) (common.Ha
 		rawBusinessTx:      rawBusinessTx,
 	})
 
-	return fundingTxHash, nil
+	return nil
 }
 
 type TokenPayMonitorContext struct {
