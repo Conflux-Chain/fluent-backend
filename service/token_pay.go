@@ -101,7 +101,7 @@ func (tp *TokenPay) Sponsor(rawTransferTokenTx, rawBusinessTx []byte) error {
 
 	// allow only 1 sponsor tx per sender
 	if _, loaded := tp.inflight.LoadOrStore(result.Sender, struct{}{}); loaded {
-		return fmt.Errorf("Another transaction in process, sender = %v, nonce = %v", result.Sender, result.Nonce)
+		return api.ErrValidationStrf("Another transaction in process, sender = %v, nonce = %v", result.Sender, result.Nonce)
 	}
 
 	// send funding ETH tx
@@ -211,6 +211,6 @@ func (tp *TokenPay) waitForReceipt(txHash common.Hash, interval time.Duration) b
 			continue
 		}
 
-		return receipt.Status == nil || *receipt.Status == gethTypes.ReceiptStatusSuccessful
+		return receipt.Status != nil && *receipt.Status == gethTypes.ReceiptStatusSuccessful
 	}
 }
