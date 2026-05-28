@@ -13,6 +13,13 @@ var (
 
 	// Gas tank
 	ErrGasTankInsufficientBalance = api.NewBusinessError(2001, "Insufficient token balance in gas tank")
+
+	// token pay
+	ErrTokenPayPriceTooLow               = api.NewBusinessError(3001, "Gas price too low")
+	ErrTokenPayGasCostTooHigh            = api.NewBusinessError(3002, "Gas cost too high")
+	ErrTokenPayTransferTokenAmountTooLow = api.NewBusinessError(3003, "Transferred token amount too low")
+	ErrTokenPaySimulateTxFailed          = api.NewBusinessError(3004, "Failed to simulate transaction")
+	ErrTokenPaySponsorBalanceNotEnough   = api.NewBusinessError(3005, "Sponsor balance is insufficient, please contact the administrator")
 )
 
 func NewRPCError(err error, message string, args ...any) *api.BusinessError {

@@ -23,11 +23,14 @@ type Config struct {
 	}
 
 	GasTank GasTankPaymasterConfig
+
+	TokenPay TokenPayConfig
 }
 
 type Services struct {
 	AccountAbstract *AccountAbstract
 	GasTank         *GasTankPaymaster
+	TokenPay        *TokenPay
 }
 
 func New(config Config) (Services, error) {
@@ -62,8 +65,14 @@ func New(config Config) (Services, error) {
 		return Services{}, errors.WithMessage(err, "Failed to create gas tank paymaster service")
 	}
 
+	tokenPay, err := NewTokenPay(config.TokenPay, txSender, &PriceOracle{})
+	if err != nil {
+		return Services{}, errors.WithMessage(err, "Failed to create token pay service")
+	}
+
 	return Services{
 		AccountAbstract: aa,
 		GasTank:         gasTank,
+		TokenPay:        tokenPay,
 	}, nil
 }
