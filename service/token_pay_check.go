@@ -53,6 +53,10 @@ func (tp *TokenPay) check(transferTokenTx, businessTx *types.Transaction) (check
 		return checkResult{}, api.ErrValidationStrf("Tx sender mismatch: transferToken = %v, business = %v", transferTokenTxSender, businessTxSender)
 	}
 
+	if _, ok := tp.blacklisted.Load(transferTokenTxSender); ok {
+		return checkResult{}, api.ErrValidationStr("Sender is blacklisted")
+	}
+
 	// requires same gas price
 	gasPrice := transferTokenTx.GasFeeCap()
 

@@ -24,6 +24,8 @@ type TokenPay struct {
 	txSigner gethTypes.Signer
 
 	inflight sync.Map
+
+	blacklisted sync.Map
 }
 
 func NewTokenPay(config TokenPayConfig, sender *TxSender, priceOracle *PriceOracle) *TokenPay {
@@ -155,6 +157,7 @@ func (tp *TokenPay) monitor(context TokenPayMonitorContext) {
 	// check for transfer token tx receipt
 	if success, errMsg := tp.waitForReceipt(transferTokenTxHash, tp.config.CheckReceiptInterval); !success {
 		logger.WithField("txHash", transferTokenTxHash).WithField("errMsg", errMsg).Error("Transfer token tx failed")
+		tp.blacklisted.Store(context.checkResult.Sender, true)
 		return
 	}
 
