@@ -37,8 +37,11 @@ func (controller *TokenPayController) Config(c *gin.Context) (any, error) {
 	}
 
 	return TokenPayConfig{
-		Tokens:    tokens,
-		Recipient: config.Recipient.Hex(),
+		Tokens:         tokens,
+		Recipient:      config.Recipient.Hex(),
+		MinGasFeeRatio: config.MinGasFeeRatio,
+		MinGasTipRatio: config.MinGasTipRatio,
+		MaxGasCost:     config.MaxGasCost,
 	}, nil
 }
 

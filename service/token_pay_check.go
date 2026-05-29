@@ -32,15 +32,9 @@ type checkResult struct {
 }
 
 func (tp *TokenPay) check(transferTokenTx, businessTx *types.Transaction) (checkResult, error) {
-	// nonce in sequence and same gas price
+	// nonce in sequence
 	if transferTokenTx.Nonce()+1 != businessTx.Nonce() {
 		return checkResult{}, api.ErrValidationStr("Nonce not in sequence")
-	}
-
-	gasPrice := transferTokenTx.GasPrice()
-
-	if businessTx.GasPrice().Cmp(gasPrice) != 0 {
-		return checkResult{}, api.ErrValidationStr("Gas price mismatch")
 	}
 
 	// static check business tx
@@ -57,6 +51,17 @@ func (tp *TokenPay) check(transferTokenTx, businessTx *types.Transaction) (check
 
 	if transferTokenTxSender != businessTxSender {
 		return checkResult{}, api.ErrValidationStrf("Tx sender mismatch: transferToken = %v, business = %v", transferTokenTxSender, businessTxSender)
+	}
+
+	// requires same gas price
+	gasPrice := transferTokenTx.GasFeeCap()
+
+	if businessTx.GasFeeCapIntCmp(gasPrice) != 0 {
+		return checkResult{}, api.ErrValidationStr("Gas price mismatch")
+	}
+
+	if businessTx.Type() >= types.DynamicFeeTxType && businessTx.GasTipCapCmp(transferTokenTx) != 0 {
+		return checkResult{}, api.ErrValidationStr("Gas tip cap mismatch")
 	}
 
 	// dynamic check transfer token tx
@@ -143,9 +148,9 @@ func (tp *TokenPay) staticCheckTx(tx *types.Transaction) (sender common.Address,
 // staticCheckTransferTokenTx performs static checks specific for transfer token transaction. It returns the recovered sender address,
 // transferred token and amount.
 func (tp *TokenPay) staticCheckTransferTokenTx(tx *types.Transaction) (sender, token common.Address, amount *big.Int, err error) {
-	// txType: legacy or 1559
-	if txType := tx.Type(); txType != types.LegacyTxType && txType != types.DynamicFeeTxType {
-		return common.Address{}, common.Address{}, nil, errors.Errorf("Invalid tx type: %v", txType)
+	// txType: must be 1559
+	if txType := tx.Type(); txType != types.DynamicFeeTxType {
+		return common.Address{}, common.Address{}, nil, errors.Errorf("Invalid tx type, expected = %v, got = %v", types.DynamicFeeTxType, txType)
 	}
 
 	// to address should be the transferred token address
@@ -203,16 +208,21 @@ func (tp *TokenPay) staticCheckTransferTokenCalldata(calldata []byte) (*big.Int,
 // dynamicCheckTransferTokenTx performs dynamic checks for the given transfer token transaction, including gas price, nonce and token balance.
 func (tp *TokenPay) dynamicCheckTransferTokenTx(tx *types.Transaction, sender, token common.Address, amount *big.Int) error {
 	// gas price
-	currentGasPrice, err := tp.client.Eth.GasPrice()
+	price, err := tp.client.Eth.GasPrice()
 	if err != nil {
-		return NewRPCError(err, "Failed to retrieve current gas price")
+		return NewRPCError(err, "Failed to retrieve gas price")
 	}
 
-	minGasPrice := new(big.Int).Mul(currentGasPrice, tp.config.minGasPriceRatioPercentageBig)
-	minGasPrice.Div(minGasPrice, big100)
+	minGasFeeCap := new(big.Int).Mul(price, tp.config.minGasFeeRatioBig)
+	minGasFeeCap.Div(minGasFeeCap, big100)
+	if txGasFeeCap := tx.GasFeeCap(); txGasFeeCap.Cmp(minGasFeeCap) < 0 {
+		return ErrTokenPayPriceTooLow.WithData(fmt.Sprintf("min gas fee cap = %v, tx gas fee cap = %v", minGasFeeCap, txGasFeeCap))
+	}
 
-	if txGasPrice := tx.GasPrice(); txGasPrice.Cmp(minGasPrice) < 0 {
-		return ErrTokenPayPriceTooLow.WithData(fmt.Sprintf("Current gas price = %v, tx gas price = %v", currentGasPrice, txGasPrice))
+	minGasTipCap := new(big.Int).Mul(price, tp.config.minGasTipRatioBig)
+	minGasTipCap.Div(minGasTipCap, big100)
+	if txGasTipCap := tx.GasTipCap(); txGasTipCap.Cmp(minGasTipCap) < 0 {
+		return ErrTokenPayPriceTooLow.WithData(fmt.Sprintf("min gas tip cap = %v, tx gas tip cap = %v", minGasTipCap, txGasTipCap))
 	}
 
 	// pending nonce

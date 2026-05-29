@@ -2,98 +2,17 @@ package service
 
 import (
 	"fmt"
-	"math/big"
 	"sync"
 	"time"
 
-	"github.com/Conflux-Chain/fluent-backend/contract"
 	"github.com/Conflux-Chain/go-conflux-util/api"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/openweb3/web3go"
 	"github.com/openweb3/web3go/types"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
-
-type ERC20TokenStub struct {
-	Caller   *contract.ERC20Caller
-	Name     string
-	Symbol   string
-	Decimals uint8
-}
-
-type TokenPayConfig struct {
-	Recipient           common.Address
-	abiEncodedRecipient string
-
-	Tokens           map[string]common.Address // name => token address
-	normalizedTokens map[common.Address]ERC20TokenStub
-
-	MinGasPriceRatioPercentage    uint64 `default:"80"` // 80% of current gas price
-	minGasPriceRatioPercentageBig *big.Int
-	MaxGasCost                    uint64 `default:"100000000000000000"` // 0.1 CFX
-	maxGasCostBig                 *big.Int
-	MinSponsorBalance             uint64 `default:"1000000000000000000"` // 1 CFX
-	minSponsorBalanceBig          *big.Int
-
-	CheckReceiptInterval        time.Duration `default:"1s"`
-	CheckFundingReceiptInterval time.Duration `default:"30ms"`
-}
-
-func (config *TokenPayConfig) Normalize(client *web3go.Client) error {
-	if config.Recipient == (common.Address{}) {
-		return errors.New("Recipient not specified")
-	}
-
-	var buf [32]byte
-	copy(buf[12:], config.Recipient.Bytes())
-	config.abiEncodedRecipient = hexutil.Encode(buf[:])
-
-	if len(config.Tokens) == 0 {
-		return errors.New("Tokens not specified")
-	}
-
-	caller, _ := client.ToClientForContract()
-
-	config.normalizedTokens = make(map[common.Address]ERC20TokenStub)
-
-	for _, tokenAddr := range config.Tokens {
-		erc20Caller, err := contract.NewERC20Caller(tokenAddr, caller)
-		if err != nil {
-			return errors.WithMessage(err, "Failed to create ERC20 caller")
-		}
-
-		name, err := erc20Caller.Name(nil)
-		if err != nil {
-			return errors.WithMessage(err, "Failed to get token name")
-		}
-
-		symbol, err := erc20Caller.Symbol(nil)
-		if err != nil {
-			return errors.WithMessage(err, "Failed to get token symbol")
-		}
-
-		decimals, err := erc20Caller.Decimals(nil)
-		if err != nil {
-			return errors.WithMessage(err, "Failed to get token decimals")
-		}
-
-		config.normalizedTokens[tokenAddr] = ERC20TokenStub{
-			Caller:   erc20Caller,
-			Name:     name,
-			Symbol:   symbol,
-			Decimals: decimals,
-		}
-	}
-
-	config.minGasPriceRatioPercentageBig = new(big.Int).SetUint64(config.MinGasPriceRatioPercentage)
-	config.maxGasCostBig = new(big.Int).SetUint64(config.MaxGasCost)
-	config.minSponsorBalanceBig = new(big.Int).SetUint64(config.MinSponsorBalance)
-
-	return nil
-}
 
 type TokenPay struct {
 	*TxSender

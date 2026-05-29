@@ -108,6 +108,12 @@ type TokenPayConfig struct {
 	Tokens []common.Address `json:"tokens"`
 	// Recipient is the configured recipient address that receives token payments.
 	Recipient string `json:"recipient"`
+	// MinGasFeeRatio is the minimum allowed gas fee ratio (gas fee / base fee) in percentage. For example, 120 means the gas fee must be at least 120% of the base fee.
+	MinGasFeeRatio uint64 `json:"minGasFeeRatio"`
+	// MinGasTipRatio is the minimum allowed gas tip ratio (priority fee / base fee) in percentage. For example, 20 means the priority fee must be at least 20% of the base fee.
+	MinGasTipRatio uint64 `json:"minGasTipRatio"`
+	// MaxGasCost is the maximum allowed gas cost in wei.
+	MaxGasCost uint64 `json:"maxGasCost"`
 }
 
 type TokenPayPriceRequest struct {
