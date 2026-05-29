@@ -118,44 +118,45 @@ func (tp *TokenPay) monitor(context TokenPayMonitorContext) {
 		"nonce": context.checkResult.Nonce,
 	})
 
+	// TODO 优化异常处理流程：
+	// 1. 发送交易 io error 时可以重试，且注意处理 response io error 后导致 tx already exists 的情况；
+	// 2. 重试多次后考虑换备机发送交易；
+	// 3. 如果发送交易失败原因是 rpc error，则需要进一步分析主因，但目前已做充分检查，先报警人工介入；
+	// 4. 交易丢失：考虑重发，长时间丢失则报警人工处理。这种场景，主要是遇到 txpool 一直满的情况；
+	// 5. 交易长时间不打包：虽然已经通过更高的 gas fee/tip 来提升交易优先级，但遇到该情况时，还需要支持重发逻辑，包括重发 funding 交易，用户重发 transfer token 和 business 交易；
+	// 6. 交易执行失败：需要分情况处理，如果用户 nonce 或者 token balance 问题，需要拉黑；
+
 	// funding ETH tx
 	logger.WithField("txHash", context.fundingTxHash).Info("Funding ETH tx sent")
 
-	if !tp.waitForReceipt(context.fundingTxHash, tp.config.CheckFundingReceiptInterval) {
-		// TODO 这种情况一般都是 sponsor balance 不够，需要报警充值
-		logger.WithField("txHash", context.fundingTxHash).Error("Funding ETH tx failed")
+	if success, errMsg := tp.waitForReceipt(context.fundingTxHash, tp.config.CheckFundingReceiptInterval); !success {
+		logger.WithField("txHash", context.fundingTxHash).WithField("errMsg", errMsg).Error("Funding ETH tx failed")
 		return
 	}
 
 	// transfer token tx
 	transferTokenTxHash, err := tp.client.Eth.SendRawTransaction(context.rawTransferTokenTx)
 	if err != nil {
-		// TODO 错误容错处理，如果是 io error 则重试，如果是 rpc error，则需要根据情况特殊处理：
-		// 1. 如果 balance 不够，可能是临时 chain reorg，也可能是钱被用户转走；
-		// 2. 如果是 nonce 问题，可能是用户发起了其它交易；
-		// 3. 其它错误则需要报警调查。
-		logger.Error("Failed to send transfer token tx")
+		logger.WithError(err).Error("Failed to send transfer token tx")
 		return
 	}
 
 	logger.WithField("txHash", transferTokenTxHash).Info("Transfer token tx sent")
 
-	if !tp.waitForReceipt(transferTokenTxHash, tp.config.CheckReceiptInterval) {
-		// TODO 这种情况大概率是用户转走了 token，导致 token balance 不够，需要 “拉黑” 用户。
-		// 但是，也可能是其他原因，导致 eth_call 成功，但是实际执行失败，这种情况很极端。
-		logger.WithField("txHash", transferTokenTxHash).Error("Transfer token tx failed")
-		return
-	}
-
 	// business tx
 	businessTxHash, err := tp.client.Eth.SendRawTransaction(context.rawBusinessTx)
 	if err != nil {
-		// TODO 同 transfer token tx 的错误处理，这里不区分了，先简单处理成一样的。
-		logger.Error("Failed to send business tx")
+		logger.WithError(err).Error("Failed to send business tx")
 		return
 	}
 
 	logger.WithField("txHash", businessTxHash).Info("Business tx sent")
+
+	// check for transfer token tx receipt
+	if success, errMsg := tp.waitForReceipt(transferTokenTxHash, tp.config.CheckReceiptInterval); !success {
+		logger.WithField("txHash", transferTokenTxHash).WithField("errMsg", errMsg).Error("Transfer token tx failed")
+		return
+	}
 
 	// do not care about the execution result of business tx
 	tp.waitForReceipt(businessTxHash, tp.config.CheckReceiptInterval)
@@ -163,22 +164,27 @@ func (tp *TokenPay) monitor(context TokenPayMonitorContext) {
 	logger.Info("Token pay completed")
 }
 
-func (tp *TokenPay) waitForReceipt(txHash common.Hash, interval time.Duration) bool {
+func (tp *TokenPay) waitForReceipt(txHash common.Hash, interval time.Duration) (bool, string) {
 	for {
 		time.Sleep(interval)
 
-		// TODO 检查交易是否存在，防止 txpool 满了丢弃交易的情况，要考虑重发交易。
-
 		receipt, err := tp.client.Eth.TransactionReceipt(txHash)
 		if err != nil {
-			// TODO 错误容错处理，一般都是 io error，需要重试，时间久了则需要报警
 			continue
 		}
 
-		if receipt == nil {
+		if receipt == nil || receipt.Status == nil {
 			continue
 		}
 
-		return receipt.Status != nil && *receipt.Status == gethTypes.ReceiptStatusSuccessful
+		if *receipt.Status == gethTypes.ReceiptStatusSuccessful {
+			return true, ""
+		}
+
+		if receipt.TxExecErrorMsg == nil {
+			return false, ""
+		}
+
+		return false, *receipt.TxExecErrorMsg
 	}
 }
