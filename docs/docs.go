@@ -609,6 +609,18 @@ const docTemplate = `{
         "api.TokenPayConfig": {
             "type": "object",
             "properties": {
+                "maxGasCost": {
+                    "description": "MaxGasCost is the maximum allowed gas cost in wei.",
+                    "type": "integer"
+                },
+                "minGasFeeRatio": {
+                    "description": "MinGasFeeRatio is the minimum allowed gas fee ratio (gas fee / base fee) in percentage. For example, 120 means the gas fee must be at least 120% of the base fee.",
+                    "type": "integer"
+                },
+                "minGasTipRatio": {
+                    "description": "MinGasTipRatio is the minimum allowed gas tip ratio (priority fee / base fee) in percentage. For example, 20 means the priority fee must be at least 20% of the base fee.",
+                    "type": "integer"
+                },
                 "recipient": {
                     "description": "Recipient is the configured recipient address that receives token payments.",
                     "type": "string"
