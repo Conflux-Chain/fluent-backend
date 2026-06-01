@@ -105,7 +105,7 @@ func (userOp *UserOperation) ToPackedUserOperation() contract.PackedUserOperatio
 
 type TokenPayConfig struct {
 	// Tokens is the list of ERC20 token contracts supported for token-pay.
-	Tokens []common.Address `json:"tokens"`
+	Tokens []string `json:"tokens"`
 	// Recipient is the configured recipient address that receives token payments.
 	Recipient string `json:"recipient"`
 	// MinGasFeeRatio is the minimum allowed gas fee ratio (gas fee / base fee) in percentage. For example, 120 means the gas fee must be at least 120% of the base fee.

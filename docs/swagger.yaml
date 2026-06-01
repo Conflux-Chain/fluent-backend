@@ -100,9 +100,7 @@ definitions:
       tokens:
         description: Tokens is the list of ERC20 token contracts supported for token-pay.
         items:
-          items:
-            type: integer
-          type: array
+          type: string
         type: array
     type: object
   api.TokenPayRequest:

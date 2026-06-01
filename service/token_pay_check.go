@@ -291,7 +291,14 @@ func (tp *TokenPay) simulateTx(tx *types.Transaction, sender common.Address) err
 		request.MaxPriorityFeePerGas = tx.GasTipCap()
 	}
 
-	_, err := tp.client.Eth.Call(request, nil, nil, nil)
+	latestBlock := web3goTypes.BlockNumberOrHashWithNumber(web3goTypes.LatestBlockNumber)
+	overrides := web3goTypes.StateOverride{
+		sender: web3goTypes.OverrideAccount{
+			Balance: (*hexutil.Big)(big10Exp18), // 1 CFX
+		},
+	}
+
+	_, err := tp.client.Eth.Call(request, &latestBlock, &overrides, nil)
 
 	return err
 }

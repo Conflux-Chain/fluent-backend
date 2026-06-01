@@ -629,10 +629,7 @@ const docTemplate = `{
                     "description": "Tokens is the list of ERC20 token contracts supported for token-pay.",
                     "type": "array",
                     "items": {
-                        "type": "array",
-                        "items": {
-                            "type": "integer"
-                        }
+                        "type": "string"
                     }
                 }
             }

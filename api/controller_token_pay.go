@@ -31,9 +31,9 @@ func NewTokenPayController(services service.Services) *TokenPayController {
 func (controller *TokenPayController) Config(c *gin.Context) (any, error) {
 	config := controller.services.TokenPay.Config()
 
-	var tokens []common.Address
+	var tokens []string
 	for _, token := range config.Tokens {
-		tokens = append(tokens, token)
+		tokens = append(tokens, token.Hex())
 	}
 
 	return TokenPayConfig{
