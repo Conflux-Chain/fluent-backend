@@ -34,6 +34,9 @@ type TokenPayConfig struct {
 	MinSponsorBalance    uint64 `default:"1000000000000000000"` // 1 CFX
 	minSponsorBalanceBig *big.Int
 
+	SuggestedGasPriceBumpRatio   uint64 `default:"10"` // 10% price bump for suggested gas price
+	SuggestedTokenPriceBumpRatio uint64 `default:"5"`  // 5% price bump for suggested token price
+
 	CheckReceiptInterval        time.Duration `default:"1s"`
 	CheckFundingReceiptInterval time.Duration `default:"30ms"`
 }

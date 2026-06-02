@@ -4,6 +4,7 @@ import (
 	"math/big"
 
 	"github.com/Conflux-Chain/fluent-backend/contract"
+	"github.com/Conflux-Chain/fluent-backend/service"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )
@@ -114,6 +115,27 @@ type TokenPayConfig struct {
 	MinGasTipRatio uint64 `json:"minGasTipRatio"`
 	// MaxGasCost is the maximum allowed gas cost in wei.
 	MaxGasCost uint64 `json:"maxGasCost"`
+	// SuggestedGasPriceBumpRatio is the percentage by which to bump the suggested gas price to increase the chance of timely inclusion in blocks.
+	SuggestedGasPriceBumpRatio uint64 `json:"suggestedGasPriceBumpRatio"`
+	// SuggestedTokenPriceBumpRatio is the percentage by which to bump the suggested token price to increase the chance of timely inclusion in blocks when the price is volatile.
+	SuggestedTokenPriceBumpRatio uint64 `json:"suggestedTokenPriceBumpRatio"`
+}
+
+func NewTokenPayConfig(config service.TokenPayConfig) TokenPayConfig {
+	var tokens []string
+	for _, token := range config.Tokens {
+		tokens = append(tokens, token.Hex())
+	}
+
+	return TokenPayConfig{
+		Tokens:                       tokens,
+		Recipient:                    config.Recipient.Hex(),
+		MinGasFeeRatio:               config.MinGasFeeRatio,
+		MinGasTipRatio:               config.MinGasTipRatio,
+		MaxGasCost:                   config.MaxGasCost,
+		SuggestedGasPriceBumpRatio:   config.SuggestedGasPriceBumpRatio,
+		SuggestedTokenPriceBumpRatio: config.SuggestedTokenPriceBumpRatio,
+	}
 }
 
 type TokenPayPriceRequest struct {

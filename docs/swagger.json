@@ -614,6 +614,14 @@
                     "description": "Recipient is the configured recipient address that receives token payments.",
                     "type": "string"
                 },
+                "suggestedGasPriceBumpRatio": {
+                    "description": "SuggestedGasPriceBumpRatio is the percentage by which to bump the suggested gas price to increase the chance of timely inclusion in blocks.",
+                    "type": "integer"
+                },
+                "suggestedTokenPriceBumpRatio": {
+                    "description": "SuggestedTokenPriceBumpRatio is the percentage by which to bump the suggested token price to increase the chance of timely inclusion in blocks when the price is volatile.",
+                    "type": "integer"
+                },
                 "tokens": {
                     "description": "Tokens is the list of ERC20 token contracts supported for token-pay.",
                     "type": "array",

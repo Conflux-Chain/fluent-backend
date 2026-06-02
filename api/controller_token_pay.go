@@ -31,18 +31,7 @@ func NewTokenPayController(services service.Services) *TokenPayController {
 func (controller *TokenPayController) Config(c *gin.Context) (any, error) {
 	config := controller.services.TokenPay.Config()
 
-	var tokens []string
-	for _, token := range config.Tokens {
-		tokens = append(tokens, token.Hex())
-	}
-
-	return TokenPayConfig{
-		Tokens:         tokens,
-		Recipient:      config.Recipient.Hex(),
-		MinGasFeeRatio: config.MinGasFeeRatio,
-		MinGasTipRatio: config.MinGasTipRatio,
-		MaxGasCost:     config.MaxGasCost,
-	}, nil
+	return NewTokenPayConfig(config), nil
 }
 
 // GetETHPrice returns how many units of the specified token equal 1 ETH.
