@@ -291,14 +291,25 @@ func (tp *TokenPay) simulateTx(tx *types.Transaction, sender common.Address) err
 		request.MaxPriorityFeePerGas = tx.GasTipCap()
 	}
 
-	latestBlock := web3goTypes.BlockNumberOrHashWithNumber(web3goTypes.LatestBlockNumber)
+	// override the sender balance, otherwise the simulation may be failed due to insufficient balance for gas fee
+	balance, err := tp.client.Eth.Balance(sender, nil)
+	if err != nil {
+		return errors.WithMessage(err, "Failed to retrieve balance")
+	}
+
+	gasCost := new(big.Int).Mul(new(big.Int).SetUint64(gas), tx.GasPrice())
 	overrides := web3goTypes.StateOverride{
 		sender: web3goTypes.OverrideAccount{
-			Balance: (*hexutil.Big)(big10Exp18), // 1 CFX
+			Balance: (*hexutil.Big)(new(big.Int).Add(balance, gasCost)),
 		},
 	}
 
-	_, err := tp.client.Eth.Call(request, &latestBlock, &overrides, nil)
+	// simulate the transaction
+	latestBlock := web3goTypes.BlockNumberOrHashWithNumber(web3goTypes.LatestBlockNumber)
+
+	if _, err = tp.client.Eth.Call(request, &latestBlock, &overrides, nil); err != nil {
+		return errors.WithMessage(err, "Failed to do eth call")
+	}
 
 	return err
 }
