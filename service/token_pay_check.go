@@ -298,10 +298,11 @@ func (tp *TokenPay) simulateTx(tx *types.Transaction, sender common.Address) err
 	}
 
 	gasCost := new(big.Int).Mul(new(big.Int).SetUint64(gas), tx.GasPrice())
-	newBalance := new(big.Int).Add(balance, gasCost)
+	gasCost.Mul(gasCost, big.NewInt(2)) // hotfix for fullnode issue
+
 	overrides := web3goTypes.StateOverride{
 		sender: web3goTypes.OverrideAccount{
-			Balance: (*hexutil.Big)(newBalance),
+			Balance: (*hexutil.Big)(new(big.Int).Add(balance, gasCost)),
 		},
 	}
 
@@ -309,7 +310,7 @@ func (tp *TokenPay) simulateTx(tx *types.Transaction, sender common.Address) err
 	latestBlock := web3goTypes.BlockNumberOrHashWithNumber(web3goTypes.LatestBlockNumber)
 
 	if _, err = tp.client.Eth.Call(request, &latestBlock, &overrides, nil); err != nil {
-		return errors.WithMessagef(err, "Failed to do eth call, newBalance = %v", newBalance)
+		return errors.WithMessage(err, "Failed to do eth call")
 	}
 
 	return err
