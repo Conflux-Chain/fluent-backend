@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/openweb3/web3go"
 	web3goTypes "github.com/openweb3/web3go/types"
 	"github.com/pkg/errors"
 )
@@ -76,7 +77,7 @@ func (tp *TokenPay) check(transferTokenTx, businessTx *types.Transaction) (check
 	// estimates the gas limit for funding ETH transaction
 	senderGasLimit := new(big.Int).SetUint64(transferTokenTx.Gas() + businessTx.Gas())
 	senderGasCost := new(big.Int).Mul(senderGasLimit, gasPrice)
-	fundingGasLimit, err := tp.estimateFundingETHGas(transferTokenTxSender, senderGasCost)
+	fundingGasLimit, err := tp.estimateFundingETHGas(transferTokenTxSender, senderGasCost, gasPrice)
 	if err != nil {
 		return checkResult{}, NewRPCError(err, "Failed to estimate gas limit for funding ETH transaction")
 	}
@@ -102,11 +103,11 @@ func (tp *TokenPay) check(transferTokenTx, businessTx *types.Transaction) (check
 	}
 
 	// simulate the txs for successful execution
-	if err = tp.simulateTx(transferTokenTx, transferTokenTxSender); err != nil {
+	if err = SimulateTx(tp.client, transferTokenTx, transferTokenTxSender); err != nil {
 		return checkResult{}, ErrTokenPaySimulateTxFailed.WithData(fmt.Sprintf("Failed to simulate transfer token transaction: %v", err.Error()))
 	}
 
-	if err = tp.simulateTx(businessTx, businessTxSender); err != nil {
+	if err = SimulateTx(tp.client, businessTx, businessTxSender); err != nil {
 		return checkResult{}, ErrTokenPaySimulateTxFailed.WithData(fmt.Sprintf("Failed to simulate business transaction: %v", err.Error()))
 	}
 
@@ -263,9 +264,21 @@ func (tp *TokenPay) dynamicCheckTransferTokenTx(tx *types.Transaction, sender, t
 	return nil
 }
 
-// simulateTx simulates the execution of the given transaction via eth_call RPC.
+// estimateFundingETHGas estimates the required gas limit for the funding ETH transaction.
+// This is because the sender may be delegated to a contract via 7702 transaction, and the
+// 21000 gas limit is not enough in this case.
+func (tp *TokenPay) estimateFundingETHGas(to common.Address, value, price *big.Int) (*big.Int, error) {
+	return tp.client.Eth.EstimateGas(web3goTypes.CallRequest{
+		From:     &tp.TxSender.sender,
+		To:       &to,
+		GasPrice: price, // will help to check the sender balance as well
+		Value:    value,
+	}, nil, nil, nil)
+}
+
+// SimulateTx simulates the execution of the given transaction via eth_call RPC.
 // It will return error if the transaction execution failed.
-func (tp *TokenPay) simulateTx(tx *types.Transaction, sender common.Address) error {
+func SimulateTx(client *web3go.Client, tx *types.Transaction, sender common.Address) error {
 	gas := tx.Gas()
 	nonce := tx.Nonce()
 	accessList := tx.AccessList()
@@ -292,13 +305,12 @@ func (tp *TokenPay) simulateTx(tx *types.Transaction, sender common.Address) err
 	}
 
 	// override the sender balance, otherwise the simulation may be failed due to insufficient balance for gas fee
-	balance, err := tp.client.Eth.Balance(sender, nil)
+	balance, err := client.Eth.Balance(sender, nil)
 	if err != nil {
 		return errors.WithMessage(err, "Failed to retrieve balance")
 	}
 
 	gasCost := new(big.Int).Mul(new(big.Int).SetUint64(gas), tx.GasPrice())
-	gasCost.Mul(gasCost, big.NewInt(2)) // hotfix for fullnode issue
 
 	overrides := web3goTypes.StateOverride{
 		sender: web3goTypes.OverrideAccount{
@@ -309,20 +321,9 @@ func (tp *TokenPay) simulateTx(tx *types.Transaction, sender common.Address) err
 	// simulate the transaction
 	latestBlock := web3goTypes.BlockNumberOrHashWithNumber(web3goTypes.LatestBlockNumber)
 
-	if _, err = tp.client.Eth.Call(request, &latestBlock, &overrides, nil); err != nil {
+	if _, err = client.Eth.Call(request, &latestBlock, &overrides, nil); err != nil {
 		return errors.WithMessage(err, "Failed to do eth call")
 	}
 
 	return err
-}
-
-// estimateFundingETHGas estimates the required gas limit for the funding ETH transaction.
-// This is because the sender may be delegated to a contract via 7702 transaction, and the
-// 21000 gas limit is not enough in this case.
-func (tp *TokenPay) estimateFundingETHGas(to common.Address, value *big.Int) (*big.Int, error) {
-	return tp.client.Eth.EstimateGas(web3goTypes.CallRequest{
-		From:  &tp.TxSender.sender,
-		To:    &to,
-		Value: value,
-	}, nil, nil, nil)
 }

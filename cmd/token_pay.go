@@ -8,6 +8,7 @@ import (
 
 	"github.com/Conflux-Chain/fluent-backend/api"
 	"github.com/Conflux-Chain/fluent-backend/contract"
+	"github.com/Conflux-Chain/fluent-backend/service"
 	"github.com/Conflux-Chain/go-conflux-util/cmd"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/v2"
@@ -60,6 +61,7 @@ func testTokenPay(*cobra.Command, []string) {
 	fmt.Println("Generated test account:", tester.Account())
 
 	// faucet some USDT to test account
+	fmt.Println("Begin to claim USDT from faucet ...")
 	err = tester.Faucet(client, big.NewInt(10_000_000_000_000_000)) // 0.01 USDT
 	cmd.FatalIfErr(err, "Failed to faucet tokens")
 	fmt.Println("Got USDT from faucet: 0.01 USDT")
@@ -70,18 +72,30 @@ func testTokenPay(*cobra.Command, []string) {
 
 	businessTx, err := tester.PrepareBusinessTx(client, price)
 	cmd.FatalIfErr(err, "Failed to prepare business transaction")
+	fmt.Println("Prepared business transaction")
 
 	transferTokenTx, err := tester.PrepareTransferTokenTx(client, businessTx)
 	cmd.FatalIfErr(err, "Failed to prepare transfer token transaction")
+	fmt.Println("Prepared transfer token transaction")
+
+	// simulate txs to make sure they are valid before submission
+	err = service.SimulateTx(client, businessTx, tester.Account())
+	cmd.FatalIfErr(err, "Failed to simulate business transaction")
+	fmt.Println("Succeeded to simulate business transaction")
+
+	err = service.SimulateTx(client, transferTokenTx, tester.Account())
+	cmd.FatalIfErr(err, "Failed to simulate transfer token transaction")
+	fmt.Println("Succeeded to simulate transfer token transaction")
 
 	// submit txs
 	err = tester.Submit(transferTokenTx, businessTx)
 	cmd.FatalIfErr(err, "Failed to submit token pay transactions")
+	fmt.Println("Submitted token pay transactions to backend and waiting for processing ...")
 
 	// wait for business tx receipt
 	err = waitForSuccessfulReceipt(client, businessTx.Hash())
 	cmd.FatalIfErr(err, "Business transaction failed")
-	fmt.Println("Business transaction succeeded")
+	fmt.Println("Business transaction executed successfully")
 }
 
 type TokenPayTester struct {
@@ -244,6 +258,13 @@ func (t *TokenPayTester) PrepareTransferTokenTx(client *web3go.Client, businessT
 
 	if data, err = abi.Pack("transfer", common.HexToAddress(t.config.Recipient), totalTokenCost); err != nil {
 		return nil, errors.WithMessage(err, "Failed to pack real transfer data")
+	}
+
+	// re-estimate gas limit with real token cost, which may be increased a little.
+	//
+	// otherwise, the transaction simulation may be failed due to insufficient funds.
+	if gasLimit, err = t.estimateGas(client, usdt, data); err != nil {
+		return nil, errors.WithMessage(err, "Failed to estimate gas limit after token cost calculated")
 	}
 
 	// nonce
