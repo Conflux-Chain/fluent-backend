@@ -22,7 +22,7 @@ type TokenPayConfig struct {
 	Recipient           common.Address
 	abiEncodedRecipient string
 
-	Tokens           map[string]common.Address // name => token address
+	Tokens           []common.Address // list of token addresses
 	normalizedTokens map[common.Address]ERC20TokenStub
 
 	MinGasFeeRatio       uint64 `default:"120"` // 120% of base fee, e.g. 20 Gdrip * 120% = 24 Gdrip

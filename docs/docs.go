@@ -634,7 +634,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "tokens": {
-                    "description": "Tokens is the list of ERC20 token contracts supported for token-pay.",
+                    "description": "Tokens is the list of ERC20 token contracts supported for token-pay. Note, the tokens[0] is the default USDT token used for quoting and payment.",
                     "type": "array",
                     "items": {
                         "type": "string"

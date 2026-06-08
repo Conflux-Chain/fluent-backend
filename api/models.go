@@ -105,7 +105,7 @@ func (userOp *UserOperation) ToPackedUserOperation() contract.PackedUserOperatio
 }
 
 type TokenPayConfig struct {
-	// Tokens is the list of ERC20 token contracts supported for token-pay.
+	// Tokens is the list of ERC20 token contracts supported for token-pay. Note, the tokens[0] is the default USDT token used for quoting and payment.
 	Tokens []string `json:"tokens"`
 	// Recipient is the configured recipient address that receives token payments.
 	Recipient string `json:"recipient"`
