@@ -100,7 +100,7 @@ func (oracle *PriceOracle) getOkxPrice(url string) (decimal.Decimal, error) {
 		DetailMessage string `json:"detailMsg"`
 		ErrorCode     string `json:"error_code"`
 		ErrorMessage  string `json:"error_message"`
-		Data          struct {
+		Data          []struct {
 			BestOption  bool   `json:"bestOption"`
 			DepositName string `json:"depositName"`
 			Payment     string `json:"payment"`
@@ -121,7 +121,11 @@ func (oracle *PriceOracle) getOkxPrice(url string) (decimal.Decimal, error) {
 		return decimal.Zero, ErrRPCError.WithData(fmt.Sprintf("OKX API error: %+v", result))
 	}
 
-	price, err := decimal.NewFromString(result.Data.Price)
+	if len(result.Data) != 1 {
+		return decimal.Zero, ErrRPCError.WithData(fmt.Sprintf("Unexpected OKX data: %+v", result))
+	}
+
+	price, err := decimal.NewFromString(result.Data[0].Price)
 	if err != nil {
 		return decimal.Zero, errors.WithMessage(err, "Failed to parse OKX price")
 	}
