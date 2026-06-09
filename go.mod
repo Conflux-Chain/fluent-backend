@@ -9,6 +9,7 @@ require (
 	github.com/go-playground/validator/v10 v10.11.2
 	github.com/go-resty/resty/v2 v2.17.2
 	github.com/holiman/uint256 v1.3.2
+	github.com/openweb3/go-rpc-provider v0.3.6
 	github.com/openweb3/web3go v0.3.4
 	github.com/pkg/errors v0.9.1
 	github.com/shopspring/decimal v1.3.1
@@ -88,7 +89,6 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/openweb3/go-ethereum-hdwallet v0.1.0 // indirect
-	github.com/openweb3/go-rpc-provider v0.3.6 // indirect
 	github.com/openweb3/go-sdk-common v0.0.0-20240627072707-f78f0155ab34 // indirect
 	github.com/pelletier/go-toml v1.9.4 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.6 // indirect

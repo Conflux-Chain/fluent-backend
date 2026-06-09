@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -9,9 +10,19 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/openweb3/go-rpc-provider/utils"
 	"github.com/openweb3/web3go/types"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+)
+
+const (
+	errMsgTxAlreadyExist = "tx already exist"
+
+	defaultSendTxRetryTimes    = 10
+	defaultSendTxRetryInterval = 3 * time.Second
+	defaultReceiptTimeout      = time.Minute
 )
 
 type TokenPay struct {
@@ -120,59 +131,58 @@ func (tp *TokenPay) monitor(context TokenPayMonitorContext) {
 		"nonce": context.checkResult.Nonce,
 	})
 
-	// TODO 优化异常处理流程：
-	// 1. 发送交易 io error 时可以重试，且注意处理 response io error 后导致 tx already exists 的情况；
-	// 2. 重试多次后考虑换备机发送交易；
-	// 3. 如果发送交易失败原因是 rpc error，则需要进一步分析主因，但目前已做充分检查，先报警人工介入；
-	// 4. 交易丢失：考虑重发，长时间丢失则报警人工处理。这种场景，主要是遇到 txpool 一直满的情况；
-	// 5. 交易长时间不打包：虽然已经通过更高的 gas fee/tip 来提升交易优先级，但遇到该情况时，还需要支持重发逻辑，包括重发 funding 交易，用户重发 transfer token 和 business 交易；
-	// 6. 交易执行失败：需要分情况处理，如果用户 nonce 或者 token balance 问题，需要拉黑；
-
 	// funding ETH tx
-	logger.WithField("txHash", context.fundingTxHash).Info("Funding ETH tx sent")
+	logger.WithField("txHash", context.fundingTxHash).Info("Succeeded to send Funding ETH tx")
 
-	if success, errMsg := tp.waitForReceipt(context.fundingTxHash, tp.config.CheckFundingReceiptInterval); !success {
-		logger.WithField("txHash", context.fundingTxHash).WithField("errMsg", errMsg).Error("Funding ETH tx failed")
+	if success, errMsg, expired := tp.waitForReceipt(context.fundingTxHash, tp.config.CheckFundingReceiptInterval, defaultReceiptTimeout); !success {
+		logger.WithField("txHash", context.fundingTxHash).WithField("errMsg", errMsg).WithField("expired", expired).Error("Failed to wait for receipt of Funding ETH tx")
 		return
 	}
 
 	// transfer token tx
-	transferTokenTxHash, err := tp.client.Eth.SendRawTransaction(context.rawTransferTokenTx)
+	transferTokenTxHash, err := tp.sendRawTransactionWithRetry(context.rawTransferTokenTx, defaultSendTxRetryTimes, defaultSendTxRetryInterval)
 	if err != nil {
-		logger.WithError(err).Error("Failed to send transfer token tx")
+		logger.WithError(err).WithField("txHash", crypto.Keccak256Hash(context.rawTransferTokenTx)).Error("Failed to send transfer token tx")
 		return
 	}
 
-	logger.WithField("txHash", transferTokenTxHash).Info("Transfer token tx sent")
+	logger.WithField("txHash", transferTokenTxHash).Info("Succeeded to send Transfer token tx")
 
 	// business tx
-	businessTxHash, err := tp.client.Eth.SendRawTransaction(context.rawBusinessTx)
+	businessTxHash, err := tp.sendRawTransactionWithRetry(context.rawBusinessTx, defaultSendTxRetryTimes, defaultSendTxRetryInterval)
 	if err != nil {
-		logger.WithError(err).Error("Failed to send business tx")
+		logger.WithError(err).WithField("txHash", crypto.Keccak256Hash(context.rawBusinessTx)).Error("Failed to send business tx")
 		return
 	}
 
-	logger.WithField("txHash", businessTxHash).Info("Business tx sent")
+	logger.WithField("txHash", businessTxHash).Info("Succeeded to send Business tx")
 
 	// check for transfer token tx receipt
-	if success, errMsg := tp.waitForReceipt(transferTokenTxHash, tp.config.CheckReceiptInterval); !success {
-		logger.WithField("txHash", transferTokenTxHash).WithField("errMsg", errMsg).Error("Transfer token tx failed")
+	if success, errMsg, expired := tp.waitForReceipt(transferTokenTxHash, tp.config.CheckReceiptInterval, defaultReceiptTimeout); !success {
+		logger.WithField("txHash", transferTokenTxHash).WithField("errMsg", errMsg).WithField("expired", expired).Error("Failed to wait for receipt of Transfer token tx")
 		tp.blacklisted.Store(context.checkResult.Sender, true)
 		return
 	}
 
 	// do not care about the execution result of business tx
-	tp.waitForReceipt(businessTxHash, tp.config.CheckReceiptInterval)
+	tp.waitForReceipt(businessTxHash, tp.config.CheckReceiptInterval, defaultReceiptTimeout)
 
 	logger.Info("Token pay completed")
 }
 
-func (tp *TokenPay) waitForReceipt(txHash common.Hash, interval time.Duration) (bool, string) {
+func (tp *TokenPay) waitForReceipt(txHash common.Hash, interval time.Duration, timeout time.Duration) (success bool, errMsg string, expired bool) {
+	startTime := time.Now()
+
 	for {
+		if time.Since(startTime) > timeout {
+			return false, "", true
+		}
+
 		time.Sleep(interval)
 
 		receipt, err := tp.client.Eth.TransactionReceipt(txHash)
 		if err != nil {
+			logrus.WithError(err).WithField("txHash", txHash).Info("Failed to get tx receipt")
 			continue
 		}
 
@@ -181,13 +191,47 @@ func (tp *TokenPay) waitForReceipt(txHash common.Hash, interval time.Duration) (
 		}
 
 		if *receipt.Status == gethTypes.ReceiptStatusSuccessful {
-			return true, ""
+			return true, "", false
 		}
 
 		if receipt.TxExecErrorMsg == nil {
-			return false, ""
+			return false, "", false
 		}
 
-		return false, *receipt.TxExecErrorMsg
+		return false, *receipt.TxExecErrorMsg, false
+	}
+}
+
+func (tp *TokenPay) sendRawTransactionWithRetry(rawTx []byte, maxRetry int, interval time.Duration) (common.Hash, error) {
+	var retry int
+
+	for {
+		txHash, err := tp.client.Eth.SendRawTransaction(rawTx)
+		if err == nil {
+			return txHash, nil
+		}
+
+		// do not retry for RPC error
+		if utils.IsRPCJSONError(err) {
+			// Sometimes, tx sent failed due to io error, and retry again.
+			// However, the tx already inserted into txpool successfully, which means request succeeded but response failed.
+			// In this case, the retry will failed with "tx already exist", so we can treat it as success and return the tx hash.
+			if strings.Contains(err.Error(), errMsgTxAlreadyExist) {
+				logrus.WithError(err).WithField("retry", retry).Warn("Tx already sent, treat as success")
+				return crypto.Keccak256Hash(rawTx), nil
+			}
+
+			return common.Hash{}, err
+		}
+
+		// retry again for other errors (e.g. io error)
+		retry++
+		if retry > maxRetry {
+			return common.Hash{}, err
+		}
+
+		logrus.WithError(err).WithField("retry", retry).Debug("Failed to send tx, retrying...")
+
+		time.Sleep(interval)
 	}
 }
