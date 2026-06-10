@@ -20,6 +20,7 @@ import (
 	"github.com/openweb3/web3go/signers"
 	"github.com/openweb3/web3go/types"
 	"github.com/pkg/errors"
+	"github.com/shopspring/decimal"
 	"github.com/spf13/cobra"
 )
 
@@ -62,7 +63,7 @@ func testTokenPay(*cobra.Command, []string) {
 
 	// faucet some USDT to test account
 	fmt.Println("Begin to claim USDT from faucet ...")
-	err = tester.Faucet(client, big.NewInt(10_000_000_000_000_000)) // 0.01 USDT
+	err = tester.Faucet(client, decimal.NewFromFloat(0.01))
 	cmd.FatalIfErr(err, "Failed to faucet tokens")
 	fmt.Println("Got USDT from faucet: 0.01 USDT")
 
@@ -121,7 +122,7 @@ func NewTokenPayTester(backend string) (*TokenPayTester, error) {
 
 func (t *TokenPayTester) Account() common.Address { return t.account.Address() }
 
-func (t *TokenPayTester) Faucet(client *web3go.Client, amount *big.Int) error {
+func (t *TokenPayTester) Faucet(client *web3go.Client, amount decimal.Decimal) error {
 	sm, _ := client.GetSignerManager()
 	from := sm.List()[0].Address()
 
@@ -129,12 +130,19 @@ func (t *TokenPayTester) Faucet(client *web3go.Client, amount *big.Int) error {
 	myAddr := t.account.Address()
 
 	caller, signer := client.ToClientForContract()
-	erc20, err := contract.NewERC20Transactor(usdtAddr, caller)
+	erc20, err := contract.NewERC20(usdtAddr, caller)
 	if err != nil {
 		return errors.WithMessage(err, "Failed to create ERC20 transactor")
 	}
 
-	tx, err := erc20.Transfer(&bind.TransactOpts{Signer: signer, From: from}, myAddr, amount)
+	decimals, err := erc20.Decimals(nil)
+	if err != nil {
+		return errors.WithMessage(err, "Failed to retrieve token decimals")
+	}
+
+	amountBig := decimal.New(1, int32(decimals)).Mul(amount).BigInt()
+
+	tx, err := erc20.Transfer(&bind.TransactOpts{Signer: signer, From: from}, myAddr, amountBig)
 	if err != nil {
 		return errors.WithMessage(err, "Failed to transfer tokens")
 	}
