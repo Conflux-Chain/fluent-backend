@@ -34,14 +34,14 @@ type SetCodeResult struct {
 	Error string `json:"error"`
 }
 
-type GasTankPrepareDepositRequest struct {
+type GasTankPrepareCreditRequest struct {
 	// ERC20 token address to deposit for gas fee payment.
 	Token string `json:"token" binding:"hex,len=42"`
 	// Amount of tokens to deposit for gas fee payment.
 	Amount string `json:"amount" binding:"required"`
 }
 
-type GasTankPrepareRequest struct {
+type GasTankPrepareRefundRequest struct {
 	// Smart account address in hex format with 0x prefix.
 	Sender string `json:"sender" binding:"hex,len=42"`
 	// ERC20 token address to pay gas fee.
@@ -90,17 +90,19 @@ func (userOp *UserOperation) ToPackedUserOperation() contract.PackedUserOperatio
 	hexToBig(userOp.PaymasterVerificationGasLimit).FillBytes(paymasterBuf[20:36])
 	hexToBig(userOp.PaymasterPostOpGasLimit).FillBytes(paymasterBuf[36:52])
 
+	callData, _ := hexutil.Decode(userOp.CallData)
 	paymasterData, _ := hexutil.Decode(userOp.PaymasterData)
+	signature, _ := hexutil.Decode(userOp.Signature)
 
 	return contract.PackedUserOperation{
 		Sender:             common.HexToAddress(userOp.Sender),
 		Nonce:              hexToBig(userOp.Nonce),
-		CallData:           hexutil.MustDecode(userOp.CallData),
+		CallData:           callData,
 		AccountGasLimits:   accountGasLimits,
 		PreVerificationGas: hexToBig(userOp.PreVerificationGas),
 		GasFees:            gasFees,
 		PaymasterAndData:   append(paymasterBuf[:], paymasterData...),
-		Signature:          hexutil.MustDecode(userOp.Signature),
+		Signature:          signature,
 	}
 }
 

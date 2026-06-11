@@ -143,9 +143,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/aa/gastank/prepare": {
+        "/aa/gastank/prepare/credit": {
             "post": {
-                "description": "Returns paymasterData used to estimate gas for a normal UserOperation in REFUND mode.",
+                "description": "Returns paymasterData used to estimate UserOperation gas in CREDIT mode for token deposit flow.",
                 "consumes": [
                     "application/json"
                 ],
@@ -155,8 +155,8 @@ const docTemplate = `{
                 "tags": [
                     "GasTank"
                 ],
-                "summary": "Prepare paymasterData for REFUND mode estimation",
-                "operationId": "aaGasTankPrepare",
+                "summary": "Prepare paymasterData for CREDIT mode deposit estimation",
+                "operationId": "aaGasTankPrepareCredit",
                 "parameters": [
                     {
                         "description": "Paymaster data request",
@@ -164,7 +164,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.GasTankPrepareRequest"
+                            "$ref": "#/definitions/api.GasTankPrepareCreditRequest"
                         }
                     }
                 ],
@@ -208,9 +208,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/aa/gastank/prepare/deposit": {
+        "/aa/gastank/prepare/refund": {
             "post": {
-                "description": "Returns paymasterData used to estimate UserOperation gas in CREDIT mode for token deposit flow.",
+                "description": "Returns paymasterData used to estimate gas for a normal UserOperation in REFUND mode.",
                 "consumes": [
                     "application/json"
                 ],
@@ -220,8 +220,8 @@ const docTemplate = `{
                 "tags": [
                     "GasTank"
                 ],
-                "summary": "Prepare paymasterData for CREDIT mode deposit estimation",
-                "operationId": "aaGasTankPrepareDeposit",
+                "summary": "Prepare paymasterData for REFUND mode estimation",
+                "operationId": "aaGasTankPrepareRefund",
                 "parameters": [
                     {
                         "description": "Paymaster data request",
@@ -229,7 +229,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.GasTankPrepareDepositRequest"
+                            "$ref": "#/definitions/api.GasTankPrepareRefundRequest"
                         }
                     }
                 ],
@@ -526,7 +526,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.GasTankPrepareDepositRequest": {
+        "api.GasTankPrepareCreditRequest": {
             "type": "object",
             "required": [
                 "amount"
@@ -542,7 +542,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.GasTankPrepareRequest": {
+        "api.GasTankPrepareRefundRequest": {
             "type": "object",
             "properties": {
                 "sender": {

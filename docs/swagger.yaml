@@ -12,7 +12,7 @@ definitions:
         description: Message error message associated with `Code`.
         type: string
     type: object
-  api.GasTankPrepareDepositRequest:
+  api.GasTankPrepareCreditRequest:
     properties:
       amount:
         description: Amount of tokens to deposit for gas fee payment.
@@ -23,7 +23,7 @@ definitions:
     required:
     - amount
     type: object
-  api.GasTankPrepareRequest:
+  api.GasTankPrepareRefundRequest:
     properties:
       sender:
         description: Smart account address in hex format with 0x prefix.
@@ -247,58 +247,20 @@ paths:
       summary: Query EIP-7702 set-code result
       tags:
       - AccountAbstract
-  /aa/gastank/prepare:
-    post:
-      consumes:
-      - application/json
-      description: Returns paymasterData used to estimate gas for a normal UserOperation
-        in REFUND mode.
-      operationId: aaGasTankPrepare
-      parameters:
-      - description: Paymaster data request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/api.GasTankPrepareRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Paymaster and data (0x-prefixed hex)
-          schema:
-            allOf:
-            - $ref: '#/definitions/api.BusinessError'
-            - properties:
-                data:
-                  type: string
-              type: object
-        "600":
-          description: Internal server error
-          schema:
-            allOf:
-            - $ref: '#/definitions/api.BusinessError'
-            - properties:
-                data:
-                  type: string
-              type: object
-      summary: Prepare paymasterData for REFUND mode estimation
-      tags:
-      - GasTank
-  /aa/gastank/prepare/deposit:
+  /aa/gastank/prepare/credit:
     post:
       consumes:
       - application/json
       description: Returns paymasterData used to estimate UserOperation gas in CREDIT
         mode for token deposit flow.
-      operationId: aaGasTankPrepareDeposit
+      operationId: aaGasTankPrepareCredit
       parameters:
       - description: Paymaster data request
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/api.GasTankPrepareDepositRequest'
+          $ref: '#/definitions/api.GasTankPrepareCreditRequest'
       produces:
       - application/json
       responses:
@@ -321,6 +283,44 @@ paths:
                   type: string
               type: object
       summary: Prepare paymasterData for CREDIT mode deposit estimation
+      tags:
+      - GasTank
+  /aa/gastank/prepare/refund:
+    post:
+      consumes:
+      - application/json
+      description: Returns paymasterData used to estimate gas for a normal UserOperation
+        in REFUND mode.
+      operationId: aaGasTankPrepareRefund
+      parameters:
+      - description: Paymaster data request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.GasTankPrepareRefundRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Paymaster and data (0x-prefixed hex)
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "600":
+          description: Internal server error
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: Prepare paymasterData for REFUND mode estimation
       tags:
       - GasTank
   /aa/gastank/sign:

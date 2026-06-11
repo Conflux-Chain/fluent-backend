@@ -68,12 +68,13 @@ func New(config Config) (Services, error) {
 
 	aa := NewAccountAbstract(txSender, config.AccountAbstract.DelegatedContract)
 
-	gasTank, err := NewGasTankPaymaster(config.GasTank, client)
+	priceOracle := NewPriceOracle(config.TokenPay.normalizedTokens)
+
+	gasTank, err := NewGasTankPaymaster(config.GasTank, priceOracle, client)
 	if err != nil {
 		return Services{}, errors.WithMessage(err, "Failed to create gas tank paymaster service")
 	}
 
-	priceOracle := NewPriceOracle(config.TokenPay.normalizedTokens)
 	tokenPay := NewTokenPay(config.TokenPay, txSender, priceOracle)
 
 	return Services{

@@ -31,6 +31,7 @@ func MustServe(config Config, services service.Services) {
 		api := router.Group("api")
 
 		aaController := NewAccountAbstractController(services)
+		gasTankController := NewGasTankController(services)
 		tokenPayController := NewTokenPayController(services)
 
 		// account abstract - auth
@@ -38,9 +39,9 @@ func MustServe(config Config, services service.Services) {
 		api.GET("/aa/auth/:txHash", middleware.Metrics("api.aa.auth.status"), middleware.Wrap(aaController.GetAuthStatus))
 
 		// Gas tank
-		api.POST("/aa/gastank/prepare/deposit", middleware.Metrics("api.aa.gastank.prepare.deposit"), middleware.Wrap(aaController.GasTankPrepareDeposit))
-		api.POST("/aa/gastank/prepare", middleware.Metrics("api.aa.gastank.prepare"), middleware.Wrap(aaController.GasTankPrepare))
-		api.POST("/aa/gastank/sign", middleware.Metrics("api.aa.gastank.signature"), middleware.Wrap(aaController.GasTankSign))
+		api.POST("/aa/gastank/prepare/credit", middleware.Metrics("api.aa.gastank.prepare.credit"), middleware.Wrap(gasTankController.PrepareCredit))
+		api.POST("/aa/gastank/prepare/refund", middleware.Metrics("api.aa.gastank.prepare.refund"), middleware.Wrap(gasTankController.PrepareRefund))
+		api.POST("/aa/gastank/sign", middleware.Metrics("api.aa.gastank.signature"), middleware.Wrap(gasTankController.Sign))
 
 		// token pay
 		api.GET("/tokenpay/config", middleware.Metrics("api.tokenpay.config"), middleware.Wrap(tokenPayController.Config))

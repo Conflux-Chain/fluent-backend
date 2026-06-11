@@ -1,13 +1,10 @@
 package api
 
 import (
-	"math/big"
-
 	"github.com/Conflux-Chain/fluent-backend/service"
 	"github.com/Conflux-Chain/go-conflux-util/api"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	gethTypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/gin-gonic/gin"
 	"github.com/holiman/uint256"
 	"github.com/openweb3/web3go/types/enums"
@@ -55,7 +52,7 @@ func (controller *AccountAbstractController) SendAuth(c *gin.Context) (any, erro
 		return nil, api.ErrValidationStrf("Invalid signature S: %v", err.Error())
 	}
 
-	return controller.services.AccountAbstract.SendSetCodeTransaction(gethTypes.SetCodeAuthorization{
+	return controller.services.AccountAbstract.SendSetCodeTransaction(types.SetCodeAuthorization{
 		ChainID: *uint256.NewInt(input.ChainId),
 		Address: common.HexToAddress(input.Contract),
 		Nonce:   input.Nonce,
@@ -115,105 +112,4 @@ func (controller *AccountAbstractController) GetAuthStatus(c *gin.Context) (any,
 		Executed: true,
 		Error:    string(result.Result),
 	}, nil
-}
-
-// GasTankPrepareDeposit builds paymasterData for CREDIT mode deposit estimation.
-//
-// The returned paymasterData should be attached to the UserOperation when wallet clients estimate
-// gas in CREDIT mode before submitting a signed operation.
-//
-// @ID				aaGasTankPrepareDeposit
-// @Summary			Prepare paymasterData for CREDIT mode deposit estimation
-// @Description		Returns paymasterData used to estimate UserOperation gas in CREDIT mode for token deposit flow.
-// @Tags			GasTank
-// @Accept			json
-// @Produce			json
-// @Param			request		body	GasTankPrepareDepositRequest	true	"Paymaster data request"
-// @Success			200	{object}	api.BusinessError{data=string}	"Paymaster and data (0x-prefixed hex)"
-// @Failure			600	{object}	api.BusinessError{data=string}	"Internal server error"
-// @Router			/aa/gastank/prepare/deposit	[post]
-func (controller *AccountAbstractController) GasTankPrepareDeposit(c *gin.Context) (any, error) {
-	var input GasTankPrepareDepositRequest
-
-	if err := c.ShouldBind(&input); err != nil {
-		return nil, api.ErrValidation(err)
-	}
-
-	token := common.HexToAddress(input.Token)
-	amount, ok := new(big.Int).SetString(input.Amount, 10)
-	if !ok || amount.Sign() <= 0 {
-		return nil, api.ErrValidationStr("Invalid amount")
-	}
-
-	paymasterData := controller.services.GasTank.PrepareDeposit(token, amount)
-
-	return hexutil.Encode(paymasterData), nil
-}
-
-// GasTankPrepare builds paymasterData for normal UserOperation gas estimation in REFUND mode.
-//
-// The returned paymasterData should be attached to the UserOperation when wallet clients estimate
-// gas in REFUND mode before signing and sending the operation.
-//
-// @ID				aaGasTankPrepare
-// @Summary			Prepare paymasterData for REFUND mode estimation
-// @Description		Returns paymasterData used to estimate gas for a normal UserOperation in REFUND mode.
-// @Tags			GasTank
-// @Accept			json
-// @Produce			json
-// @Param			request		body	GasTankPrepareRequest	true	"Paymaster data request"
-// @Success			200	{object}	api.BusinessError{data=string}	"Paymaster and data (0x-prefixed hex)"
-// @Failure			600	{object}	api.BusinessError{data=string}	"Internal server error"
-// @Router			/aa/gastank/prepare	[post]
-func (controller *AccountAbstractController) GasTankPrepare(c *gin.Context) (any, error) {
-	var input GasTankPrepareRequest
-
-	if err := c.ShouldBind(&input); err != nil {
-		return nil, api.ErrValidation(err)
-	}
-
-	sender := common.HexToAddress(input.Sender)
-	token := common.HexToAddress(input.Token)
-
-	paymasterData, err := controller.services.GasTank.Prepare(sender, token)
-	if err != nil {
-		return nil, err
-	}
-
-	return hexutil.Encode(paymasterData), nil
-}
-
-// GasTankSign calculates maxTokenCost for a UserOperation, signs it with paymaster key, and
-// returns the reassembled paymasterData.
-//
-// The wallet should call this endpoint after gas estimation, then place the returned paymasterData
-// into UserOperation.paymasterData before final submission.
-//
-// @ID				aaGasTankSign
-// @Summary			Sign paymasterData for UserOperation
-// @Description		Calculates maxTokenCost for the given UserOperation, adds paymaster signature, and returns reassembled paymasterData.
-// @Description		Encoding format (182 bytes): paymaster(20) || paymasterVerificationGasLimit(16) || paymasterPostOpGasLimit(16) || mode(1) || token(20) || maxTokenCost(32) || validAfter(6) || validUntil(6) || signature(65). maxTokenCost is bytes[73:105] (0-based, big-endian uint256).
-// @Description		CREDIT mode reminder: in input UserOperation.paymasterData, maxTokenCost is the token deposit amount and should be the amount to deposit.
-// @Tags			GasTank
-// @Accept			json
-// @Produce			json
-// @Param			userOp	body	UserOperation	true	"UserOperation for maxTokenCost estimation and paymaster signing"
-// @Success			200	{object}	api.BusinessError{data=string}	"Signed and reassembled paymasterData (0x-prefixed hex, 182 bytes)"
-// @Failure			600	{object}	api.BusinessError{data=string}	"Internal server error"
-// @Router			/aa/gastank/sign	[post]
-func (controller *AccountAbstractController) GasTankSign(c *gin.Context) (any, error) {
-	var input UserOperation
-
-	if err := c.ShouldBind(&input); err != nil {
-		return nil, api.ErrValidation(err)
-	}
-
-	userOp := input.ToPackedUserOperation()
-
-	paymasterData, err := controller.services.GasTank.Sign(userOp)
-	if err != nil {
-		return nil, err
-	}
-
-	return hexutil.Encode(paymasterData), nil
 }
