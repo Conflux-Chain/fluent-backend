@@ -53,6 +53,11 @@ func (tp *TokenPay) Config() TokenPayConfig {
 }
 
 func (tp *TokenPay) Sponsor(rawTransferTokenTx, rawBusinessTx []byte, ip string) error {
+	// validate ip
+	if ip = strings.TrimSpace(ip); len(ip) == 0 {
+		return api.ErrValidationStr("Client IP address is empty")
+	}
+
 	if _, ok := tp.blacklisted.Load(ip); ok {
 		return api.ErrValidationStrf("IP address is blacklisted, ip = %v", ip)
 	}
@@ -167,7 +172,9 @@ func (tp *TokenPay) monitor(context TokenPayMonitorContext) {
 	if success, errMsg, expired := tp.waitForReceipt(transferTokenTxHash, tp.config.CheckReceiptInterval, defaultReceiptTimeout); !success {
 		logger.WithField("txHash", transferTokenTxHash).WithField("errMsg", errMsg).WithField("expired", expired).Error("Failed to wait for receipt of Transfer token tx")
 
-		// blacklist the sender if the transfer token tx failed
+		// Blacklist the sender and client IP if the transfer token tx failed.
+		// Note, since the IP address is limited, no worry about the memory usage of the blacklist map.
+		// If necessary, we can add admin API to update the blacklist map, or add a TTL to the blacklist map in future.
 		if !expired {
 			tp.blacklisted.Store(context.checkResult.Sender, true)
 			tp.blacklisted.Store(context.ip, true)
