@@ -52,7 +52,11 @@ func (tp *TokenPay) Config() TokenPayConfig {
 	return tp.config
 }
 
-func (tp *TokenPay) Sponsor(rawTransferTokenTx, rawBusinessTx []byte) error {
+func (tp *TokenPay) Sponsor(rawTransferTokenTx, rawBusinessTx []byte, ip string) error {
+	if _, ok := tp.blacklisted.Load(ip); ok {
+		return api.ErrValidationStrf("IP address is blacklisted, ip = %v", ip)
+	}
+
 	// unmarshal given txs
 	var transferTokenTx, businessTx gethTypes.Transaction
 
@@ -107,6 +111,7 @@ func (tp *TokenPay) Sponsor(rawTransferTokenTx, rawBusinessTx []byte) error {
 	}
 
 	go tp.monitor(TokenPayMonitorContext{
+		ip:                 ip,
 		checkResult:        result,
 		fundingTxHash:      fundingTxHash,
 		rawTransferTokenTx: rawTransferTokenTx,
@@ -117,6 +122,7 @@ func (tp *TokenPay) Sponsor(rawTransferTokenTx, rawBusinessTx []byte) error {
 }
 
 type TokenPayMonitorContext struct {
+	ip                 string
 	checkResult        checkResult
 	fundingTxHash      common.Hash
 	rawTransferTokenTx []byte
@@ -160,7 +166,13 @@ func (tp *TokenPay) monitor(context TokenPayMonitorContext) {
 	// check for transfer token tx receipt
 	if success, errMsg, expired := tp.waitForReceipt(transferTokenTxHash, tp.config.CheckReceiptInterval, defaultReceiptTimeout); !success {
 		logger.WithField("txHash", transferTokenTxHash).WithField("errMsg", errMsg).WithField("expired", expired).Error("Failed to wait for receipt of Transfer token tx")
-		tp.blacklisted.Store(context.checkResult.Sender, true)
+
+		// blacklist the sender if the transfer token tx failed
+		if !expired {
+			tp.blacklisted.Store(context.checkResult.Sender, true)
+			tp.blacklisted.Store(context.ip, true)
+		}
+
 		return
 	}
 
