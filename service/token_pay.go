@@ -52,7 +52,16 @@ func (tp *TokenPay) Config() TokenPayConfig {
 	return tp.config
 }
 
-func (tp *TokenPay) Sponsor(rawTransferTokenTx, rawBusinessTx []byte) error {
+func (tp *TokenPay) Sponsor(rawTransferTokenTx, rawBusinessTx []byte, ip string) error {
+	// validate ip
+	if ip = strings.TrimSpace(ip); len(ip) == 0 {
+		return api.ErrValidationStr("Client IP address is empty")
+	}
+
+	if _, ok := tp.blacklisted.Load(ip); ok {
+		return api.ErrValidationStrf("IP address is blacklisted, ip = %v", ip)
+	}
+
 	// unmarshal given txs
 	var transferTokenTx, businessTx gethTypes.Transaction
 
@@ -107,6 +116,7 @@ func (tp *TokenPay) Sponsor(rawTransferTokenTx, rawBusinessTx []byte) error {
 	}
 
 	go tp.monitor(TokenPayMonitorContext{
+		ip:                 ip,
 		checkResult:        result,
 		fundingTxHash:      fundingTxHash,
 		rawTransferTokenTx: rawTransferTokenTx,
@@ -117,6 +127,7 @@ func (tp *TokenPay) Sponsor(rawTransferTokenTx, rawBusinessTx []byte) error {
 }
 
 type TokenPayMonitorContext struct {
+	ip                 string
 	checkResult        checkResult
 	fundingTxHash      common.Hash
 	rawTransferTokenTx []byte
@@ -160,7 +171,15 @@ func (tp *TokenPay) monitor(context TokenPayMonitorContext) {
 	// check for transfer token tx receipt
 	if success, errMsg, expired := tp.waitForReceipt(transferTokenTxHash, tp.config.CheckReceiptInterval, defaultReceiptTimeout); !success {
 		logger.WithField("txHash", transferTokenTxHash).WithField("errMsg", errMsg).WithField("expired", expired).Error("Failed to wait for receipt of Transfer token tx")
-		tp.blacklisted.Store(context.checkResult.Sender, true)
+
+		// Blacklist the sender and client IP if the transfer token tx failed.
+		// Note, since the IP address is limited, no worry about the memory usage of the blacklist map.
+		// If necessary, we can add admin API to update the blacklist map, or add a TTL to the blacklist map in future.
+		if !expired {
+			tp.blacklisted.Store(context.checkResult.Sender, true)
+			tp.blacklisted.Store(context.ip, true)
+		}
+
 		return
 	}
 

@@ -91,6 +91,11 @@ func (controller *TokenPayController) GetETHPrice(c *gin.Context) (any, error) {
 // @Failure			600	{object}	api.BusinessError{data=string}	"Internal server error"
 // @Router			/tokenpay/submit	[post]
 func (controller *TokenPayController) Submit(c *gin.Context) (any, error) {
+	ip := c.GetHeader("X-Real-Ip")
+	if len(ip) == 0 {
+		ip = c.RemoteIP()
+	}
+
 	var input TokenPayRequest
 
 	if err := c.ShouldBind(&input); err != nil {
@@ -107,5 +112,5 @@ func (controller *TokenPayController) Submit(c *gin.Context) (any, error) {
 		return nil, api.ErrValidation(errors.WithMessage(err, "Failed to hex decode business tx"))
 	}
 
-	return nil, controller.services.TokenPay.Sponsor(rawTransferTokenTx, rawBusinessTx)
+	return nil, controller.services.TokenPay.Sponsor(rawTransferTokenTx, rawBusinessTx, ip)
 }
