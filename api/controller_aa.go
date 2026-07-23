@@ -4,9 +4,7 @@ import (
 	"github.com/Conflux-Chain/fluent-backend/service"
 	"github.com/Conflux-Chain/go-conflux-util/api"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/gin-gonic/gin"
-	"github.com/holiman/uint256"
 	"github.com/openweb3/web3go/types/enums"
 )
 
@@ -42,24 +40,9 @@ func (controller *AccountAbstractController) SendAuth(c *gin.Context) (any, erro
 		return nil, api.ErrValidation(err)
 	}
 
-	r, err := uint256.FromHex(input.R)
-	if err != nil {
-		return nil, api.ErrValidationStrf("Invalid signature R: %v", err.Error())
-	}
+	auth := input.mustToGeth()
 
-	s, err := uint256.FromHex(input.S)
-	if err != nil {
-		return nil, api.ErrValidationStrf("Invalid signature S: %v", err.Error())
-	}
-
-	return controller.services.AccountAbstract.SendSetCodeTransaction(types.SetCodeAuthorization{
-		ChainID: *uint256.NewInt(input.ChainId),
-		Address: common.HexToAddress(input.Contract),
-		Nonce:   input.Nonce,
-		V:       input.V,
-		R:       *r,
-		S:       *s,
-	})
+	return controller.services.AccountAbstract.SendSetCodeTransaction(auth)
 }
 
 // GetAuthStatus returns the on-chain result of an EIP-7702 set-code transaction.

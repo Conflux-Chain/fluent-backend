@@ -22,6 +22,7 @@ definitions:
         type: string
     required:
     - amount
+    - token
     type: object
   api.GasTankPrepareRefundRequest:
     properties:
@@ -31,6 +32,9 @@ definitions:
       token:
         description: ERC20 token address to pay gas fee.
         type: string
+    required:
+    - sender
+    - token
     type: object
   api.SetCodeAuth:
     properties:
@@ -119,10 +123,14 @@ definitions:
         type: string
       rawTransferTokenTx:
         type: string
+    required:
+    - rawBusinessTx
+    - rawTransferTokenTx
     type: object
   api.UserOperation:
     properties:
       callData:
+        minLength: 2
         type: string
       callGasLimit:
         maxLength: 34
@@ -166,6 +174,20 @@ definitions:
         maxLength: 34
         minLength: 4
         type: string
+    required:
+    - callData
+    - callGasLimit
+    - maxFeePerGas
+    - maxPriorityFeePerGas
+    - nonce
+    - paymaster
+    - paymasterData
+    - paymasterPostOpGasLimit
+    - paymasterVerificationGasLimit
+    - preVerificationGas
+    - sender
+    - signature
+    - verificationGasLimit
     type: object
 info:
   contact: {}
