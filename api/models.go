@@ -7,6 +7,8 @@ import (
 	"github.com/Conflux-Chain/fluent-backend/service"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/holiman/uint256"
 )
 
 type SetCodeAuth struct {
@@ -14,15 +16,32 @@ type SetCodeAuth struct {
 	ChainId uint64 `json:"chainId"`
 	// Contract is the 20-byte hex address (with 0x prefix) of the smart-contract to delegate the EOA to.
 	// Set to "0x0000000000000000000000000000000000000000" to revoke an existing delegation.
-	Contract string `json:"contract" binding:"required,len=42"`
+	Contract string `json:"contract" binding:"hex,len=42"`
 	// Nonce is the current on-chain nonce of the signing authority (EOA). Must match exactly.
 	Nonce uint64 `json:"nonce"`
 	// V is the recovery identifier of the EIP-7702 authorization signature (0 or 1).
 	V uint8 `json:"v"`
 	// R is the R component of the EIP-7702 authorization signature, as a 0x-prefixed hex string.
-	R string `json:"r" binding:"required"`
+	R string `json:"r" binding:"hex,len=66"`
 	// S is the S component of the EIP-7702 authorization signature, as a 0x-prefixed hex string.
-	S string `json:"s" binding:"required"`
+	S string `json:"s" binding:"hex,len=66"`
+}
+
+func (auth *SetCodeAuth) ToGeth() types.SetCodeAuthorization {
+	rBytes32 := hexutil.MustDecode(auth.R)
+	rU256, _ := uint256.FromBig(new(big.Int).SetBytes(rBytes32)) // never overflow
+
+	sBytes32 := hexutil.MustDecode(auth.S)
+	sU256, _ := uint256.FromBig(new(big.Int).SetBytes(sBytes32)) // never overflow
+
+	return types.SetCodeAuthorization{
+		ChainID: *uint256.NewInt(auth.ChainId),
+		Address: common.HexToAddress(auth.Contract),
+		Nonce:   auth.Nonce,
+		V:       auth.V,
+		R:       *rU256,
+		S:       *sU256,
+	}
 }
 
 type SetCodeResult struct {

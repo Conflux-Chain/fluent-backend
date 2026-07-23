@@ -557,11 +557,6 @@ const docTemplate = `{
         },
         "api.SetCodeAuth": {
             "type": "object",
-            "required": [
-                "contract",
-                "r",
-                "s"
-            ],
             "properties": {
                 "chainId": {
                     "description": "ChainID is the chain ID the authorization is bound to. 0 means the auth is valid on any chain.",

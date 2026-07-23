@@ -59,10 +59,6 @@ definitions:
         description: V is the recovery identifier of the EIP-7702 authorization signature
           (0 or 1).
         type: integer
-    required:
-    - contract
-    - r
-    - s
     type: object
   api.SetCodeResult:
     properties:
