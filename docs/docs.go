@@ -529,7 +529,8 @@ const docTemplate = `{
         "api.GasTankPrepareCreditRequest": {
             "type": "object",
             "required": [
-                "amount"
+                "amount",
+                "token"
             ],
             "properties": {
                 "amount": {
@@ -544,6 +545,10 @@ const docTemplate = `{
         },
         "api.GasTankPrepareRefundRequest": {
             "type": "object",
+            "required": [
+                "sender",
+                "token"
+            ],
             "properties": {
                 "sender": {
                     "description": "Smart account address in hex format with 0x prefix.",
@@ -557,6 +562,11 @@ const docTemplate = `{
         },
         "api.SetCodeAuth": {
             "type": "object",
+            "required": [
+                "contract",
+                "r",
+                "s"
+            ],
             "properties": {
                 "chainId": {
                     "description": "ChainID is the chain ID the authorization is bound to. 0 means the auth is valid on any chain.",
@@ -639,6 +649,10 @@ const docTemplate = `{
         },
         "api.TokenPayRequest": {
             "type": "object",
+            "required": [
+                "rawBusinessTx",
+                "rawTransferTokenTx"
+            ],
             "properties": {
                 "rawBusinessTx": {
                     "type": "string"
@@ -650,9 +664,25 @@ const docTemplate = `{
         },
         "api.UserOperation": {
             "type": "object",
+            "required": [
+                "callData",
+                "callGasLimit",
+                "maxFeePerGas",
+                "maxPriorityFeePerGas",
+                "nonce",
+                "paymaster",
+                "paymasterData",
+                "paymasterPostOpGasLimit",
+                "paymasterVerificationGasLimit",
+                "preVerificationGas",
+                "sender",
+                "signature",
+                "verificationGasLimit"
+            ],
             "properties": {
                 "callData": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 2
                 },
                 "callGasLimit": {
                     "type": "string",

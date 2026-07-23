@@ -11,10 +11,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestFoo(t *testing.T) {
+func TestSetCodeAuth(t *testing.T) {
 	v, ok := binding.Validator.Engine().(*validator.Validate)
 	assert.True(t, ok)
 
+	// input
 	auth := SetCodeAuth{
 		ChainId:  1,
 		Contract: "0x0000000000000000000000000000000000000002",
@@ -23,8 +24,11 @@ func TestFoo(t *testing.T) {
 		R:        "0x0000000000000000000000000000000000000000000000000000000000000005",
 		S:        "0x0000000000000000000000000000000000000000000000000000000000000006",
 	}
+
+	// validation
 	assert.NoError(t, v.Struct(auth))
 
+	// conversion
 	assert.Equal(t, types.SetCodeAuthorization{
 		ChainID: *uint256.NewInt(1),
 		Address: common.HexToAddress("0x0000000000000000000000000000000000000002"),
@@ -32,5 +36,5 @@ func TestFoo(t *testing.T) {
 		V:       4,
 		R:       *uint256.NewInt(5),
 		S:       *uint256.NewInt(6),
-	}, auth.ToGeth())
+	}, auth.mustToGeth())
 }

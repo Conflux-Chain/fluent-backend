@@ -40,7 +40,7 @@ func (controller *AccountAbstractController) SendAuth(c *gin.Context) (any, erro
 		return nil, api.ErrValidation(err)
 	}
 
-	auth := input.ToGeth()
+	auth := input.mustToGeth()
 
 	return controller.services.AccountAbstract.SendSetCodeTransaction(auth)
 }

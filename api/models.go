@@ -16,18 +16,21 @@ type SetCodeAuth struct {
 	ChainId uint64 `json:"chainId"`
 	// Contract is the 20-byte hex address (with 0x prefix) of the smart-contract to delegate the EOA to.
 	// Set to "0x0000000000000000000000000000000000000000" to revoke an existing delegation.
-	Contract string `json:"contract" binding:"hex,len=42"`
+	Contract string `json:"contract" binding:"required,hex,len=42"`
 	// Nonce is the current on-chain nonce of the signing authority (EOA). Must match exactly.
 	Nonce uint64 `json:"nonce"`
 	// V is the recovery identifier of the EIP-7702 authorization signature (0 or 1).
 	V uint8 `json:"v"`
 	// R is the R component of the EIP-7702 authorization signature, as a 0x-prefixed hex string.
-	R string `json:"r" binding:"hex,len=66"`
+	R string `json:"r" binding:"required,hex,len=66"`
 	// S is the S component of the EIP-7702 authorization signature, as a 0x-prefixed hex string.
-	S string `json:"s" binding:"hex,len=66"`
+	S string `json:"s" binding:"required,hex,len=66"`
 }
 
-func (auth *SetCodeAuth) ToGeth() types.SetCodeAuthorization {
+// mustToGeth converts the SetCodeAuth to the Geth SetCodeAuthorization type.
+//
+// Note, the auth should be validated before calling this function, as it will panic if the R or S values are not valid hex strings.
+func (auth *SetCodeAuth) mustToGeth() types.SetCodeAuthorization {
 	rBytes32 := hexutil.MustDecode(auth.R)
 	rU256, _ := uint256.FromBig(new(big.Int).SetBytes(rBytes32)) // never overflow
 
@@ -55,34 +58,34 @@ type SetCodeResult struct {
 
 type GasTankPrepareCreditRequest struct {
 	// ERC20 token address to deposit for gas fee payment.
-	Token string `json:"token" binding:"hex,len=42"`
+	Token string `json:"token" binding:"required,hex,len=42"`
 	// Amount of tokens to deposit for gas fee payment.
 	Amount string `json:"amount" binding:"required"`
 }
 
 type GasTankPrepareRefundRequest struct {
 	// Smart account address in hex format with 0x prefix.
-	Sender string `json:"sender" binding:"hex,len=42"`
+	Sender string `json:"sender" binding:"required,hex,len=42"`
 	// ERC20 token address to pay gas fee.
-	Token string `json:"token" binding:"hex,len=42"`
+	Token string `json:"token" binding:"required,hex,len=42"`
 }
 
 type UserOperation struct {
-	Sender               string `json:"sender" binding:"hex,len=42"`
-	Nonce                string `json:"nonce" binding:"hex,min=4"`
-	CallData             string `json:"callData" binding:"hex"`
-	VerificationGasLimit string `json:"verificationGasLimit" binding:"hex,min=4,max=34"`
-	CallGasLimit         string `json:"callGasLimit" binding:"hex,min=4,max=34"`
-	PreVerificationGas   string `json:"preVerificationGas" binding:"hex,min=4,max=34"`
-	MaxFeePerGas         string `json:"maxFeePerGas" binding:"hex,min=4,max=34"`
-	MaxPriorityFeePerGas string `json:"maxPriorityFeePerGas" binding:"hex,min=4,max=34"`
-	Signature            string `json:"signature" binding:"hex,len=132"`
+	Sender               string `json:"sender" binding:"required,hex,len=42"`
+	Nonce                string `json:"nonce" binding:"required,hex,min=4"`
+	CallData             string `json:"callData" binding:"required,hex,min=2"`
+	VerificationGasLimit string `json:"verificationGasLimit" binding:"required,hex,min=4,max=34"`
+	CallGasLimit         string `json:"callGasLimit" binding:"required,hex,min=4,max=34"`
+	PreVerificationGas   string `json:"preVerificationGas" binding:"required,hex,min=4,max=34"`
+	MaxFeePerGas         string `json:"maxFeePerGas" binding:"required,hex,min=4,max=34"`
+	MaxPriorityFeePerGas string `json:"maxPriorityFeePerGas" binding:"required,hex,min=4,max=34"`
+	Signature            string `json:"signature" binding:"required,hex,len=132"`
 
 	// Paymaster
-	Paymaster                     string `json:"paymaster" binding:"hex,len=42"`
-	PaymasterVerificationGasLimit string `json:"paymasterVerificationGasLimit" binding:"hex,min=4,max=34"`
-	PaymasterPostOpGasLimit       string `json:"paymasterPostOpGasLimit" binding:"hex,min=4,max=34"`
-	PaymasterData                 string `json:"paymasterData" binding:"hex,min=156"` // at least validAfter (6) || validUntil (6) || signature (65)
+	Paymaster                     string `json:"paymaster" binding:"required,hex,len=42"`
+	PaymasterVerificationGasLimit string `json:"paymasterVerificationGasLimit" binding:"required,hex,min=4,max=34"`
+	PaymasterPostOpGasLimit       string `json:"paymasterPostOpGasLimit" binding:"required,hex,min=4,max=34"`
+	PaymasterData                 string `json:"paymasterData" binding:"required,hex,min=156"` // at least validAfter (6) || validUntil (6) || signature (65)
 }
 
 func hexToBig(hex string) *big.Int {
@@ -160,10 +163,10 @@ func NewTokenPayConfig(config service.TokenPayConfig) TokenPayConfig {
 }
 
 type TokenPayPriceRequest struct {
-	Token string `json:"token" form:"token" binding:"hex,len=42"`
+	Token string `json:"token" form:"token" binding:"required,hex,len=42"`
 }
 
 type TokenPayRequest struct {
-	RawTransferTokenTx string `json:"rawTransferTokenTx" binding:"hex"`
-	RawBusinessTx      string `json:"rawBusinessTx" binding:"hex"`
+	RawTransferTokenTx string `json:"rawTransferTokenTx" binding:"required,hex"`
+	RawBusinessTx      string `json:"rawBusinessTx" binding:"required,hex"`
 }
