@@ -1,5 +1,5 @@
-github.com/Conflux-Chain/go-conflux-util v0.7.9 h1:kHJwNJwBhYsN64s/N+uC9YZ4l2mwyBlqKAbfpTdwtcg=
-github.com/Conflux-Chain/go-conflux-util v0.7.9/go.mod h1:S04yplGB7FtbfKmSKKk8jIjSjhSIi/FulirGIKQ6LqU=
+github.com/Conflux-Chain/go-conflux-util v0.7.10 h1:tOvJV1sdli0NS+chl1ueeJvUqF6H9hp7oMSjlpOTZgw=
+github.com/Conflux-Chain/go-conflux-util v0.7.10/go.mod h1:S04yplGB7FtbfKmSKKk8jIjSjhSIi/FulirGIKQ6LqU=
 github.com/DataDog/zstd v1.4.5 h1:EndNeuB0l9syBZhut0wns3gV1hL8zX8LIu6ZiVHWLIQ=
 github.com/DataDog/zstd v1.4.5/go.mod h1:1jcaCB/ufaK+sKp1NBhlGmpz41jOoPQ35bpF36t7BBo=
 github.com/KyleBanks/depth v1.2.1 h1:5h8fQADFrWtarTdtDudMmGsC7GPbOAu6RVB3ffsVFHc=

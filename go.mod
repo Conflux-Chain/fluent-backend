@@ -3,7 +3,7 @@ module github.com/Conflux-Chain/fluent-backend
 go 1.23.0
 
 require (
-	github.com/Conflux-Chain/go-conflux-util v0.7.9
+	github.com/Conflux-Chain/go-conflux-util v0.7.10
 	github.com/ethereum/go-ethereum v1.15.11
 	github.com/gin-gonic/gin v1.9.0
 	github.com/go-playground/validator/v10 v10.11.2
@@ -123,6 +123,7 @@ require (
 	golang.org/x/sync v0.16.0 // indirect
 	golang.org/x/sys v0.35.0 // indirect
 	golang.org/x/text v0.28.0 // indirect
+	golang.org/x/time v0.12.0 // indirect
 	golang.org/x/tools v0.35.0 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
