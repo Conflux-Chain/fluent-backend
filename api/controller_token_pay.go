@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/Conflux-Chain/fluent-backend/service"
 	"github.com/Conflux-Chain/go-conflux-util/api"
+	"github.com/Conflux-Chain/go-conflux-util/api/middleware"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/gin-gonic/gin"
@@ -91,10 +92,7 @@ func (controller *TokenPayController) GetETHPrice(c *gin.Context) (any, error) {
 // @Failure			600	{object}	api.BusinessError{data=string}	"Internal server error"
 // @Router			/tokenpay/submit	[post]
 func (controller *TokenPayController) Submit(c *gin.Context) (any, error) {
-	ip := c.GetHeader("X-Real-Ip")
-	if len(ip) == 0 {
-		ip = c.RemoteIP()
-	}
+	ip := middleware.GetRealIP(c)
 
 	var input TokenPayRequest
 
