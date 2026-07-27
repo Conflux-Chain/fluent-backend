@@ -18,7 +18,9 @@ import (
 )
 
 const (
-	errMsgTxAlreadyExist = "tx already exist"
+	errMsgTxAlreadyExist    = "tx already exist"
+	errMsgInsufficientFunds = "insufficient funds for gas * price + value"
+	errMsgNonceTooLow       = "nonce too low"
 
 	defaultSendTxRetryTimes    = 10
 	defaultSendTxRetryInterval = 3 * time.Second
@@ -146,7 +148,11 @@ func (tp *TokenPay) monitor(context TokenPayMonitorContext) {
 	logger.WithField("txHash", context.fundingTxHash).Info("Succeeded to send Funding ETH tx")
 
 	if success, errMsg, expired := tp.waitForReceipt(context.fundingTxHash, tp.config.CheckFundingReceiptInterval, defaultReceiptTimeout); !success {
-		logger.WithField("txHash", context.fundingTxHash).WithField("errMsg", errMsg).WithField("expired", expired).Error("Failed to wait for receipt of Funding ETH tx")
+		logger.WithFields(logrus.Fields{
+			"txHash":  context.fundingTxHash,
+			"errMsg":  errMsg,
+			"expired": expired,
+		}).Error("Failed to wait for receipt of Funding ETH tx")
 		return
 	}
 
@@ -154,6 +160,12 @@ func (tp *TokenPay) monitor(context TokenPayMonitorContext) {
 	transferTokenTxHash, err := tp.sendRawTransactionWithRetry(context.rawTransferTokenTx, defaultSendTxRetryTimes, defaultSendTxRetryInterval)
 	if err != nil {
 		logger.WithError(err).WithField("txHash", crypto.Keccak256Hash(context.rawTransferTokenTx)).Error("Failed to send transfer token tx")
+
+		// Blacklist the sender and client IP due to balance or nonce problems, which may be caused by malicious users.
+		if errMsg := err.Error(); strings.Contains(errMsg, errMsgInsufficientFunds) || strings.Contains(errMsg, errMsgNonceTooLow) {
+			tp.addBlacklist(context.checkResult.Sender, context.ip)
+		}
+
 		return
 	}
 
@@ -170,14 +182,15 @@ func (tp *TokenPay) monitor(context TokenPayMonitorContext) {
 
 	// check for transfer token tx receipt
 	if success, errMsg, expired := tp.waitForReceipt(transferTokenTxHash, tp.config.CheckReceiptInterval, defaultReceiptTimeout); !success {
-		logger.WithField("txHash", transferTokenTxHash).WithField("errMsg", errMsg).WithField("expired", expired).Error("Failed to wait for receipt of Transfer token tx")
+		logger.WithFields(logrus.Fields{
+			"txHash":  transferTokenTxHash,
+			"errMsg":  errMsg,
+			"expired": expired,
+		}).Error("Failed to wait for receipt of Transfer token tx")
 
 		// Blacklist the sender and client IP if the transfer token tx failed.
-		// Note, since the IP address is limited, no worry about the memory usage of the blacklist map.
-		// If necessary, we can add admin API to update the blacklist map, or add a TTL to the blacklist map in future.
 		if !expired {
-			tp.blacklisted.Store(context.checkResult.Sender, true)
-			tp.blacklisted.Store(context.ip, true)
+			tp.addBlacklist(context.checkResult.Sender, context.ip)
 		}
 
 		return
@@ -187,6 +200,15 @@ func (tp *TokenPay) monitor(context TokenPayMonitorContext) {
 	tp.waitForReceipt(businessTxHash, tp.config.CheckReceiptInterval, defaultReceiptTimeout)
 
 	logger.Info("Token pay completed")
+}
+
+func (tp *TokenPay) addBlacklist(user common.Address, ip string) {
+	// Note, since the IP address is limited, no worry about the memory usage of the blacklist map. On the other hand,
+	// the user address is also bounded by the number of client IP.
+	//
+	// If necessary, we can add admin API to update the blacklist map, or add a TTL to the blacklist map in future.
+	tp.blacklisted.Store(user, true)
+	tp.blacklisted.Store(ip, true)
 }
 
 func (tp *TokenPay) waitForReceipt(txHash common.Hash, interval time.Duration, timeout time.Duration) (success bool, errMsg string, expired bool) {
