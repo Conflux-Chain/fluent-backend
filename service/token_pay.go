@@ -189,8 +189,6 @@ func (tp *TokenPay) monitor(context TokenPayMonitorContext) {
 		}).Error("Failed to wait for receipt of Transfer token tx")
 
 		// Blacklist the sender and client IP if the transfer token tx failed.
-		// Note, since the IP address is limited, no worry about the memory usage of the blacklist map.
-		// If necessary, we can add admin API to update the blacklist map, or add a TTL to the blacklist map in future.
 		if !expired {
 			tp.addBlacklist(context.checkResult.Sender, context.ip)
 		}
@@ -205,6 +203,10 @@ func (tp *TokenPay) monitor(context TokenPayMonitorContext) {
 }
 
 func (tp *TokenPay) addBlacklist(user common.Address, ip string) {
+	// Note, since the IP address is limited, no worry about the memory usage of the blacklist map. On the other hand,
+	// the user address is also bounded by the number of client IP.
+	//
+	// If necessary, we can add admin API to update the blacklist map, or add a TTL to the blacklist map in future.
 	tp.blacklisted.Store(user, true)
 	tp.blacklisted.Store(ip, true)
 }
