@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"math/big"
 	"strings"
 	"sync"
 	"time"
@@ -11,14 +12,12 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/openweb3/go-rpc-provider/utils"
 	"github.com/openweb3/web3go/types"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
 const (
-	errMsgTxAlreadyExist    = "tx already exist"
 	errMsgInsufficientFunds = "insufficient funds for gas * price + value"
 	errMsgNonceTooLow       = "nonce too low"
 
@@ -97,10 +96,12 @@ func (tp *TokenPay) Sponsor(rawTransferTokenTx, rawBusinessTx []byte, ip string)
 	}
 
 	// send funding ETH tx
-	logrus.WithFields(logrus.Fields{
-		"user":  result.Sender,
-		"nonce": result.Nonce,
-	}).Info("Begin to funding ETH")
+	logger := logrus.WithFields(logrus.Fields{
+		"module": "TokenPay",
+		"user":   result.Sender,
+		"nonce":  result.Nonce,
+	})
+	logger.Info("Begin to funding ETH")
 
 	fundingTxGasLimit := hexutil.Uint64(result.FundingGasLimit.Uint64())
 	fundingTxArgs := types.TransactionArgs{
@@ -117,7 +118,7 @@ func (tp *TokenPay) Sponsor(rawTransferTokenTx, rawBusinessTx []byte, ip string)
 		return err
 	}
 
-	go tp.monitor(TokenPayMonitorContext{
+	go tp.monitor(logger, TokenPayMonitorContext{
 		ip:                 ip,
 		checkResult:        result,
 		fundingTxHash:      fundingTxHash,
@@ -136,28 +137,19 @@ type TokenPayMonitorContext struct {
 	rawBusinessTx      []byte
 }
 
-func (tp *TokenPay) monitor(context TokenPayMonitorContext) {
+func (tp *TokenPay) monitor(logger *logrus.Entry, context TokenPayMonitorContext) {
 	defer tp.inflight.Delete(context.checkResult.Sender)
 
-	logger := logrus.WithFields(logrus.Fields{
-		"user":  context.checkResult.Sender,
-		"nonce": context.checkResult.Nonce,
-	})
-
 	// funding ETH tx
-	logger.WithField("txHash", context.fundingTxHash).Info("Succeeded to send Funding ETH tx")
+	logger.WithField("txHash", context.fundingTxHash).Info("Succeeded to send Funding ETH tx, and waiting for receipt")
 
-	if success, errMsg, expired := tp.waitForReceipt(context.fundingTxHash, tp.config.CheckFundingReceiptInterval, defaultReceiptTimeout); !success {
-		logger.WithFields(logrus.Fields{
-			"txHash":  context.fundingTxHash,
-			"errMsg":  errMsg,
-			"expired": expired,
-		}).Error("Failed to wait for receipt of Funding ETH tx")
+	if err := tp.waitForFundingTx(logger, context.fundingTxHash, 5*defaultReceiptTimeout); err != nil {
+		logger.WithError(err).Error("Failed to wait for receipt of Funding ETH tx")
 		return
 	}
 
 	// transfer token tx
-	transferTokenTxHash, err := tp.sendRawTransactionWithRetry(context.rawTransferTokenTx, defaultSendTxRetryTimes, defaultSendTxRetryInterval)
+	transferTokenTxHash, err := tp.SendRawTransactionWithRetry(context.rawTransferTokenTx, defaultSendTxRetryTimes, defaultSendTxRetryInterval)
 	if err != nil {
 		logger.WithError(err).WithField("txHash", crypto.Keccak256Hash(context.rawTransferTokenTx)).Error("Failed to send transfer token tx")
 
@@ -172,7 +164,7 @@ func (tp *TokenPay) monitor(context TokenPayMonitorContext) {
 	logger.WithField("txHash", transferTokenTxHash).Info("Succeeded to send Transfer token tx")
 
 	// business tx
-	businessTxHash, err := tp.sendRawTransactionWithRetry(context.rawBusinessTx, defaultSendTxRetryTimes, defaultSendTxRetryInterval)
+	businessTxHash, err := tp.SendRawTransactionWithRetry(context.rawBusinessTx, defaultSendTxRetryTimes, defaultSendTxRetryInterval)
 	if err != nil {
 		logger.WithError(err).WithField("txHash", crypto.Keccak256Hash(context.rawBusinessTx)).Error("Failed to send business tx")
 		return
@@ -181,7 +173,7 @@ func (tp *TokenPay) monitor(context TokenPayMonitorContext) {
 	logger.WithField("txHash", businessTxHash).Info("Succeeded to send Business tx")
 
 	// check for transfer token tx receipt
-	if success, errMsg, expired := tp.waitForReceipt(transferTokenTxHash, tp.config.CheckReceiptInterval, defaultReceiptTimeout); !success {
+	if success, errMsg, expired := tp.WaitForReceipt(transferTokenTxHash, tp.config.CheckReceiptInterval, defaultReceiptTimeout); !success {
 		logger.WithFields(logrus.Fields{
 			"txHash":  transferTokenTxHash,
 			"errMsg":  errMsg,
@@ -197,7 +189,7 @@ func (tp *TokenPay) monitor(context TokenPayMonitorContext) {
 	}
 
 	// do not care about the execution result of business tx
-	tp.waitForReceipt(businessTxHash, tp.config.CheckReceiptInterval, defaultReceiptTimeout)
+	tp.WaitForReceipt(businessTxHash, tp.config.CheckReceiptInterval, defaultReceiptTimeout)
 
 	logger.Info("Token pay completed")
 }
@@ -211,68 +203,88 @@ func (tp *TokenPay) addBlacklist(user common.Address, ip string) {
 	tp.blacklisted.Store(ip, true)
 }
 
-func (tp *TokenPay) waitForReceipt(txHash common.Hash, interval time.Duration, timeout time.Duration) (success bool, errMsg string, expired bool) {
-	startTime := time.Now()
+func (tp *TokenPay) waitForFundingTx(logger *logrus.Entry, txHash common.Hash, timeout time.Duration) error {
+	// retrieve the funding ETH
+	tx, err := tp.client.Eth.TransactionByHash(txHash)
+	if err != nil {
+		return errors.WithMessage(err, "Failed to get transaction by hash")
+	}
+
+	if tx == nil {
+		return fmt.Errorf("Transaction not found, txHash = %v", txHash)
+	}
+
+	// wait for nonce to be used
+	txs := []common.Hash{txHash}
+	start := time.Now()
+	startIter := time.Now()
+	price := tx.GasPrice
 
 	for {
-		if time.Since(startTime) > timeout {
-			return false, "", true
+		// timeout to wait for nonce used
+		if time.Since(start) > timeout {
+			return fmt.Errorf("Timeout to wait for funding ETH tx nonce, nonce = %v", tx.Nonce)
 		}
 
-		time.Sleep(interval)
+		time.Sleep(tp.config.CheckFundingReceiptInterval)
 
-		receipt, err := tp.client.Eth.TransactionReceipt(txHash)
+		nonce, err := tp.client.Eth.TransactionCount(tx.From, nil)
 		if err != nil {
-			logrus.WithError(err).WithField("txHash", txHash).Info("Failed to get tx receipt")
+			logger.WithError(err).Info("Failed to get state nonce, retry again")
 			continue
 		}
 
-		if receipt == nil || receipt.Status == nil {
+		// nonce used
+		if nonce.Uint64() > tx.Nonce {
+			break
+		}
+
+		if time.Since(startIter) < defaultReceiptTimeout {
 			continue
 		}
 
-		if *receipt.Status == gethTypes.ReceiptStatusSuccessful {
-			return true, "", false
+		startIter = time.Now()
+
+		// re-send the funding ETH tx with higher gas price (2x)
+		price.Mul(price, big.NewInt(2))
+		txArgs := types.TransactionArgs{
+			To:       tx.To,
+			Gas:      (*hexutil.Uint64)(&tx.Gas),
+			GasPrice: (*hexutil.Big)(price),
+			Value:    (*hexutil.Big)(tx.Value),
+			Nonce:    (*hexutil.Uint64)(&tx.Nonce),
 		}
 
-		if receipt.TxExecErrorMsg == nil {
-			return false, "", false
+		newTxHash, err := tp.Send(txArgs)
+		if err != nil {
+			logger.WithError(err).WithField("price", price).Info("Failed to re-send funding ETH tx")
+		} else {
+			txs = append(txs, newTxHash)
+			logger.WithField("txHash", newTxHash).WithField("price", price).Info("Succeeded to re-send funding ETH tx")
 		}
-
-		return false, *receipt.TxExecErrorMsg, false
 	}
-}
 
-func (tp *TokenPay) sendRawTransactionWithRetry(rawTx []byte, maxRetry int, interval time.Duration) (common.Hash, error) {
-	var retry int
-
-	for {
-		txHash, err := tp.client.Eth.SendRawTransaction(rawTx)
-		if err == nil {
-			return txHash, nil
+	// check receipt of all sent txs
+	var receipt *types.Receipt
+	for _, v := range txs {
+		if receipt, err = tp.client.Eth.TransactionReceipt(v); err != nil {
+			logger.WithError(err).WithField("txHash", v).Info("Failed to get receipt of funding ETH tx")
+		} else if receipt != nil {
+			break
 		}
-
-		// do not retry for RPC error
-		if utils.IsRPCJSONError(err) {
-			// Sometimes, tx sent failed due to io error, and retry again.
-			// However, the tx already inserted into txpool successfully, which means request succeeded but response failed.
-			// In this case, the retry will failed with "tx already exist", so we can treat it as success and return the tx hash.
-			if strings.Contains(err.Error(), errMsgTxAlreadyExist) {
-				logrus.WithError(err).WithField("retry", retry).Warn("Tx already sent, treat as success")
-				return crypto.Keccak256Hash(rawTx), nil
-			}
-
-			return common.Hash{}, err
-		}
-
-		// retry again for other errors (e.g. io error)
-		retry++
-		if retry > maxRetry {
-			return common.Hash{}, err
-		}
-
-		logrus.WithError(err).WithField("retry", retry).Debug("Failed to send tx, retrying...")
-
-		time.Sleep(interval)
 	}
+
+	if receipt == nil || receipt.Status == nil {
+		return fmt.Errorf("Funding ETH tx receipt not found or receipt status is nil, txs = %v", txs)
+	}
+
+	if *receipt.Status != gethTypes.ReceiptStatusSuccessful {
+		errMsg := "N/A"
+		if receipt.TxExecErrorMsg != nil {
+			errMsg = *receipt.TxExecErrorMsg
+		}
+		return fmt.Errorf("Funding ETH tx failed, txHash = %v, errMsg = %v", receipt.TransactionHash, errMsg)
+	}
+
+	return nil
 }
