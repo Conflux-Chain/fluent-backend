@@ -267,11 +267,11 @@ func (tp *TokenPay) waitForFundingTx(logger *logrus.Entry, txHash common.Hash, t
 	// check receipt of all sent txs
 	var receipt *types.Receipt
 	for _, v := range txs {
-		if receipt, err = tp.client.Eth.TransactionReceipt(v); err == nil {
+		if receipt, err = tp.client.Eth.TransactionReceipt(v); err != nil {
+			logger.WithError(err).WithField("txHash", v).Info("Failed to get receipt of funding ETH tx")
+		} else if receipt != nil {
 			break
 		}
-
-		logger.WithError(err).WithField("txHash", v).Info("Failed to get receipt of funding ETH tx")
 	}
 
 	if receipt == nil || receipt.Status == nil {
