@@ -83,7 +83,7 @@ Submit behavior:
 
 ## Business errors
 
-There are some business errors for wallet to handle, see all defined errors [here](./service/errors.go).
+There are some business errors for wallet to handle, see all defined errors on [github](./service/errors.go).
 
 ## CLI Helper: Generate Auth Message
 
