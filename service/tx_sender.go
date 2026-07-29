@@ -1,11 +1,13 @@
 package service
 
 import (
+	"fmt"
 	"math/big"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/Conflux-Chain/go-conflux-util/health"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
@@ -18,6 +20,11 @@ import (
 )
 
 const errMsgTxAlreadyExist = "tx already exist"
+
+var (
+	defaultBalanceCheckInterval = time.Minute
+	defaultBalanceThreshold     = big.NewInt(1e18) // 1 CFX
+)
 
 type TxSender struct {
 	client *web3go.Client
@@ -64,12 +71,43 @@ func NewTxSender(client *web3go.Client) (*TxSender, error) {
 		return nil, errors.New("Chain ID unavailable on fullnode")
 	}
 
-	return &TxSender{
+	txSender := TxSender{
 		client:     client,
 		sender:     sender,
 		chainId:    *chainId,
 		chainIdBig: (*hexutil.Big)(new(big.Int).SetUint64(*chainId)),
-	}, nil
+	}
+
+	// starts to monitor the balance of the sender address in the entire process lifetime,
+	// and graceful shutdown is unnecessary.
+	go txSender.monitorBalance()
+
+	return &txSender, nil
+}
+
+func (s *TxSender) monitorBalance() {
+	ticker := time.NewTicker(defaultBalanceCheckInterval)
+	defer ticker.Stop()
+
+	healthCounter := health.NewTimedCounter()
+	balanceCounter := health.NewTimedCounter(health.TimedCounterConfig{
+		Threshold: time.Second,
+		Remind:    time.Hour,
+	})
+
+	for range ticker.C {
+		balance, err := s.client.Eth.Balance(s.sender, nil)
+		healthCounter.LogOnError(err, "Monitoring tx sender balance")
+		if err != nil {
+			continue
+		}
+
+		if balance.Cmp(defaultBalanceThreshold) < 0 {
+			err = fmt.Errorf("Tx sender balance not enough, address = %v, balance = %v, threshold = %v", s.sender, balance, defaultBalanceThreshold)
+		}
+
+		balanceCounter.LogOnError(err, "Monitoring tx sender balance")
+	}
 }
 
 func (s *TxSender) Send(tx types.TransactionArgs) (common.Hash, error) {
