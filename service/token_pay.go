@@ -147,12 +147,14 @@ func (tp *TokenPay) monitor(logger *logrus.Entry, context TokenPayMonitorContext
 	defer tp.inflight.Delete(context.checkResult.Sender)
 
 	// funding ETH tx
-	logger.WithField("txHash", context.fundingTxHash).Info("Succeeded to send Funding ETH tx, and waiting for receipt")
+	logger.WithField("txHash", context.fundingTxHash).Info("Succeeded to send Funding ETH tx")
 
 	if err := tp.waitForFundingTx(logger, context.fundingTxHash, 5*defaultReceiptTimeout); err != nil {
 		logger.WithError(err).Error("Failed to wait for receipt of Funding ETH tx")
 		return
 	}
+
+	logger.Info("Succeeded to execute Funding ETH tx")
 
 	// transfer token tx
 	transferTokenTxHash, err := tp.SendRawTransactionWithRetry(context.rawTransferTokenTx, defaultSendTxRetryTimes, defaultSendTxRetryInterval)
@@ -161,7 +163,7 @@ func (tp *TokenPay) monitor(logger *logrus.Entry, context TokenPayMonitorContext
 
 		// Blacklist the sender and client IP due to balance or nonce problems, which may be caused by malicious users.
 		if errMsg := err.Error(); strings.Contains(errMsg, errMsgInsufficientFunds) || strings.Contains(errMsg, errMsgNonceTooLow) {
-			tp.addBlacklist(context.checkResult.Sender, context.ip)
+			tp.addBlacklist(logger, context.checkResult.Sender, context.ip)
 		}
 
 		return
@@ -188,25 +190,29 @@ func (tp *TokenPay) monitor(logger *logrus.Entry, context TokenPayMonitorContext
 
 		// Blacklist the sender and client IP if the transfer token tx failed.
 		if !expired {
-			tp.addBlacklist(context.checkResult.Sender, context.ip)
+			tp.addBlacklist(logger, context.checkResult.Sender, context.ip)
 		}
 
 		return
 	}
 
+	logger.Info("Succeeded to execute Transfer token tx")
+
 	// do not care about the execution result of business tx
 	tp.WaitForReceipt(businessTxHash, tp.config.CheckReceiptInterval, defaultReceiptTimeout)
 
-	logger.Info("Token pay completed")
+	logger.Info("Succeeded to execute Business tx")
 }
 
-func (tp *TokenPay) addBlacklist(user common.Address, ip string) {
+func (tp *TokenPay) addBlacklist(logger *logrus.Entry, user common.Address, ip string) {
 	// Note, since the IP address is limited, no worry about the memory usage of the blacklist map. On the other hand,
 	// the user address is also bounded by the number of client IP.
 	//
 	// If necessary, we can add admin API to update the blacklist map, or add a TTL to the blacklist map in future.
 	tp.blacklisted.Store(user, true)
 	tp.blacklisted.Store(ip, true)
+
+	logger.WithField("ip", ip).Warn("Blacklisted the user and client IP")
 }
 
 func (tp *TokenPay) waitForFundingTx(logger *logrus.Entry, txHash common.Hash, timeout time.Duration) error {
@@ -263,10 +269,10 @@ func (tp *TokenPay) waitForFundingTx(logger *logrus.Entry, txHash common.Hash, t
 
 		newTxHash, err := tp.Send(txArgs)
 		if err != nil {
-			logger.WithError(err).WithField("price", price).Info("Failed to re-send funding ETH tx")
+			logger.WithError(err).WithField("price", price).Info("Failed to re-send funding ETH tx with higher gas price")
 		} else {
 			txs = append(txs, newTxHash)
-			logger.WithField("txHash", newTxHash).WithField("price", price).Info("Succeeded to re-send funding ETH tx")
+			logger.WithField("txHash", newTxHash).WithField("price", price).Info("Succeeded to re-send funding ETH tx with higher gas price")
 		}
 	}
 
