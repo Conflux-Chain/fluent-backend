@@ -52,6 +52,9 @@ func MustServe(config Config, services service.Services) {
 		gasTankController := NewGasTankController(services)
 		tokenPayController := NewTokenPayController(services)
 
+		// test client IP address
+		api.GET("/ip", middleware.Wrap(testClientIP))
+
 		// account abstract - auth
 		api.POST("/aa/auth", rateLimiters.Middleware("setAuth"), middleware.Metrics("api.aa.auth.send"), middleware.Wrap(aaController.SendAuth))
 		api.GET("/aa/auth/:txHash", middleware.Metrics("api.aa.auth.status"), middleware.Wrap(aaController.GetAuthStatus))
@@ -66,4 +69,8 @@ func MustServe(config Config, services service.Services) {
 		api.GET("/tokenpay/price", rateLimiters.Middleware("getPrice"), middleware.Metrics("api.tokenpay.price"), middleware.Wrap(tokenPayController.GetETHPrice))
 		api.POST("/tokenpay/submit", rateLimiters.Middleware("sponsor"), middleware.Metrics("api.tokenpay.submit"), middleware.Wrap(tokenPayController.Submit))
 	})
+}
+
+func testClientIP(c *gin.Context) (any, error) {
+	return middleware.GetRealIP(c), nil
 }
