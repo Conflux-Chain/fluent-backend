@@ -13,8 +13,8 @@ import (
 type Config struct {
 	RPC struct {
 		URL            string
-		RequestTimeout time.Duration `default:"3s"`
 		PrivateKey     string
+		RequestTimeout time.Duration `default:"3s"`
 		LogEnabled     bool
 	}
 
@@ -28,9 +28,9 @@ type Config struct {
 }
 
 type Services struct {
-	AccountAbstract *AccountAbstract
+	AccountAbstract *AccountAbstract // may be nil if the delegated contract address is not specified
 	PriceOracle     *PriceOracle
-	GasTank         *GasTankPaymaster
+	GasTank         *GasTankPaymaster // may be nil if the gas tank paymaster is not specified
 	TokenPay        *TokenPay
 }
 
@@ -66,21 +66,24 @@ func New(config Config) (Services, error) {
 		return Services{}, errors.WithMessage(err, "Failed to create transaction sender")
 	}
 
-	aa := NewAccountAbstract(txSender, config.AccountAbstract.DelegatedContract)
-
 	priceOracle := NewPriceOracle(config.TokenPay.normalizedTokens)
 
-	gasTank, err := NewGasTankPaymaster(config.GasTank, priceOracle, client)
-	if err != nil {
-		return Services{}, errors.WithMessage(err, "Failed to create gas tank paymaster service")
+	services := Services{
+		PriceOracle: priceOracle,
+		TokenPay:    NewTokenPay(config.TokenPay, txSender, priceOracle),
 	}
 
-	tokenPay := NewTokenPay(config.TokenPay, txSender, priceOracle)
+	// AccountAbstract service is optional, only create it if the delegated contract address is specified
+	if config.AccountAbstract.DelegatedContract != (common.Address{}) {
+		services.AccountAbstract = NewAccountAbstract(txSender, config.AccountAbstract.DelegatedContract)
+	}
 
-	return Services{
-		AccountAbstract: aa,
-		PriceOracle:     priceOracle,
-		GasTank:         gasTank,
-		TokenPay:        tokenPay,
-	}, nil
+	// GasTankPaymaster service is optional, only create it if the gas tank paymaster address is specified
+	if config.GasTank.Address != (common.Address{}) {
+		if services.GasTank, err = NewGasTankPaymaster(config.GasTank, priceOracle, client); err != nil {
+			return Services{}, errors.WithMessage(err, "Failed to create gas tank paymaster service")
+		}
+	}
+
+	return services, nil
 }
