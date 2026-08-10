@@ -23,10 +23,13 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const (
-	errMsgInsufficientFunds = "insufficient funds for gas * price + value"
-	errMsgNonceTooLow       = "nonce too low"
+var txpoolErrMsgKeywords = map[string]bool{
+	"insufficient funds": true,
+	"nonce":              true,
+	"underpriced":        true,
+}
 
+const (
 	defaultSendTxRetryTimes    = 10
 	defaultSendTxRetryInterval = 3 * time.Second
 	defaultReceiptTimeout      = time.Minute
@@ -161,9 +164,13 @@ func (tp *TokenPay) monitor(logger *logrus.Entry, context TokenPayMonitorContext
 	if err != nil {
 		logger.WithError(err).WithField("txHash", crypto.Keccak256Hash(context.rawTransferTokenTx)).Error("Failed to send transfer token tx")
 
-		// Blacklist the sender and client IP due to balance or nonce problems, which may be caused by malicious users.
-		if errMsg := err.Error(); strings.Contains(errMsg, errMsgInsufficientFunds) || strings.Contains(errMsg, errMsgNonceTooLow) {
-			tp.addBlacklist(logger, context.checkResult.Sender, context.ip)
+		// Blacklist the sender and client IP if the transfer token tx failed due to known txpool errors, which is most likely caused by malicious users.
+		errMsg := err.Error()
+		for v := range txpoolErrMsgKeywords {
+			if strings.Contains(errMsg, v) {
+				tp.addBlacklist(logger, context.checkResult.Sender, context.ip)
+				break
+			}
 		}
 
 		return
