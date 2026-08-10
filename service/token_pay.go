@@ -18,15 +18,13 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/openweb3/go-rpc-provider/utils"
 	"github.com/openweb3/web3go/types"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
 const (
-	errMsgInsufficientFunds = "insufficient funds for gas * price + value"
-	errMsgNonceTooLow       = "nonce too low"
-
 	defaultSendTxRetryTimes    = 10
 	defaultSendTxRetryInterval = 3 * time.Second
 	defaultReceiptTimeout      = time.Minute
@@ -161,8 +159,8 @@ func (tp *TokenPay) monitor(logger *logrus.Entry, context TokenPayMonitorContext
 	if err != nil {
 		logger.WithError(err).WithField("txHash", crypto.Keccak256Hash(context.rawTransferTokenTx)).Error("Failed to send transfer token tx")
 
-		// Blacklist the sender and client IP due to balance or nonce problems, which may be caused by malicious users.
-		if errMsg := err.Error(); strings.Contains(errMsg, errMsgInsufficientFunds) || strings.Contains(errMsg, errMsgNonceTooLow) {
+		// Blacklist the sender and client IP if the transfer token tx failed due to RPC JSON error, which may be caused by malicious users.
+		if utils.IsRPCJSONError(err) {
 			tp.addBlacklist(logger, context.checkResult.Sender, context.ip)
 		}
 
