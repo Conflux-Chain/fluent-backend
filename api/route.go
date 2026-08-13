@@ -19,10 +19,6 @@ type Config struct {
 	RateLimit rate.Config
 }
 
-// @title           Fluent Backend API
-// @version         1.0
-// @description     REST API for upgrading an EOA (Externally Owned Account) to an EIP-7702 Account Abstraction smart-contract wallet.
-// @BasePath /api
 func MustServe(config Config, services service.Services) {
 	api.MustServe(config.Config, func(router *gin.Engine) {
 		// set default rate limit config if not configured

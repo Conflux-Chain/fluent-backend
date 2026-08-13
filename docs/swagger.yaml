@@ -1,3 +1,4 @@
+basePath: /api
 definitions:
   api.BusinessError:
     properties:
@@ -191,6 +192,10 @@ definitions:
     type: object
 info:
   contact: {}
+  description: Fluent Backend provides account abstraction, gas tank paymaster, and
+    ERC20 token gas payment services.
+  title: Fluent Backend API
+  version: "1.0"
 paths:
   /aa/auth:
     post:
@@ -494,3 +499,14 @@ paths:
       tags:
       - TokenPay
 swagger: "2.0"
+tags:
+- description: Provides account abstraction features, including free EOA to smart
+    account upgrades and upgrade status queries.
+  name: AccountAbstract
+- description: Provides an off-chain gas tank sponsorship service for smart accounts,
+    including paymaster data preparation and user operation signing for on-chain paymaster
+    contract validation.
+  name: GasTank
+- description: Provides gas fee sponsorship so EOA accounts can pay gas fees with
+    supported ERC20 tokens.
+  name: TokenPay

@@ -740,17 +740,31 @@ const docTemplate = `{
                 }
             }
         }
-    }
+    },
+    "tags": [
+        {
+            "description": "Provides account abstraction features, including free EOA to smart account upgrades and upgrade status queries.",
+            "name": "AccountAbstract"
+        },
+        {
+            "description": "Provides an off-chain gas tank sponsorship service for smart accounts, including paymaster data preparation and user operation signing for on-chain paymaster contract validation.",
+            "name": "GasTank"
+        },
+        {
+            "description": "Provides gas fee sponsorship so EOA accounts can pay gas fees with supported ERC20 tokens.",
+            "name": "TokenPay"
+        }
+    ]
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "",
+	Version:          "1.0",
 	Host:             "",
-	BasePath:         "",
+	BasePath:         "/api",
 	Schemes:          []string{},
-	Title:            "",
-	Description:      "",
+	Title:            "Fluent Backend API",
+	Description:      "Fluent Backend provides account abstraction, gas tank paymaster, and ERC20 token gas payment services.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",
