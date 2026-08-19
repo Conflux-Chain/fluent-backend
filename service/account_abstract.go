@@ -1,23 +1,16 @@
 package service
 
 import (
-	"fmt"
-
 	"github.com/Conflux-Chain/go-conflux-util/api"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/openweb3/web3go/types"
 	"github.com/sirupsen/logrus"
 )
 
-var (
-	emptyAddress        = common.Address{}
-	delegatedCodePrefix = "0xef0100" // EIP-7702 standard
-	// setCodeTxTo is the well-known EIP-7702 sentinel address used as the transaction recipient
-	// when submitting a set-code (type-4) transaction on Conflux eSpace.
-	setCodeTxTo = common.HexToAddress("0x7702770277027702770277027702770277027702")
-)
+// setCodeTxTo is the well-known EIP-7702 sentinel address used as the transaction recipient
+// when submitting a set-code (type-4) transaction on Conflux eSpace.
+var setCodeTxTo = common.HexToAddress("0x7702770277027702770277027702770277027702")
 
 // AccountAbstract provides account abstraction relevant functions.
 type AccountAbstract struct {
@@ -81,15 +74,15 @@ func (aa *AccountAbstract) validateAuth(auth gethTypes.SetCodeAuthorization) err
 	}
 
 	// validate delegated contract
-	onChainCode, err := aa.getDelegatedContract(authority)
+	onChainCode, err := GetDelegatedContract(aa.client, authority)
 	if err != nil {
 		return err
 	}
 
-	if auth.Address == emptyAddress {
+	if auth.Address == (common.Address{}) {
 		// auth.Address == zero means the authority wants to revoke an existing delegation.
 		// Reject early if there is nothing to revoke.
-		if onChainCode == emptyAddress {
+		if onChainCode == (common.Address{}) {
 			return api.ErrValidationStr("Authority is not delegated to any contract yet")
 		}
 
@@ -97,7 +90,7 @@ func (aa *AccountAbstract) validateAuth(auth gethTypes.SetCodeAuthorization) err
 	}
 
 	// restrict delegated contract if required
-	if aa.delegatedContract != emptyAddress && auth.Address != aa.delegatedContract {
+	if aa.delegatedContract != (common.Address{}) && auth.Address != aa.delegatedContract {
 		return api.ErrValidationStrf("Invalid delegated contract, expected = %v, got = %v", aa.delegatedContract, auth.Address)
 	}
 
@@ -107,37 +100,6 @@ func (aa *AccountAbstract) validateAuth(auth gethTypes.SetCodeAuthorization) err
 	}
 
 	return nil
-}
-
-// getDelegatedContract reads the on-chain code of authority and extracts the 20-byte contract
-// address from the EIP-7702 delegation designator (prefix 0xef0100 + address).
-// Returns emptyAddress when the authority has no code (not yet delegated).
-func (aa *AccountAbstract) getDelegatedContract(authority common.Address) (common.Address, error) {
-	code, err := aa.client.Eth.CodeAt(authority, nil)
-	if err != nil {
-		return emptyAddress, NewRPCError(err, "Failed to retrieve authority code")
-	}
-
-	codeLen := len(code)
-	if codeLen == 0 {
-		return emptyAddress, nil
-	}
-
-	if codeLen != 23 {
-		return emptyAddress, fmt.Errorf(
-			"Invalid code length, expected = 23, got = %v, authority = %v, code = %v",
-			codeLen, authority, hexutil.Encode(code),
-		)
-	}
-
-	if prefix := hexutil.Encode(code[0:3]); prefix != delegatedCodePrefix {
-		return emptyAddress, fmt.Errorf(
-			"Invalid code prefix, expected = %v, got = %v, authority = %v, code = %v",
-			delegatedCodePrefix, prefix, authority, hexutil.Encode(code),
-		)
-	}
-
-	return common.BytesToAddress(code[3:]), nil
 }
 
 // GetSetCodeResult queries the result of a previously broadcasted EIP-7702 set-code transaction.
