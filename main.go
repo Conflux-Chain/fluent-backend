@@ -10,6 +10,9 @@ import "github.com/Conflux-Chain/fluent-backend/cmd"
 // @tag.name		AccountAbstract
 // @tag.description	Provides account abstraction features, including free EOA to smart account upgrades and upgrade status queries.
 //
+// @tag.name		Paymaster
+// @tag.description	Provides paymaster services for gas fee sponsorship.
+//
 // @tag.name		GasTank
 // @tag.description	Provides an off-chain gas tank sponsorship service for smart accounts, including paymaster data preparation and user operation signing for on-chain paymaster contract validation.
 //

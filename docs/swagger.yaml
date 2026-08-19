@@ -190,6 +190,74 @@ definitions:
     - signature
     - verificationGasLimit
     type: object
+  api.UserOperationWithAuth:
+    properties:
+      callData:
+        minLength: 2
+        type: string
+      callGasLimit:
+        maxLength: 34
+        minLength: 4
+        type: string
+      delegatedContract:
+        description: |-
+          DelegatedContract is used when user operation carrying an EIP-7702 auth message to upgrade EOA to a smart account.
+          Otherwise, use empty address "0x0000000000000000000000000000000000000000".
+        type: string
+      maxFeePerGas:
+        maxLength: 34
+        minLength: 4
+        type: string
+      maxPriorityFeePerGas:
+        maxLength: 34
+        minLength: 4
+        type: string
+      nonce:
+        minLength: 4
+        type: string
+      paymaster:
+        description: Paymaster
+        type: string
+      paymasterData:
+        description: at least validAfter (6) || validUntil (6) || signature (65)
+        minLength: 156
+        type: string
+      paymasterPostOpGasLimit:
+        maxLength: 34
+        minLength: 4
+        type: string
+      paymasterVerificationGasLimit:
+        maxLength: 34
+        minLength: 4
+        type: string
+      preVerificationGas:
+        maxLength: 34
+        minLength: 4
+        type: string
+      sender:
+        type: string
+      signature:
+        type: string
+      verificationGasLimit:
+        maxLength: 34
+        minLength: 4
+        type: string
+    required:
+    - callData
+    - callGasLimit
+    - delegatedContract
+    - maxFeePerGas
+    - maxPriorityFeePerGas
+    - nonce
+    - paymaster
+    - paymasterData
+    - paymasterPostOpGasLimit
+    - paymasterVerificationGasLimit
+    - preVerificationGas
+    - sender
+    - signature
+    - verificationGasLimit
+    type: object
 info:
   contact: {}
   description: Fluent Backend provides account abstraction, gas tank paymaster, and
@@ -391,6 +459,76 @@ paths:
       summary: Sign paymasterData for UserOperation
       tags:
       - GasTank
+  /aa/paymaster/sign:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Validates the given UserOperation, adds paymaster signature, and returns reassembled paymasterData.
+        Encoding format (129 bytes): paymaster(20) || paymasterVerificationGasLimit(16) || paymasterPostOpGasLimit(16) || validAfter(6) || validUntil(6) || signature(65).
+      operationId: aaPaymasterSign
+      parameters:
+      - description: UserOperation for paymaster signing
+        in: body
+        name: userOp
+        required: true
+        schema:
+          $ref: '#/definitions/api.UserOperationWithAuth'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Signed and reassembled paymasterData (0x-prefixed hex, 129
+            bytes)
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "600":
+          description: Internal server error
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: Sign paymasterData of given user operation and return reassembled paymasterData
+      tags:
+      - Paymaster
+  /aa/paymaster/stub:
+    get:
+      consumes:
+      - application/json
+      description: Returns the stub paymasterData of verifying paymaster for gas estimation.
+      operationId: aaPaymasterStub
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Paymaster and data (0x-prefixed hex)
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "600":
+          description: Internal server error
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: Returns the stub paymasterData of verifying paymaster for gas estimation
+      tags:
+      - Paymaster
   /tokenpay/config:
     get:
       consumes:
@@ -503,6 +641,8 @@ tags:
 - description: Provides account abstraction features, including free EOA to smart
     account upgrades and upgrade status queries.
   name: AccountAbstract
+- description: Provides paymaster services for gas fee sponsorship.
+  name: Paymaster
 - description: Provides an off-chain gas tank sponsorship service for smart accounts,
     including paymaster data preparation and user operation signing for on-chain paymaster
     contract validation.

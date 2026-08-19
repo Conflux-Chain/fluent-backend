@@ -338,6 +338,125 @@ const docTemplate = `{
                 }
             }
         },
+        "/aa/paymaster/sign": {
+            "post": {
+                "description": "Validates the given UserOperation, adds paymaster signature, and returns reassembled paymasterData.\nEncoding format (129 bytes): paymaster(20) || paymasterVerificationGasLimit(16) || paymasterPostOpGasLimit(16) || validAfter(6) || validUntil(6) || signature(65).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Paymaster"
+                ],
+                "summary": "Sign paymasterData of given user operation and return reassembled paymasterData",
+                "operationId": "aaPaymasterSign",
+                "parameters": [
+                    {
+                        "description": "UserOperation for paymaster signing",
+                        "name": "userOp",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.UserOperationWithAuth"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Signed and reassembled paymasterData (0x-prefixed hex, 129 bytes)",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "600": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/aa/paymaster/stub": {
+            "get": {
+                "description": "Returns the stub paymasterData of verifying paymaster for gas estimation.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Paymaster"
+                ],
+                "summary": "Returns the stub paymasterData of verifying paymaster for gas estimation",
+                "operationId": "aaPaymasterStub",
+                "responses": {
+                    "200": {
+                        "description": "Paymaster and data (0x-prefixed hex)",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "600": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/tokenpay/config": {
             "get": {
                 "description": "Returns the supported ERC20 token list and the configured recipient address for token-pay.",
@@ -739,12 +858,99 @@ const docTemplate = `{
                     "minLength": 4
                 }
             }
+        },
+        "api.UserOperationWithAuth": {
+            "type": "object",
+            "required": [
+                "callData",
+                "callGasLimit",
+                "delegatedContract",
+                "maxFeePerGas",
+                "maxPriorityFeePerGas",
+                "nonce",
+                "paymaster",
+                "paymasterData",
+                "paymasterPostOpGasLimit",
+                "paymasterVerificationGasLimit",
+                "preVerificationGas",
+                "sender",
+                "signature",
+                "verificationGasLimit"
+            ],
+            "properties": {
+                "callData": {
+                    "type": "string",
+                    "minLength": 2
+                },
+                "callGasLimit": {
+                    "type": "string",
+                    "maxLength": 34,
+                    "minLength": 4
+                },
+                "delegatedContract": {
+                    "description": "DelegatedContract is used when user operation carrying an EIP-7702 auth message to upgrade EOA to a smart account.\nOtherwise, use empty address \"0x0000000000000000000000000000000000000000\".",
+                    "type": "string"
+                },
+                "maxFeePerGas": {
+                    "type": "string",
+                    "maxLength": 34,
+                    "minLength": 4
+                },
+                "maxPriorityFeePerGas": {
+                    "type": "string",
+                    "maxLength": 34,
+                    "minLength": 4
+                },
+                "nonce": {
+                    "type": "string",
+                    "minLength": 4
+                },
+                "paymaster": {
+                    "description": "Paymaster",
+                    "type": "string"
+                },
+                "paymasterData": {
+                    "description": "at least validAfter (6) || validUntil (6) || signature (65)",
+                    "type": "string",
+                    "minLength": 156
+                },
+                "paymasterPostOpGasLimit": {
+                    "type": "string",
+                    "maxLength": 34,
+                    "minLength": 4
+                },
+                "paymasterVerificationGasLimit": {
+                    "type": "string",
+                    "maxLength": 34,
+                    "minLength": 4
+                },
+                "preVerificationGas": {
+                    "type": "string",
+                    "maxLength": 34,
+                    "minLength": 4
+                },
+                "sender": {
+                    "type": "string"
+                },
+                "signature": {
+                    "type": "string"
+                },
+                "verificationGasLimit": {
+                    "type": "string",
+                    "maxLength": 34,
+                    "minLength": 4
+                }
+            }
         }
     },
     "tags": [
         {
             "description": "Provides account abstraction features, including free EOA to smart account upgrades and upgrade status queries.",
             "name": "AccountAbstract"
+        },
+        {
+            "description": "Provides paymaster services for gas fee sponsorship.",
+            "name": "Paymaster"
         },
         {
             "description": "Provides an off-chain gas tank sponsorship service for smart accounts, including paymaster data preparation and user operation signing for on-chain paymaster contract validation.",
