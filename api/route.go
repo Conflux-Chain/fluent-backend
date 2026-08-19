@@ -49,17 +49,24 @@ func MustServe(config Config, services service.Services) {
 
 		// account abstract - auth
 		if services.AccountAbstract != nil {
-			aaController := NewAccountAbstractController(services)
-			api.POST("/aa/auth", rateLimiters.Middleware("setAuth"), middleware.Metrics("api.aa.auth.send"), middleware.Wrap(aaController.SendAuth))
-			api.GET("/aa/auth/:txHash", middleware.Metrics("api.aa.auth.status"), middleware.Wrap(aaController.GetAuthStatus))
+			controller := NewAccountAbstractController(services)
+			api.POST("/aa/auth", rateLimiters.Middleware("setAuth"), middleware.Metrics("api.aa.auth.send"), middleware.Wrap(controller.SendAuth))
+			api.GET("/aa/auth/:txHash", middleware.Metrics("api.aa.auth.status"), middleware.Wrap(controller.GetAuthStatus))
+		}
+
+		// verifying paymaster
+		if services.VerifyingPaymaster != nil {
+			controller := NewVerifyingPaymasterController(services)
+			api.GET("/aa/paymaster/stub", middleware.Metrics("api.aa.paymaster.stub"), middleware.Wrap(controller.Stub))
+			api.POST("/aa/paymaster/sign", rateLimiters.Middleware("signUserOp"), middleware.Metrics("api.aa.paymaster.sign"), middleware.Wrap(controller.Sign))
 		}
 
 		// Gas tank
 		if services.GasTank != nil {
-			gasTankController := NewGasTankController(services)
-			api.POST("/aa/gastank/prepare/credit", middleware.Metrics("api.aa.gastank.prepare.credit"), middleware.Wrap(gasTankController.PrepareCredit))
-			api.POST("/aa/gastank/prepare/refund", middleware.Metrics("api.aa.gastank.prepare.refund"), middleware.Wrap(gasTankController.PrepareRefund))
-			api.POST("/aa/gastank/sign", rateLimiters.Middleware("signUserOp"), middleware.Metrics("api.aa.gastank.signature"), middleware.Wrap(gasTankController.Sign))
+			controller := NewGasTankController(services)
+			api.POST("/aa/gastank/prepare/credit", middleware.Metrics("api.aa.gastank.prepare.credit"), middleware.Wrap(controller.PrepareCredit))
+			api.POST("/aa/gastank/prepare/refund", middleware.Metrics("api.aa.gastank.prepare.refund"), middleware.Wrap(controller.PrepareRefund))
+			api.POST("/aa/gastank/sign", rateLimiters.Middleware("signUserOp"), middleware.Metrics("api.aa.gastank.sign"), middleware.Wrap(controller.Sign))
 		}
 
 		// token pay

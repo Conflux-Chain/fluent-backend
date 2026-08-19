@@ -128,6 +128,14 @@ func (userOp *UserOperation) ToPackedUserOperation() contract.PackedUserOperatio
 	}
 }
 
+type UserOperationWithAuth struct {
+	UserOperation
+
+	// DelegatedContract is used when user operation carrying an EIP-7702 auth message to upgrade EOA to a smart account.
+	// Otherwise, use empty address "0x0000000000000000000000000000000000000000".
+	DelegatedContract string `json:"delegatedContract" binding:"required,hex,len=42"`
+}
+
 type TokenPayConfig struct {
 	// Tokens is the list of ERC20 token contracts supported for token-pay. Note, the tokens[0] is the default USDT token used for quoting and payment.
 	Tokens []string `json:"tokens"`

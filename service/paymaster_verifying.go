@@ -26,12 +26,12 @@ const (
 
 type VerifyingPaymasterConfig struct {
 	Address           common.Address
-	MaxGasCost        int64 `default:"100000000000000000"` // 0.1 CFX by default, and could up to 1 CFX for int64 type
 	ContractWhitelist []common.Address
+	MaxGasCost        int64         `default:"100000000000000000"` // 0.1 CFX by default, and could up to 1 CFX for int64 type
 	SignatureTimeout  time.Duration `default:"5m"`
 
-	maxGasCost        *big.Int
 	contractWhitelist map[common.Address]bool
+	maxGasCost        *big.Int
 }
 
 type VerifyingPaymaster struct {
