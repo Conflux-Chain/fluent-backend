@@ -20,6 +20,11 @@ var (
 	ErrTokenPayTransferTokenAmountTooLow = api.NewBusinessError(3003, "Transferred token amount too low")
 	ErrTokenPaySimulateTxFailed          = api.NewBusinessError(3004, "Failed to simulate transaction")
 	ErrTokenPaySponsorBalanceNotEnough   = api.NewBusinessError(3005, "Sponsor balance is insufficient, please contact the administrator")
+
+	// verifying paymaster
+	ErrVerifyingPaymasterMaxGasCostExceeded     = api.NewBusinessError(4001, "Max gas cost exceeded")
+	ErrVerifyingPaymasterInvalidSmartAccount    = api.NewBusinessError(4002, "Smart account is not in whitelist")
+	ErrVerifyingPaymasterContractNotWhitelisted = api.NewBusinessError(4003, "Contract is not in whitelist")
 )
 
 func NewRPCError(err error, message string, args ...any) *api.BusinessError {
