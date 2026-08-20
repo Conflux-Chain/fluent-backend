@@ -54,12 +54,11 @@ func (controller *VerifyingPaymasterController) Sign(c *gin.Context) (any, error
 	}
 
 	userOp := input.ToPackedUserOperation()
-
 	delegatedContract := common.HexToAddress(input.DelegatedContract)
 
 	paymasterData, err := controller.services.VerifyingPaymaster.Sign(userOp, delegatedContract)
 	if err != nil {
-		return nil, api.ErrInternal(err)
+		return nil, err
 	}
 
 	return hexutil.Encode(paymasterData), nil

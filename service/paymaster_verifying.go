@@ -135,6 +135,11 @@ func (paymaster *VerifyingPaymaster) Sign(userOp contract.PackedUserOperation, d
 		return nil, err
 	}
 
+	// re-assemble paymasterData for signature
+	validUntil := time.Now().Add(paymaster.config.SignatureTimeout).Unix()
+	big.NewInt(0).FillBytes(userOp.PaymasterAndData[52:58])          // validAfter
+	big.NewInt(validUntil).FillBytes(userOp.PaymasterAndData[58:64]) // validUntil
+
 	// compute the paymaster signature
 	hash, err := paymaster.caller.GetPaymasterHash(nil, userOp)
 	if err != nil {
@@ -146,18 +151,12 @@ func (paymaster *VerifyingPaymaster) Sign(userOp contract.PackedUserOperation, d
 		return nil, errors.WithMessage(err, "Failed to sign paymaster hash")
 	}
 
+	// re-assemble signature into paymasterAndData
+	copy(userOp.PaymasterAndData[64:], signature)
+
 	// TODO persistent the user op to database
 
-	// construct the paymasterAndData
-	var buf [verifyingPaymasterDataLength]byte
-
-	validUntil := time.Now().Add(paymaster.config.SignatureTimeout).Unix()
-
-	copy(buf[:52], userOp.PaymasterAndData[:52]) // address and gas limits
-	big.NewInt(validUntil).FillBytes(buf[58:64]) // validUntil
-	copy(buf[64:], signature)                    // signature
-
-	return buf[:], nil
+	return userOp.PaymasterAndData, nil
 }
 
 func (paymaster *VerifyingPaymaster) validate(userOp *contract.PackedUserOperation, delegatedContract common.Address) error {
@@ -217,33 +216,31 @@ func (paymaster *VerifyingPaymaster) validateCallData(userOp *contract.PackedUse
 		return api.ErrValidationStr("Invalid callData, too short to parse function selector")
 	}
 
-	// single execute
 	if bytes.Equal(paymaster.executeMethod.ID, userOp.CallData[:4]) {
+		// single execute
 		unpacked, err := paymaster.executeMethod.Inputs.Unpack(userOp.CallData[4:])
 		if err != nil {
-			return errors.WithMessage(err, "Failed to unpack callData for execute method")
+			return api.ErrValidation(errors.WithMessage(err, "Failed to unpack callData for execute method"))
 		}
 
 		var execution contract.Execution
 		if err = paymaster.executeMethod.Inputs.Copy(&execution, unpacked); err != nil {
-			return errors.WithMessage(err, "Failed to copy unpacked data to Execution struct")
+			return api.ErrValidation(errors.WithMessage(err, "Failed to copy unpacked data to Execution struct"))
 		}
 
 		if !paymaster.config.contractWhitelist[execution.Target] {
 			return ErrVerifyingPaymasterContractNotWhitelisted.WithData(execution.Target)
 		}
-	}
-
-	// batch execute
-	if bytes.Equal(paymaster.executeBatchMethod.ID, userOp.CallData[:4]) {
+	} else if bytes.Equal(paymaster.executeBatchMethod.ID, userOp.CallData[:4]) {
+		// batch execute
 		unpacked, err := paymaster.executeBatchMethod.Inputs.Unpack(userOp.CallData[4:])
 		if err != nil {
-			return errors.WithMessage(err, "Failed to unpack callData for executeBatch method")
+			return api.ErrValidation(errors.WithMessage(err, "Failed to unpack callData for executeBatch method"))
 		}
 
 		var executions []contract.Execution
 		if err = paymaster.executeBatchMethod.Inputs.Copy(&executions, unpacked); err != nil {
-			return errors.WithMessage(err, "Failed to copy unpacked data to []Execution struct")
+			return api.ErrValidation(errors.WithMessage(err, "Failed to copy unpacked data to []Execution struct"))
 		}
 
 		for _, execution := range executions {
@@ -251,6 +248,8 @@ func (paymaster *VerifyingPaymaster) validateCallData(userOp *contract.PackedUse
 				return ErrVerifyingPaymasterContractNotWhitelisted.WithData(execution.Target)
 			}
 		}
+	} else {
+		return api.ErrValidationStr("Invalid callData, unsupported function selector")
 	}
 
 	return nil
