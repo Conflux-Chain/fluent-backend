@@ -22,16 +22,18 @@ type Config struct {
 		DelegatedContract common.Address
 	}
 
-	GasTank GasTankPaymasterConfig
+	VerifyingPaymaster VerifyingPaymasterConfig
+	GasTank            GasTankPaymasterConfig
 
 	TokenPay TokenPayConfig
 }
 
 type Services struct {
-	AccountAbstract *AccountAbstract // may be nil if the delegated contract address is not specified
-	PriceOracle     *PriceOracle
-	GasTank         *GasTankPaymaster // may be nil if the gas tank paymaster is not specified
-	TokenPay        *TokenPay
+	AccountAbstract    *AccountAbstract // may be nil if the delegated contract address is not specified
+	PriceOracle        *PriceOracle
+	VerifyingPaymaster *VerifyingPaymaster
+	GasTank            *GasTankPaymaster // may be nil if the gas tank paymaster is not specified
+	TokenPay           *TokenPay
 }
 
 func New(config Config) (Services, error) {
@@ -76,6 +78,13 @@ func New(config Config) (Services, error) {
 	// AccountAbstract service is optional, only create it if the delegated contract address is specified
 	if config.AccountAbstract.DelegatedContract != (common.Address{}) {
 		services.AccountAbstract = NewAccountAbstract(txSender, config.AccountAbstract.DelegatedContract)
+	}
+
+	// VerifyingPaymaster service is optional, only create it if required configurations specified
+	if config.VerifyingPaymaster.Address != (common.Address{}) && len(config.VerifyingPaymaster.ContractWhitelist) > 0 {
+		if services.VerifyingPaymaster, err = NewVerifyingPaymaster(config.VerifyingPaymaster, client); err != nil {
+			return Services{}, errors.WithMessage(err, "Failed to create verifying paymaster service")
+		}
 	}
 
 	// GasTankPaymaster service is optional, only create it if the gas tank paymaster address is specified
