@@ -194,6 +194,16 @@ func (paymaster *VerifyingPaymaster) validate(userOp *contract.PackedUserOperati
 		return err
 	}
 
+	// check if paymaster contract paused
+	paused, err := paymaster.caller.Paused(nil)
+	if err != nil {
+		return NewRPCError(err, "Failed to check if paymaster contract is paused")
+	}
+
+	if paused {
+		return ErrVerifyingPaymasterPaused
+	}
+
 	return nil
 }
 
