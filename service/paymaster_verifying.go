@@ -135,7 +135,7 @@ func (paymaster *VerifyingPaymaster) Sign(userOp contract.PackedUserOperation, d
 		return nil, err
 	}
 
-	// re-assemble paymasterData for signature
+	// re-assemble paymasterData for signing, including validAfter and validUntil
 	validUntil := time.Now().Add(paymaster.config.SignatureTimeout).Unix()
 	big.NewInt(0).FillBytes(userOp.PaymasterAndData[52:58])          // validAfter
 	big.NewInt(validUntil).FillBytes(userOp.PaymasterAndData[58:64]) // validUntil
@@ -162,7 +162,7 @@ func (paymaster *VerifyingPaymaster) Sign(userOp contract.PackedUserOperation, d
 func (paymaster *VerifyingPaymaster) validate(userOp *contract.PackedUserOperation, delegatedContract common.Address) error {
 	// validate the paymasterAndData length at first, to avoid panic when accessing the slice
 	if len(userOp.PaymasterAndData) != verifyingPaymasterDataLength {
-		return api.ErrValidationStrf("Invalid paymasterAndData length: %d, expected %d", len(userOp.PaymasterAndData), verifyingPaymasterDataLength)
+		return api.ErrValidationStrf("Invalid paymaster data length: %d, expected %d", len(userOp.PaymasterAndData), verifyingPaymasterDataLength)
 	}
 
 	// check paymaster address
@@ -185,12 +185,12 @@ func (paymaster *VerifyingPaymaster) validate(userOp *contract.PackedUserOperati
 	}
 
 	// check calldata
-	if err := paymaster.validateCallData(userOp); err != nil {
+	if err := paymaster.validateCallData(userOp.CallData); err != nil {
 		return err
 	}
 
 	// check if delegation is whitelisted
-	if err := paymaster.validateSmartAccount(userOp, delegatedContract); err != nil {
+	if err := paymaster.validateSmartAccount(userOp.Sender, delegatedContract); err != nil {
 		return err
 	}
 
@@ -199,7 +199,9 @@ func (paymaster *VerifyingPaymaster) validate(userOp *contract.PackedUserOperati
 
 // maxCost calculates the maximum cost of a user operation based on its gas limits and fees.
 func (paymaster *VerifyingPaymaster) maxCost(userOp *contract.PackedUserOperation) *big.Int {
-	maxCost := userOp.PreVerificationGas                                        // pre-verification gas
+	maxCost := big.NewInt(0)
+
+	maxCost.Add(maxCost, userOp.PreVerificationGas)                             // pre-verification gas
 	maxCost.Add(maxCost, new(big.Int).SetBytes(userOp.AccountGasLimits[0:16]))  // account verification gas limit
 	maxCost.Add(maxCost, new(big.Int).SetBytes(userOp.AccountGasLimits[16:32])) // account call gas limit
 	maxCost.Add(maxCost, new(big.Int).SetBytes(userOp.PaymasterAndData[20:36])) // paymaster verification gas limit
@@ -211,14 +213,16 @@ func (paymaster *VerifyingPaymaster) maxCost(userOp *contract.PackedUserOperatio
 }
 
 // validateCallData checks if the call data is valid for the user operation.
-func (paymaster *VerifyingPaymaster) validateCallData(userOp *contract.PackedUserOperation) error {
-	if len(userOp.CallData) < 4 {
+func (paymaster *VerifyingPaymaster) validateCallData(callData []byte) error {
+	if len(callData) < 4 {
 		return api.ErrValidationStr("Invalid callData, too short to parse function selector")
 	}
 
-	if bytes.Equal(paymaster.executeMethod.ID, userOp.CallData[:4]) {
+	selector, args := callData[:4], callData[4:]
+
+	if bytes.Equal(paymaster.executeMethod.ID, selector) {
 		// single execute
-		unpacked, err := paymaster.executeMethod.Inputs.Unpack(userOp.CallData[4:])
+		unpacked, err := paymaster.executeMethod.Inputs.Unpack(args)
 		if err != nil {
 			return api.ErrValidation(errors.WithMessage(err, "Failed to unpack callData for execute method"))
 		}
@@ -231,9 +235,9 @@ func (paymaster *VerifyingPaymaster) validateCallData(userOp *contract.PackedUse
 		if !paymaster.config.contractWhitelist[execution.Target] {
 			return ErrVerifyingPaymasterContractNotWhitelisted.WithData(execution.Target)
 		}
-	} else if bytes.Equal(paymaster.executeBatchMethod.ID, userOp.CallData[:4]) {
+	} else if bytes.Equal(paymaster.executeBatchMethod.ID, selector) {
 		// batch execute
-		unpacked, err := paymaster.executeBatchMethod.Inputs.Unpack(userOp.CallData[4:])
+		unpacked, err := paymaster.executeBatchMethod.Inputs.Unpack(args)
 		if err != nil {
 			return api.ErrValidation(errors.WithMessage(err, "Failed to unpack callData for executeBatch method"))
 		}
@@ -256,8 +260,8 @@ func (paymaster *VerifyingPaymaster) validateCallData(userOp *contract.PackedUse
 }
 
 // validateSmartAccount checks if the smart account is whitelisted by the paymaster.
-func (paymaster *VerifyingPaymaster) validateSmartAccount(userOp *contract.PackedUserOperation, delegatedContract common.Address) error {
-	delegation, err := GetDelegatedContract(paymaster.client, userOp.Sender)
+func (paymaster *VerifyingPaymaster) validateSmartAccount(sender common.Address, delegatedContract common.Address) error {
+	delegation, err := GetDelegatedContract(paymaster.client, sender)
 	if err != nil {
 		return err
 	}
