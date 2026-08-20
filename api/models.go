@@ -73,6 +73,7 @@ type GasTankPrepareRefundRequest struct {
 type UserOperation struct {
 	Sender               string `json:"sender" binding:"required,hex,len=42"`
 	Nonce                string `json:"nonce" binding:"required,hex,min=4"`
+	InitCode             string `json:"initCode" binding:"required,hex,min=2"`
 	CallData             string `json:"callData" binding:"required,hex,min=2"`
 	VerificationGasLimit string `json:"verificationGasLimit" binding:"required,hex,min=4,max=34"`
 	CallGasLimit         string `json:"callGasLimit" binding:"required,hex,min=4,max=34"`
@@ -112,6 +113,7 @@ func (userOp *UserOperation) ToPackedUserOperation() contract.PackedUserOperatio
 	hexToBig(userOp.PaymasterVerificationGasLimit).FillBytes(paymasterBuf[20:36])
 	hexToBig(userOp.PaymasterPostOpGasLimit).FillBytes(paymasterBuf[36:52])
 
+	initCode, _ := hexutil.Decode(userOp.InitCode)
 	callData, _ := hexutil.Decode(userOp.CallData)
 	paymasterData, _ := hexutil.Decode(userOp.PaymasterData)
 	signature, _ := hexutil.Decode(userOp.Signature)
@@ -119,6 +121,7 @@ func (userOp *UserOperation) ToPackedUserOperation() contract.PackedUserOperatio
 	return contract.PackedUserOperation{
 		Sender:             common.HexToAddress(userOp.Sender),
 		Nonce:              hexToBig(userOp.Nonce),
+		InitCode:           initCode,
 		CallData:           callData,
 		AccountGasLimits:   accountGasLimits,
 		PreVerificationGas: hexToBig(userOp.PreVerificationGas),
