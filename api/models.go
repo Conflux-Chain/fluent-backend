@@ -75,6 +75,20 @@ type PaymasterAndDataStub struct {
 	Data    string `json:"data"`
 }
 
+func ToPaymasterAndDataStub(paymasterAndData []byte) (stub PaymasterAndDataStub) {
+	if len(paymasterAndData) >= 20 {
+		stub.Address = common.BytesToAddress(paymasterAndData[:20]).Hex()
+	}
+
+	if len(paymasterAndData) >= 52 {
+		stub.Data = hexutil.Encode(paymasterAndData[52:])
+	} else {
+		stub.Data = "0x"
+	}
+
+	return
+}
+
 type UserOperation struct {
 	Sender               string `json:"sender" binding:"required,hex,len=42"`
 	Nonce                string `json:"nonce" binding:"required,hex,min=4"`
