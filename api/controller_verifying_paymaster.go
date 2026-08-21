@@ -24,13 +24,16 @@ func NewVerifyingPaymasterController(services service.Services) *VerifyingPaymas
 // @Tags			Paymaster
 // @Accept			json
 // @Produce			json
-// @Success			200	{object}	api.BusinessError{data=string}	"Paymaster and data (0x-prefixed hex)"
+// @Success			200	{object}	api.BusinessError{data=PaymasterAndDataStub}	"Paymaster address and data (0x-prefixed hex)"
 // @Failure			600	{object}	api.BusinessError{data=string}	"Internal server error"
 // @Router			/aa/paymaster/stub	[get]
 func (controller *VerifyingPaymasterController) Stub(c *gin.Context) (any, error) {
-	stub := controller.services.VerifyingPaymaster.Stub()
+	address, data := controller.services.VerifyingPaymaster.Stub()
 
-	return hexutil.Encode(stub), nil
+	return PaymasterAndDataStub{
+		Address: address.Hex(),
+		Data:    hexutil.Encode(data),
+	}, nil
 }
 
 // Sign validates the given user operation, signs the paymasterData and returns the reassembled paymasterData.
@@ -38,7 +41,7 @@ func (controller *VerifyingPaymasterController) Stub(c *gin.Context) (any, error
 // @ID				aaPaymasterSign
 // @Summary			Sign paymasterData of given user operation and return reassembled paymasterData
 // @Description		Validates the given UserOperation, adds paymaster signature, and returns reassembled paymasterData.
-// @Description		Encoding format (129 bytes): paymaster(20) || paymasterVerificationGasLimit(16) || paymasterPostOpGasLimit(16) || validAfter(6) || validUntil(6) || signature(65).
+// @Description		Encoding format (77 bytes): validAfter(6) || validUntil(6) || signature(65).
 // @Description		Note: the on-chain paymaster contract will verify the delegated contract address, so users may be punished
 // @Description 	if sending another inconsistent EIP-7702 auth message to the bundler.
 // @Tags			Paymaster

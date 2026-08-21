@@ -70,10 +70,16 @@ type GasTankPrepareRefundRequest struct {
 	Token string `json:"token" binding:"required,hex,len=42"`
 }
 
+type PaymasterAndDataStub struct {
+	Address string `json:"address"`
+	Data    string `json:"data"`
+}
+
 type UserOperation struct {
 	Sender               string `json:"sender" binding:"required,hex,len=42"`
 	Nonce                string `json:"nonce" binding:"required,hex,min=4"`
-	InitCode             string `json:"initCode" binding:"required,hex,min=2"`
+	Factory              string `json:"factory" binding:"omitempty,hex,len=42"`
+	FactoryData          string `json:"factoryData" binding:"omitempty,hex,min=2"`
 	CallData             string `json:"callData" binding:"required,hex,min=2"`
 	VerificationGasLimit string `json:"verificationGasLimit" binding:"required,hex,min=4,max=34"`
 	CallGasLimit         string `json:"callGasLimit" binding:"required,hex,min=4,max=34"`
@@ -113,7 +119,17 @@ func (userOp *UserOperation) ToPackedUserOperation() contract.PackedUserOperatio
 	hexToBig(userOp.PaymasterVerificationGasLimit).FillBytes(paymasterBuf[20:36])
 	hexToBig(userOp.PaymasterPostOpGasLimit).FillBytes(paymasterBuf[36:52])
 
-	initCode, _ := hexutil.Decode(userOp.InitCode)
+	var initCode []byte
+	if len(userOp.Factory) > 2 {
+		factory, _ := hexutil.Decode(userOp.Factory)
+		initCode = append(initCode, factory...)
+	}
+
+	if len(userOp.FactoryData) > 2 {
+		factoryData, _ := hexutil.Decode(userOp.FactoryData)
+		initCode = append(initCode, factoryData...)
+	}
+
 	callData, _ := hexutil.Decode(userOp.CallData)
 	paymasterData, _ := hexutil.Decode(userOp.PaymasterData)
 	signature, _ := hexutil.Decode(userOp.Signature)
