@@ -26,6 +26,7 @@ var (
 	ErrVerifyingPaymasterInvalidSmartAccount    = api.NewBusinessError(4002, "Smart account is not in whitelist")
 	ErrVerifyingPaymasterContractNotWhitelisted = api.NewBusinessError(4003, "Contract is not in whitelist")
 	ErrVerifyingPaymasterPaused                 = api.NewBusinessError(4004, "Verifying paymaster contract is paused")
+	ErrVerifyingPaymasterTooManyPendingOps      = api.NewBusinessError(4005, "Too many pending user operations for this sender")
 )
 
 func NewRPCError(err error, message string, args ...any) *api.BusinessError {
