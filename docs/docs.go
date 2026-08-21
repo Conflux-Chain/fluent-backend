@@ -365,7 +365,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Signed and reassembled paymasterData (0x-prefixed hex, 129 bytes)",
+                        "description": "Signed and reassembled paymasterData (0x-prefixed hex, 77 bytes)",
                         "schema": {
                             "allOf": [
                                 {
