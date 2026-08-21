@@ -340,7 +340,7 @@ const docTemplate = `{
         },
         "/aa/paymaster/sign": {
             "post": {
-                "description": "Validates the given UserOperation, adds paymaster signature, and returns reassembled paymasterData.\nEncoding format (129 bytes): paymaster(20) || paymasterVerificationGasLimit(16) || paymasterPostOpGasLimit(16) || validAfter(6) || validUntil(6) || signature(65).\nNote: the on-chain paymaster contract will verify the delegated contract address, so users may be punished\nif sending another inconsistent EIP-7702 auth message to the bundler.",
+                "description": "Validates the given UserOperation, adds paymaster signature, and returns reassembled paymasterData.\nEncoding format (77 bytes): validAfter(6) || validUntil(6) || signature(65).\nNote: the on-chain paymaster contract will verify the delegated contract address, so users may be punished\nif sending another inconsistent EIP-7702 auth message to the bundler.",
                 "consumes": [
                     "application/json"
                 ],
@@ -419,7 +419,7 @@ const docTemplate = `{
                 "operationId": "aaPaymasterStub",
                 "responses": {
                     "200": {
-                        "description": "Paymaster and data (0x-prefixed hex)",
+                        "description": "Paymaster address and data (0x-prefixed hex)",
                         "schema": {
                             "allOf": [
                                 {
@@ -429,7 +429,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "type": "string"
+                                            "$ref": "#/definitions/api.PaymasterAndDataStub"
                                         }
                                     }
                                 }
@@ -679,6 +679,17 @@ const docTemplate = `{
                 }
             }
         },
+        "api.PaymasterAndDataStub": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "data": {
+                    "type": "string"
+                }
+            }
+        },
         "api.SetCodeAuth": {
             "type": "object",
             "required": [
@@ -786,7 +797,6 @@ const docTemplate = `{
             "required": [
                 "callData",
                 "callGasLimit",
-                "initCode",
                 "maxFeePerGas",
                 "maxPriorityFeePerGas",
                 "nonce",
@@ -809,7 +819,10 @@ const docTemplate = `{
                     "maxLength": 34,
                     "minLength": 4
                 },
-                "initCode": {
+                "factory": {
+                    "type": "string"
+                },
+                "factoryData": {
                     "type": "string",
                     "minLength": 2
                 },
@@ -870,7 +883,6 @@ const docTemplate = `{
                 "callData",
                 "callGasLimit",
                 "delegatedContract",
-                "initCode",
                 "maxFeePerGas",
                 "maxPriorityFeePerGas",
                 "nonce",
@@ -897,7 +909,10 @@ const docTemplate = `{
                     "description": "DelegatedContract is used when user operation carrying an EIP-7702 auth message to upgrade EOA to a smart account\nor replace the delegated smart account. If there is no EIP-7702 auth message, use empty value \"0x0000000000000000000000000000000000000000\".",
                     "type": "string"
                 },
-                "initCode": {
+                "factory": {
+                    "type": "string"
+                },
+                "factoryData": {
                     "type": "string",
                     "minLength": 2
                 },

@@ -123,11 +123,11 @@ func (userOp *UserOperation) ToPackedUserOperation() contract.PackedUserOperatio
 	if len(userOp.Factory) > 2 {
 		factory, _ := hexutil.Decode(userOp.Factory)
 		initCode = append(initCode, factory...)
-	}
 
-	if len(userOp.FactoryData) > 2 {
-		factoryData, _ := hexutil.Decode(userOp.FactoryData)
-		initCode = append(initCode, factoryData...)
+		if len(userOp.FactoryData) > 2 {
+			factoryData, _ := hexutil.Decode(userOp.FactoryData)
+			initCode = append(initCode, factoryData...)
+		}
 	}
 
 	callData, _ := hexutil.Decode(userOp.CallData)

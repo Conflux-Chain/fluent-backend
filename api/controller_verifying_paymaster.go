@@ -48,7 +48,7 @@ func (controller *VerifyingPaymasterController) Stub(c *gin.Context) (any, error
 // @Accept			json
 // @Produce			json
 // @Param			userOp	body	UserOperationWithAuth	true	"UserOperation for paymaster signing"
-// @Success			200	{object}	api.BusinessError{data=string}	"Signed and reassembled paymasterData (0x-prefixed hex, 129 bytes)"
+// @Success			200	{object}	api.BusinessError{data=string}	"Signed and reassembled paymasterData (0x-prefixed hex, 77 bytes)"
 // @Failure			600	{object}	api.BusinessError{data=string}	"Internal server error"
 // @Router			/aa/paymaster/sign	[post]
 func (controller *VerifyingPaymasterController) Sign(c *gin.Context) (any, error) {
