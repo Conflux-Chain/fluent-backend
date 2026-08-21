@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/Conflux-Chain/fluent-backend/contract"
@@ -45,6 +46,7 @@ type VerifyingPaymaster struct {
 	executeBatchMethod *abi.Method
 	signer             interfaces.Signer
 	userOpStore        *store.UserOpStore
+	inflightSenders    sync.Map
 }
 
 func NewVerifyingPaymaster(config VerifyingPaymasterConfig, client *web3go.Client, userOpStore *store.UserOpStore) (*VerifyingPaymaster, error) {
@@ -148,11 +150,20 @@ func (paymaster *VerifyingPaymaster) Stub() []byte {
 // Sign validates the user operation and signs the user operation with the paymaster's private key.
 // It returns the signed paymasterAndData, which includes the paymaster address, gas limits, validAfter, validUntil, and signature.
 func (paymaster *VerifyingPaymaster) Sign(userOp contract.PackedUserOperation, delegatedContract common.Address) ([]byte, error) {
-	// limit the number of pending user ops
+	// check if the sender is already inflight
+	//
+	// Currently, use simple sync.Map to store inflight senders, which is enough for low QPS phase.
 	if userOp.Sender == (common.Address{}) {
-		return nil, api.ErrValidationStr("Invalid userOp, sender is empty")
+		return nil, api.ErrValidationStr("Invalid sender address")
 	}
 
+	if _, loaded := paymaster.inflightSenders.LoadOrStore(userOp.Sender, struct{}{}); loaded {
+		return nil, api.ErrValidationStr("Sender already inflight")
+	}
+
+	defer paymaster.inflightSenders.Delete(userOp.Sender)
+
+	// limit the number of pending user ops
 	pendings, err := paymaster.userOpStore.GetPendingCount(userOp.Sender)
 	if err != nil {
 		return nil, err
