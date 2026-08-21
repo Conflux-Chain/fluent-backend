@@ -37,6 +37,13 @@ definitions:
     - sender
     - token
     type: object
+  api.PaymasterAndDataStub:
+    properties:
+      address:
+        type: string
+      data:
+        type: string
+    type: object
   api.SetCodeAuth:
     properties:
       chainId:
@@ -137,7 +144,9 @@ definitions:
         maxLength: 34
         minLength: 4
         type: string
-      initCode:
+      factory:
+        type: string
+      factoryData:
         minLength: 2
         type: string
       maxFeePerGas:
@@ -181,7 +190,6 @@ definitions:
     required:
     - callData
     - callGasLimit
-    - initCode
     - maxFeePerGas
     - maxPriorityFeePerGas
     - nonce
@@ -208,7 +216,9 @@ definitions:
           DelegatedContract is used when user operation carrying an EIP-7702 auth message to upgrade EOA to a smart account
           or replace the delegated smart account. If there is no EIP-7702 auth message, use empty value "0x0000000000000000000000000000000000000000".
         type: string
-      initCode:
+      factory:
+        type: string
+      factoryData:
         minLength: 2
         type: string
       maxFeePerGas:
@@ -253,7 +263,6 @@ definitions:
     - callData
     - callGasLimit
     - delegatedContract
-    - initCode
     - maxFeePerGas
     - maxPriorityFeePerGas
     - nonce
@@ -473,7 +482,7 @@ paths:
       - application/json
       description: |-
         Validates the given UserOperation, adds paymaster signature, and returns reassembled paymasterData.
-        Encoding format (129 bytes): paymaster(20) || paymasterVerificationGasLimit(16) || paymasterPostOpGasLimit(16) || validAfter(6) || validUntil(6) || signature(65).
+        Encoding format (77 bytes): validAfter(6) || validUntil(6) || signature(65).
         Note: the on-chain paymaster contract will verify the delegated contract address, so users may be punished
         if sending another inconsistent EIP-7702 auth message to the bundler.
       operationId: aaPaymasterSign
@@ -488,8 +497,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: Signed and reassembled paymasterData (0x-prefixed hex, 129
-            bytes)
+          description: Signed and reassembled paymasterData (0x-prefixed hex, 77 bytes)
           schema:
             allOf:
             - $ref: '#/definitions/api.BusinessError'
@@ -519,13 +527,13 @@ paths:
       - application/json
       responses:
         "200":
-          description: Paymaster and data (0x-prefixed hex)
+          description: Paymaster address and data (0x-prefixed hex)
           schema:
             allOf:
             - $ref: '#/definitions/api.BusinessError'
             - properties:
                 data:
-                  type: string
+                  $ref: '#/definitions/api.PaymasterAndDataStub'
               type: object
         "600":
           description: Internal server error
