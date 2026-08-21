@@ -276,28 +276,26 @@ func (paymaster *VerifyingPaymaster) validateCallData(callData []byte) error {
 
 // validateSmartAccount checks if the smart account is whitelisted by the paymaster.
 func (paymaster *VerifyingPaymaster) validateSmartAccount(sender common.Address, delegatedContract common.Address) error {
-	delegation, err := GetDelegatedContract(paymaster.client, sender)
-	if err != nil {
-		return err
-	}
-
-	if delegation != (common.Address{}) {
-		if delegatedContract != (common.Address{}) {
-			return api.ErrValidationStrf("Already delegated to smart account %v", delegation)
+	if delegatedContract == (common.Address{}) {
+		delegation, err := GetDelegatedContract(paymaster.client, sender)
+		if err != nil {
+			return err
 		}
-	} else if delegatedContract == (common.Address{}) {
-		return api.ErrValidationStr("Delegated contract required")
-	} else {
-		delegation = delegatedContract
+
+		if delegation == (common.Address{}) {
+			return api.ErrValidationStr("Delegated contract not found")
+		}
+
+		delegatedContract = delegation
 	}
 
-	whitelisted, err := paymaster.caller.SmartAccountWhitelist(nil, delegation)
+	whitelisted, err := paymaster.caller.SmartAccountWhitelist(nil, delegatedContract)
 	if err != nil {
 		return NewRPCError(err, "Failed to check if smart account is whitelisted")
 	}
 
 	if !whitelisted {
-		return ErrVerifyingPaymasterInvalidSmartAccount.WithData(delegation)
+		return ErrVerifyingPaymasterInvalidSmartAccount.WithData(delegatedContract)
 	}
 
 	return nil

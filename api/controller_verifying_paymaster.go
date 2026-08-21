@@ -39,6 +39,8 @@ func (controller *VerifyingPaymasterController) Stub(c *gin.Context) (any, error
 // @Summary			Sign paymasterData of given user operation and return reassembled paymasterData
 // @Description		Validates the given UserOperation, adds paymaster signature, and returns reassembled paymasterData.
 // @Description		Encoding format (129 bytes): paymaster(20) || paymasterVerificationGasLimit(16) || paymasterPostOpGasLimit(16) || validAfter(6) || validUntil(6) || signature(65).
+// @Description		Note: the on-chain paymaster contract will verify the delegated contract address, so users may be punished
+// @Description 	if sending another inconsistent EIP-7702 auth message to the bundler.
 // @Tags			Paymaster
 // @Accept			json
 // @Produce			json
