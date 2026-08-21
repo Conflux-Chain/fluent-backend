@@ -63,6 +63,10 @@ func NewVerifyingPaymaster(config VerifyingPaymasterConfig, client *web3go.Clien
 		return nil, errors.New("Contract whitelist is required")
 	}
 
+	if config.ExpirationInterval <= 0 || config.ExpirationTime <= 0 {
+		return nil, errors.New("ExpirationInterval and ExpirationTime must be greater than 0")
+	}
+
 	config.maxGasCost = big.NewInt(config.MaxGasCost)
 	config.contractWhitelist = make(map[common.Address]bool)
 	for _, addr := range config.ContractWhitelist {
