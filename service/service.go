@@ -4,6 +4,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/Conflux-Chain/fluent-backend/store"
+	storeUtil "github.com/Conflux-Chain/go-conflux-util/store"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/openweb3/web3go"
 	"github.com/openweb3/web3go/signers"
@@ -36,7 +38,7 @@ type Services struct {
 	TokenPay           *TokenPay
 }
 
-func New(config Config) (Services, error) {
+func New(config Config, rawStore *storeUtil.Store) (Services, error) {
 	// RPC client
 	if len(config.RPC.URL) == 0 {
 		return Services{}, errors.New("RPC URL not specified")
@@ -82,7 +84,7 @@ func New(config Config) (Services, error) {
 
 	// VerifyingPaymaster service is optional, only create it if required configurations specified
 	if config.VerifyingPaymaster.Address != (common.Address{}) && len(config.VerifyingPaymaster.ContractWhitelist) > 0 {
-		if services.VerifyingPaymaster, err = NewVerifyingPaymaster(config.VerifyingPaymaster, client); err != nil {
+		if services.VerifyingPaymaster, err = NewVerifyingPaymaster(config.VerifyingPaymaster, client, store.NewUserOpStore(rawStore)); err != nil {
 			return Services{}, errors.WithMessage(err, "Failed to create verifying paymaster service")
 		}
 	}

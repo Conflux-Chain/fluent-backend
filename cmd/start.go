@@ -6,7 +6,9 @@ import (
 
 	"github.com/Conflux-Chain/fluent-backend/api"
 	"github.com/Conflux-Chain/fluent-backend/service"
+	"github.com/Conflux-Chain/fluent-backend/store"
 	"github.com/Conflux-Chain/go-conflux-util/cmd"
+	storeUtil "github.com/Conflux-Chain/go-conflux-util/store"
 	"github.com/Conflux-Chain/go-conflux-util/viper"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -20,12 +22,18 @@ func start(*cobra.Command, []string) {
 	var config struct {
 		API     api.Config
 		Service service.Config
+		Store   storeUtil.Config
 	}
 	err := viper.Unmarshal(&config)
 	cmd.FatalIfErr(err, "Failed to unmarshal config")
 
+	// store
+	db := config.Store.MustOpenOrCreate(store.AllTables...)
+	rawStore := storeUtil.NewStore(db)
+	defer rawStore.Close()
+
 	// services
-	services, err := service.New(config.Service)
+	services, err := service.New(config.Service, rawStore)
 	cmd.FatalIfErr(err, "Failed to create services")
 
 	// api

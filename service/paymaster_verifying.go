@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/Conflux-Chain/fluent-backend/contract"
+	"github.com/Conflux-Chain/fluent-backend/store"
 	"github.com/Conflux-Chain/go-conflux-util/api"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
@@ -27,23 +29,27 @@ const (
 type VerifyingPaymasterConfig struct {
 	Address           common.Address
 	ContractWhitelist []common.Address
-	MaxGasCost        int64         `default:"100000000000000000"` // 0.1 CFX by default, and could up to 1 CFX for int64 type
+	contractWhitelist map[common.Address]bool
+	MaxGasCost        int64 `default:"100000000000000000"` // 0.1 CFX by default, and could up to 1 CFX for int64 type
+	maxGasCost        *big.Int
 	SignatureTimeout  time.Duration `default:"5m"`
 
-	contractWhitelist map[common.Address]bool
-	maxGasCost        *big.Int
+	MaxPendingOps int64 `default:"10"` // max pending user ops per sender
 }
 
 type VerifyingPaymaster struct {
 	config             VerifyingPaymasterConfig
 	client             *web3go.Client
 	caller             *contract.VerifyingPaymasterCaller
+	entryPointCaller   *contract.EntryPointCaller
 	executeMethod      *abi.Method
 	executeBatchMethod *abi.Method
 	signer             interfaces.Signer
+	userOpStore        *store.UserOpStore
+	inflightSenders    sync.Map
 }
 
-func NewVerifyingPaymaster(config VerifyingPaymasterConfig, client *web3go.Client) (*VerifyingPaymaster, error) {
+func NewVerifyingPaymaster(config VerifyingPaymasterConfig, client *web3go.Client, userOpStore *store.UserOpStore) (*VerifyingPaymaster, error) {
 	// check config and normalize it
 	if config.Address == (common.Address{}) {
 		return nil, errors.New("VerifyingPaymaster address is required")
@@ -70,24 +76,6 @@ func NewVerifyingPaymaster(config VerifyingPaymasterConfig, client *web3go.Clien
 		return nil, errors.New("No signer found")
 	}
 
-	// contract caller
-	caller, _ := client.ToClientForContract()
-	verifyingPaymasterCaller, err := contract.NewVerifyingPaymasterCaller(config.Address, caller)
-	if err != nil {
-		return nil, errors.WithMessage(err, "Failed to create VerifyingPaymaster contract caller")
-	}
-
-	// check if the signer is whitelisted by the paymaster
-	signerAddr := signers[0].Address()
-	signerAllowed, err := verifyingPaymasterCaller.IsSignerAllowed(nil, signerAddr)
-	if err != nil {
-		return nil, errors.WithMessage(err, "Failed to check if signer is allowed by VerifyingPaymaster")
-	}
-
-	if !signerAllowed {
-		return nil, fmt.Errorf("Signer is not allowed by VerifyingPaymaster: %v", signerAddr)
-	}
-
 	// smart account execute ABI
 	smartAccountABI, err := abi.JSON(strings.NewReader(contract.SimpleSmartAccount7702MetaData.ABI))
 	if err != nil {
@@ -104,13 +92,45 @@ func NewVerifyingPaymaster(config VerifyingPaymasterConfig, client *web3go.Clien
 		return nil, errors.New("Failed to get executeBatch method from SimpleSmartAccount7702 ABI")
 	}
 
+	// contract callers
+	caller, _ := client.ToClientForContract()
+
+	verifyingPaymasterCaller, err := contract.NewVerifyingPaymasterCaller(config.Address, caller)
+	if err != nil {
+		return nil, errors.WithMessage(err, "Failed to create VerifyingPaymaster contract caller")
+	}
+
+	entryPointAddress, err := verifyingPaymasterCaller.EntryPoint(nil)
+	if err != nil {
+		return nil, errors.WithMessage(err, "Failed to get EntryPoint address from VerifyingPaymaster")
+	}
+
+	entryPointCaller, err := contract.NewEntryPointCaller(entryPointAddress, caller)
+	if err != nil {
+		return nil, errors.WithMessage(err, "Failed to create EntryPoint contract caller")
+	}
+
+	// check if the signer is whitelisted by the paymaster
+	signerAddr := signers[0].Address()
+
+	signerAllowed, err := verifyingPaymasterCaller.IsSignerAllowed(nil, signerAddr)
+	if err != nil {
+		return nil, errors.WithMessage(err, "Failed to check if signer is allowed by VerifyingPaymaster")
+	}
+
+	if !signerAllowed {
+		return nil, fmt.Errorf("Signer is not allowed by VerifyingPaymaster: %v", signerAddr)
+	}
+
 	return &VerifyingPaymaster{
 		config:             config,
 		client:             client,
 		caller:             verifyingPaymasterCaller,
+		entryPointCaller:   entryPointCaller,
 		executeMethod:      &executeMethod,
 		executeBatchMethod: &executeBatchMethod,
 		signer:             signers[0],
+		userOpStore:        userOpStore,
 	}, nil
 }
 
@@ -130,16 +150,38 @@ func (paymaster *VerifyingPaymaster) Stub() []byte {
 // Sign validates the user operation and signs the user operation with the paymaster's private key.
 // It returns the signed paymasterAndData, which includes the paymaster address, gas limits, validAfter, validUntil, and signature.
 func (paymaster *VerifyingPaymaster) Sign(userOp contract.PackedUserOperation, delegatedContract common.Address) ([]byte, error) {
-	// TODO limit the number of pending user ops
+	// check if the sender is already inflight
+	//
+	// Currently, use simple sync.Map to store inflight senders, which is enough for low QPS phase.
+	if userOp.Sender == (common.Address{}) {
+		return nil, api.ErrValidationStr("Invalid sender address")
+	}
 
+	if _, loaded := paymaster.inflightSenders.LoadOrStore(userOp.Sender, struct{}{}); loaded {
+		return nil, api.ErrValidationStr("Sender already inflight")
+	}
+
+	defer paymaster.inflightSenders.Delete(userOp.Sender)
+
+	// limit the number of pending user ops
+	pendings, err := paymaster.userOpStore.GetPendingCount(userOp.Sender)
+	if err != nil {
+		return nil, err
+	}
+
+	if pendings >= paymaster.config.MaxPendingOps {
+		return nil, ErrVerifyingPaymasterTooManyPendingOps.WithData(fmt.Sprintf("max = %v", paymaster.config.MaxPendingOps))
+	}
+
+	// validate the user operation
 	if err := paymaster.validate(&userOp, delegatedContract); err != nil {
 		return nil, err
 	}
 
 	// re-assemble paymasterData for signing, including validAfter and validUntil
-	validUntil := time.Now().Add(paymaster.config.SignatureTimeout).Unix()
-	big.NewInt(0).FillBytes(userOp.PaymasterAndData[52:58])          // validAfter
-	big.NewInt(validUntil).FillBytes(userOp.PaymasterAndData[58:64]) // validUntil
+	validUntil := time.Now().Add(paymaster.config.SignatureTimeout)
+	big.NewInt(0).FillBytes(userOp.PaymasterAndData[52:58])                 // validAfter
+	big.NewInt(validUntil.Unix()).FillBytes(userOp.PaymasterAndData[58:64]) // validUntil
 
 	// compute the paymaster signature
 	hash, err := paymaster.caller.GetPaymasterHash(nil, userOp)
@@ -155,7 +197,23 @@ func (paymaster *VerifyingPaymaster) Sign(userOp contract.PackedUserOperation, d
 	// re-assemble signature into paymasterAndData
 	copy(userOp.PaymasterAndData[64:], signature)
 
-	// TODO persistent the user op to database
+	// persistent the user op to database
+	userOpHash, err := paymaster.entryPointCaller.GetUserOpHash(nil, userOp)
+	if err != nil {
+		return nil, NewRPCError(err, "Failed to get user operation hash")
+	}
+
+	entity := store.UserOp{
+		UserOpHash: hexutil.Encode(userOpHash[:]),
+		Sender:     userOp.Sender.Hex(),
+		Nonce:      hexutil.Encode(userOp.Nonce.Bytes()),
+		ValidUntil: validUntil,
+		Status:     store.UserOpStatusSigned,
+	}
+
+	if err = paymaster.userOpStore.Create(&entity); err != nil {
+		return nil, err
+	}
 
 	return userOp.PaymasterAndData, nil
 }
