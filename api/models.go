@@ -134,8 +134,8 @@ func (userOp *UserOperation) ToPackedUserOperation() contract.PackedUserOperatio
 type UserOperationWithAuth struct {
 	UserOperation
 
-	// DelegatedContract is used when user operation carrying an EIP-7702 auth message to upgrade EOA to a smart account.
-	// Otherwise, use empty address "0x0000000000000000000000000000000000000000".
+	// DelegatedContract is used when user operation carrying an EIP-7702 auth message to upgrade EOA to a smart account
+	// or replace the delegated smart account. If there is no EIP-7702 auth message, use empty value "0x0000000000000000000000000000000000000000".
 	DelegatedContract string `json:"delegatedContract" binding:"required,hex,len=42"`
 }
 
