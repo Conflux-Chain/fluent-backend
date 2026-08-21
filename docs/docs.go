@@ -143,7 +143,72 @@ const docTemplate = `{
                 }
             }
         },
-        "/aa/gastank/prepare/credit": {
+        "/aa/gastank/sign": {
+            "post": {
+                "description": "Calculates maxTokenCost for the given UserOperation, adds paymaster signature, and returns reassembled paymasterData.\nEncoding format (130 bytes): mode(1) || token(20) || maxTokenCost(32) || validAfter(6) || validUntil(6) || signature(65). maxTokenCost is 0-based, big-endian uint256.\nCREDIT mode reminder: in input UserOperation.paymasterData, maxTokenCost is the token deposit amount and should be the amount to deposit.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GasTank"
+                ],
+                "summary": "Sign paymasterData for UserOperation",
+                "operationId": "aaGasTankSign",
+                "parameters": [
+                    {
+                        "description": "UserOperation for maxTokenCost estimation and paymaster signing",
+                        "name": "userOp",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.UserOperation"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Signed and reassembled paymasterData (0x-prefixed hex, 130 bytes)",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "600": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/aa/gastank/stub/credit": {
             "post": {
                 "description": "Returns paymasterData used to estimate UserOperation gas in CREDIT mode for token deposit flow.",
                 "consumes": [
@@ -208,7 +273,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/aa/gastank/prepare/refund": {
+        "/aa/gastank/stub/refund": {
             "post": {
                 "description": "Returns paymasterData used to estimate gas for a normal UserOperation in REFUND mode.",
                 "consumes": [
@@ -246,71 +311,6 @@ const docTemplate = `{
                                     "properties": {
                                         "data": {
                                             "$ref": "#/definitions/api.PaymasterAndDataStub"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "600": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/api.BusinessError"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "string"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
-            }
-        },
-        "/aa/gastank/sign": {
-            "post": {
-                "description": "Calculates maxTokenCost for the given UserOperation, adds paymaster signature, and returns reassembled paymasterData.\nEncoding format (130 bytes): mode(1) || token(20) || maxTokenCost(32) || validAfter(6) || validUntil(6) || signature(65). maxTokenCost is bytes[73:105] (0-based, big-endian uint256).\nCREDIT mode reminder: in input UserOperation.paymasterData, maxTokenCost is the token deposit amount and should be the amount to deposit.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "GasTank"
-                ],
-                "summary": "Sign paymasterData for UserOperation",
-                "operationId": "aaGasTankSign",
-                "parameters": [
-                    {
-                        "description": "UserOperation for maxTokenCost estimation and paymaster signing",
-                        "name": "userOp",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/api.UserOperation"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Signed and reassembled paymasterData (0x-prefixed hex, 130 bytes)",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/api.BusinessError"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "string"
                                         }
                                     }
                                 }

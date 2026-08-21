@@ -359,7 +359,48 @@ paths:
       summary: Query EIP-7702 set-code result
       tags:
       - AccountAbstract
-  /aa/gastank/prepare/credit:
+  /aa/gastank/sign:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Calculates maxTokenCost for the given UserOperation, adds paymaster signature, and returns reassembled paymasterData.
+        Encoding format (130 bytes): mode(1) || token(20) || maxTokenCost(32) || validAfter(6) || validUntil(6) || signature(65). maxTokenCost is 0-based, big-endian uint256.
+        CREDIT mode reminder: in input UserOperation.paymasterData, maxTokenCost is the token deposit amount and should be the amount to deposit.
+      operationId: aaGasTankSign
+      parameters:
+      - description: UserOperation for maxTokenCost estimation and paymaster signing
+        in: body
+        name: userOp
+        required: true
+        schema:
+          $ref: '#/definitions/api.UserOperation'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Signed and reassembled paymasterData (0x-prefixed hex, 130
+            bytes)
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "600":
+          description: Internal server error
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: Sign paymasterData for UserOperation
+      tags:
+      - GasTank
+  /aa/gastank/stub/credit:
     post:
       consumes:
       - application/json
@@ -397,7 +438,7 @@ paths:
       summary: Prepare paymasterData for CREDIT mode deposit estimation
       tags:
       - GasTank
-  /aa/gastank/prepare/refund:
+  /aa/gastank/stub/refund:
     post:
       consumes:
       - application/json
@@ -433,47 +474,6 @@ paths:
                   type: string
               type: object
       summary: Prepare paymasterData for REFUND mode estimation
-      tags:
-      - GasTank
-  /aa/gastank/sign:
-    post:
-      consumes:
-      - application/json
-      description: |-
-        Calculates maxTokenCost for the given UserOperation, adds paymaster signature, and returns reassembled paymasterData.
-        Encoding format (130 bytes): mode(1) || token(20) || maxTokenCost(32) || validAfter(6) || validUntil(6) || signature(65). maxTokenCost is bytes[73:105] (0-based, big-endian uint256).
-        CREDIT mode reminder: in input UserOperation.paymasterData, maxTokenCost is the token deposit amount and should be the amount to deposit.
-      operationId: aaGasTankSign
-      parameters:
-      - description: UserOperation for maxTokenCost estimation and paymaster signing
-        in: body
-        name: userOp
-        required: true
-        schema:
-          $ref: '#/definitions/api.UserOperation'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Signed and reassembled paymasterData (0x-prefixed hex, 130
-            bytes)
-          schema:
-            allOf:
-            - $ref: '#/definitions/api.BusinessError'
-            - properties:
-                data:
-                  type: string
-              type: object
-        "600":
-          description: Internal server error
-          schema:
-            allOf:
-            - $ref: '#/definitions/api.BusinessError'
-            - properties:
-                data:
-                  type: string
-              type: object
-      summary: Sign paymasterData for UserOperation
       tags:
       - GasTank
   /aa/paymaster/sign:

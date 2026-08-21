@@ -95,7 +95,7 @@ func (controller *GasTankController) PrepareRefund(c *gin.Context) (any, error) 
 // @ID				aaGasTankSign
 // @Summary			Sign paymasterData for UserOperation
 // @Description		Calculates maxTokenCost for the given UserOperation, adds paymaster signature, and returns reassembled paymasterData.
-// @Description		Encoding format (130 bytes): mode(1) || token(20) || maxTokenCost(32) || validAfter(6) || validUntil(6) || signature(65). maxTokenCost is bytes[73:105] (0-based, big-endian uint256).
+// @Description		Encoding format (130 bytes): mode(1) || token(20) || maxTokenCost(32) || validAfter(6) || validUntil(6) || signature(65). maxTokenCost is 0-based, big-endian uint256.
 // @Description		CREDIT mode reminder: in input UserOperation.paymasterData, maxTokenCost is the token deposit amount and should be the amount to deposit.
 // @Tags			GasTank
 // @Accept			json
