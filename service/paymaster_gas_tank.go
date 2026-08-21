@@ -99,7 +99,7 @@ func NewGasTankPaymaster(config GasTankPaymasterConfig, priceOracle *PriceOracle
 	}, nil
 }
 
-func (paymaster *GasTankPaymaster) PrepareCredit(token common.Address, amount *big.Int) ([]byte, error) {
+func (paymaster *GasTankPaymaster) StubCredit(token common.Address, amount *big.Int) ([]byte, error) {
 	// check if token is allowed
 	tokenAllowed, err := paymaster.gasTankCaller.IsTokenAllowed(nil, token)
 	if err != nil {
@@ -122,7 +122,7 @@ func (paymaster *GasTankPaymaster) PrepareCredit(token common.Address, amount *b
 	return data.encode(), nil
 }
 
-func (paymaster *GasTankPaymaster) PrepareRefund(sender, token common.Address) ([]byte, error) {
+func (paymaster *GasTankPaymaster) StubRefund(sender, token common.Address) ([]byte, error) {
 	// check if token is allowed
 	tokenAllowed, err := paymaster.gasTankCaller.IsTokenAllowed(nil, token)
 	if err != nil {

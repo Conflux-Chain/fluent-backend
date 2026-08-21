@@ -170,7 +170,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Paymaster and data (0x-prefixed hex)",
+                        "description": "Paymaster address and data (0x-prefixed hex)",
                         "schema": {
                             "allOf": [
                                 {
@@ -180,7 +180,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "type": "string"
+                                            "$ref": "#/definitions/api.PaymasterAndDataStub"
                                         }
                                     }
                                 }
@@ -235,7 +235,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Paymaster and data (0x-prefixed hex)",
+                        "description": "Paymaster address and data (0x-prefixed hex)",
                         "schema": {
                             "allOf": [
                                 {
@@ -245,7 +245,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "type": "string"
+                                            "$ref": "#/definitions/api.PaymasterAndDataStub"
                                         }
                                     }
                                 }
@@ -275,7 +275,7 @@ const docTemplate = `{
         },
         "/aa/gastank/sign": {
             "post": {
-                "description": "Calculates maxTokenCost for the given UserOperation, adds paymaster signature, and returns reassembled paymasterData.\nEncoding format (182 bytes): paymaster(20) || paymasterVerificationGasLimit(16) || paymasterPostOpGasLimit(16) || mode(1) || token(20) || maxTokenCost(32) || validAfter(6) || validUntil(6) || signature(65). maxTokenCost is bytes[73:105] (0-based, big-endian uint256).\nCREDIT mode reminder: in input UserOperation.paymasterData, maxTokenCost is the token deposit amount and should be the amount to deposit.",
+                "description": "Calculates maxTokenCost for the given UserOperation, adds paymaster signature, and returns reassembled paymasterData.\nEncoding format (130 bytes): mode(1) || token(20) || maxTokenCost(32) || validAfter(6) || validUntil(6) || signature(65). maxTokenCost is bytes[73:105] (0-based, big-endian uint256).\nCREDIT mode reminder: in input UserOperation.paymasterData, maxTokenCost is the token deposit amount and should be the amount to deposit.",
                 "consumes": [
                     "application/json"
                 ],
@@ -300,7 +300,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Signed and reassembled paymasterData (0x-prefixed hex, 182 bytes)",
+                        "description": "Signed and reassembled paymasterData (0x-prefixed hex, 130 bytes)",
                         "schema": {
                             "allOf": [
                                 {

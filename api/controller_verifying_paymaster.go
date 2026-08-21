@@ -4,7 +4,6 @@ import (
 	"github.com/Conflux-Chain/fluent-backend/service"
 	"github.com/Conflux-Chain/go-conflux-util/api"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/gin-gonic/gin"
 )
 
@@ -28,12 +27,9 @@ func NewVerifyingPaymasterController(services service.Services) *VerifyingPaymas
 // @Failure			600	{object}	api.BusinessError{data=string}	"Internal server error"
 // @Router			/aa/paymaster/stub	[get]
 func (controller *VerifyingPaymasterController) Stub(c *gin.Context) (any, error) {
-	address, data := controller.services.VerifyingPaymaster.Stub()
+	stub := controller.services.VerifyingPaymaster.Stub()
 
-	return PaymasterAndDataStub{
-		Address: address.Hex(),
-		Data:    hexutil.Encode(data),
-	}, nil
+	return ToPaymasterAndDataStub(stub), nil
 }
 
 // Sign validates the given user operation, signs the paymasterData and returns the reassembled paymasterData.
@@ -61,10 +57,10 @@ func (controller *VerifyingPaymasterController) Sign(c *gin.Context) (any, error
 	userOp := input.ToPackedUserOperation()
 	delegatedContract := common.HexToAddress(input.DelegatedContract)
 
-	paymasterData, err := controller.services.VerifyingPaymaster.Sign(userOp, delegatedContract)
+	paymasterAndData, err := controller.services.VerifyingPaymaster.Sign(userOp, delegatedContract)
 	if err != nil {
 		return nil, err
 	}
 
-	return hexutil.Encode(paymasterData), nil
+	return ToPaymasterAndDataStub(paymasterAndData).Data, nil
 }

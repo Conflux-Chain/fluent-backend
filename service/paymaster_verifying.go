@@ -114,19 +114,21 @@ func NewVerifyingPaymaster(config VerifyingPaymasterConfig, client *web3go.Clien
 	}, nil
 }
 
-// Stub returns paymaster address and stub paymaster data for gas estimation.
-func (paymaster *VerifyingPaymaster) Stub() (common.Address, []byte) {
-	var buf [verifyingPaymasterDataLength - 52]byte
+// Stub returns a stub paymasterAndData for gas estimation.
+func (paymaster *VerifyingPaymaster) Stub() []byte {
+	var buf [verifyingPaymasterDataLength]byte
 
 	validUntil := time.Now().Add(paymaster.config.SignatureTimeout).Unix()
-	big.NewInt(validUntil).FillBytes(buf[6:12]) // validUntil
-	copy(buf[12:], dummySignature)              // dummy signature
 
-	return paymaster.config.Address, buf[:]
+	copy(buf[:20], paymaster.config.Address.Bytes()) // address
+	big.NewInt(validUntil).FillBytes(buf[58:64])     // validUntil
+	copy(buf[64:], dummySignature)                   // dummy signature
+
+	return buf[:]
 }
 
 // Sign validates the user operation and signs the user operation with the paymaster's private key.
-// It returns the signed paymaster data, which is assembled by validAfter, validUntil and paymaster signature.
+// It returns the signed paymasterAndData, which includes the paymaster address, gas limits, validAfter, validUntil, and signature.
 func (paymaster *VerifyingPaymaster) Sign(userOp contract.PackedUserOperation, delegatedContract common.Address) ([]byte, error) {
 	// TODO limit the number of pending user ops
 
@@ -155,7 +157,7 @@ func (paymaster *VerifyingPaymaster) Sign(userOp contract.PackedUserOperation, d
 
 	// TODO persistent the user op to database
 
-	return userOp.PaymasterAndData[52:], nil
+	return userOp.PaymasterAndData, nil
 }
 
 func (paymaster *VerifyingPaymaster) validate(userOp *contract.PackedUserOperation, delegatedContract common.Address) error {
