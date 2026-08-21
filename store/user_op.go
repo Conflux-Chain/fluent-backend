@@ -1,6 +1,8 @@
 package store
 
 import (
+	"time"
+
 	"github.com/Conflux-Chain/go-conflux-util/api"
 	"github.com/Conflux-Chain/go-conflux-util/store"
 	"github.com/ethereum/go-ethereum/common"
@@ -35,4 +37,17 @@ func (store *UserOpStore) Create(userOp *UserOp) error {
 	}
 
 	return nil
+}
+
+func (store *UserOpStore) DeleteExpired(timeout time.Duration) (int64, error) {
+	db := store.inner.DB.
+		Where("status = ?", UserOpStatusSigned).
+		Where("valid_until < ?", time.Now().Add(-timeout)).
+		Delete(&UserOp{})
+
+	if err := db.Error; err != nil {
+		return 0, api.ErrDatabaseCause(err, "Failed to delete expired user operations")
+	}
+
+	return db.RowsAffected, nil
 }

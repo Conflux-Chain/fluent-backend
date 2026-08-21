@@ -17,6 +17,7 @@ import (
 	"github.com/openweb3/web3go"
 	"github.com/openweb3/web3go/interfaces"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -35,6 +36,9 @@ type VerifyingPaymasterConfig struct {
 	SignatureTimeout  time.Duration `default:"5m"`
 
 	MaxPendingOps int64 `default:"10"` // max pending user ops per sender
+
+	ExpirationTime     time.Duration `default:"24h"` // user op expiration time, used to clean up expired user ops
+	ExpirationInterval time.Duration `default:"10m"` // user op expiration interval, used to clean up expired user ops
 }
 
 type VerifyingPaymaster struct {
@@ -57,6 +61,10 @@ func NewVerifyingPaymaster(config VerifyingPaymasterConfig, client *web3go.Clien
 
 	if len(config.ContractWhitelist) == 0 {
 		return nil, errors.New("Contract whitelist is required")
+	}
+
+	if config.ExpirationInterval <= 0 || config.ExpirationTime <= 0 {
+		return nil, errors.New("ExpirationInterval and ExpirationTime must be greater than 0")
 	}
 
 	config.maxGasCost = big.NewInt(config.MaxGasCost)
@@ -122,7 +130,7 @@ func NewVerifyingPaymaster(config VerifyingPaymasterConfig, client *web3go.Clien
 		return nil, fmt.Errorf("Signer is not allowed by VerifyingPaymaster: %v", signerAddr)
 	}
 
-	return &VerifyingPaymaster{
+	paymaster := VerifyingPaymaster{
 		config:             config,
 		client:             client,
 		caller:             verifyingPaymasterCaller,
@@ -131,7 +139,11 @@ func NewVerifyingPaymaster(config VerifyingPaymasterConfig, client *web3go.Clien
 		executeBatchMethod: &executeBatchMethod,
 		signer:             signers[0],
 		userOpStore:        userOpStore,
-	}, nil
+	}
+
+	go paymaster.scheduleExpire()
+
+	return &paymaster, nil
 }
 
 // Stub returns a stub paymasterAndData for gas estimation.
@@ -358,4 +370,18 @@ func (paymaster *VerifyingPaymaster) validateSmartAccount(sender common.Address,
 	}
 
 	return nil
+}
+
+func (paymaster *VerifyingPaymaster) scheduleExpire() {
+	ticker := time.NewTicker(paymaster.config.ExpirationInterval)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		deleted, err := paymaster.userOpStore.DeleteExpired(paymaster.config.ExpirationTime)
+		if err != nil {
+			logrus.WithError(err).Warn("Failed to delete expired user ops")
+		} else if deleted > 0 {
+			logrus.WithField("count", deleted).Info("Deleted expired user ops")
+		}
+	}
 }
