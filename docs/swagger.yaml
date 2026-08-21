@@ -137,6 +137,9 @@ definitions:
         maxLength: 34
         minLength: 4
         type: string
+      initCode:
+        minLength: 2
+        type: string
       maxFeePerGas:
         maxLength: 34
         minLength: 4
@@ -178,6 +181,7 @@ definitions:
     required:
     - callData
     - callGasLimit
+    - initCode
     - maxFeePerGas
     - maxPriorityFeePerGas
     - nonce
@@ -201,8 +205,11 @@ definitions:
         type: string
       delegatedContract:
         description: |-
-          DelegatedContract is used when user operation carrying an EIP-7702 auth message to upgrade EOA to a smart account.
-          Otherwise, use empty address "0x0000000000000000000000000000000000000000".
+          DelegatedContract is used when user operation carrying an EIP-7702 auth message to upgrade EOA to a smart account
+          or replace the delegated smart account. If there is no EIP-7702 auth message, use empty value "0x0000000000000000000000000000000000000000".
+        type: string
+      initCode:
+        minLength: 2
         type: string
       maxFeePerGas:
         maxLength: 34
@@ -246,6 +253,7 @@ definitions:
     - callData
     - callGasLimit
     - delegatedContract
+    - initCode
     - maxFeePerGas
     - maxPriorityFeePerGas
     - nonce
@@ -466,6 +474,8 @@ paths:
       description: |-
         Validates the given UserOperation, adds paymaster signature, and returns reassembled paymasterData.
         Encoding format (129 bytes): paymaster(20) || paymasterVerificationGasLimit(16) || paymasterPostOpGasLimit(16) || validAfter(6) || validUntil(6) || signature(65).
+        Note: the on-chain paymaster contract will verify the delegated contract address, so users may be punished
+        if sending another inconsistent EIP-7702 auth message to the bundler.
       operationId: aaPaymasterSign
       parameters:
       - description: UserOperation for paymaster signing

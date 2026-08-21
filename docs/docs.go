@@ -340,7 +340,7 @@ const docTemplate = `{
         },
         "/aa/paymaster/sign": {
             "post": {
-                "description": "Validates the given UserOperation, adds paymaster signature, and returns reassembled paymasterData.\nEncoding format (129 bytes): paymaster(20) || paymasterVerificationGasLimit(16) || paymasterPostOpGasLimit(16) || validAfter(6) || validUntil(6) || signature(65).",
+                "description": "Validates the given UserOperation, adds paymaster signature, and returns reassembled paymasterData.\nEncoding format (129 bytes): paymaster(20) || paymasterVerificationGasLimit(16) || paymasterPostOpGasLimit(16) || validAfter(6) || validUntil(6) || signature(65).\nNote: the on-chain paymaster contract will verify the delegated contract address, so users may be punished\nif sending another inconsistent EIP-7702 auth message to the bundler.",
                 "consumes": [
                     "application/json"
                 ],
@@ -786,6 +786,7 @@ const docTemplate = `{
             "required": [
                 "callData",
                 "callGasLimit",
+                "initCode",
                 "maxFeePerGas",
                 "maxPriorityFeePerGas",
                 "nonce",
@@ -807,6 +808,10 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 34,
                     "minLength": 4
+                },
+                "initCode": {
+                    "type": "string",
+                    "minLength": 2
                 },
                 "maxFeePerGas": {
                     "type": "string",
@@ -865,6 +870,7 @@ const docTemplate = `{
                 "callData",
                 "callGasLimit",
                 "delegatedContract",
+                "initCode",
                 "maxFeePerGas",
                 "maxPriorityFeePerGas",
                 "nonce",
@@ -888,8 +894,12 @@ const docTemplate = `{
                     "minLength": 4
                 },
                 "delegatedContract": {
-                    "description": "DelegatedContract is used when user operation carrying an EIP-7702 auth message to upgrade EOA to a smart account.\nOtherwise, use empty address \"0x0000000000000000000000000000000000000000\".",
+                    "description": "DelegatedContract is used when user operation carrying an EIP-7702 auth message to upgrade EOA to a smart account\nor replace the delegated smart account. If there is no EIP-7702 auth message, use empty value \"0x0000000000000000000000000000000000000000\".",
                     "type": "string"
+                },
+                "initCode": {
+                    "type": "string",
+                    "minLength": 2
                 },
                 "maxFeePerGas": {
                     "type": "string",
