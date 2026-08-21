@@ -224,6 +224,7 @@ func (paymaster *VerifyingPaymaster) maxCost(userOp *contract.PackedUserOperatio
 
 // validateCallData checks if the call data is valid for the user operation.
 func (paymaster *VerifyingPaymaster) validateCallData(callData []byte) error {
+	// must call execute or executeBatch functions of the smart account
 	if len(callData) < 4 {
 		return api.ErrValidationStr("Invalid callData, too short to parse function selector")
 	}
@@ -255,6 +256,10 @@ func (paymaster *VerifyingPaymaster) validateCallData(callData []byte) error {
 		var executions []contract.Execution
 		if err = paymaster.executeBatchMethod.Inputs.Copy(&executions, unpacked); err != nil {
 			return api.ErrValidation(errors.WithMessage(err, "Failed to copy unpacked data to []Execution struct"))
+		}
+
+		if len(executions) == 0 {
+			return api.ErrValidationStr("Invalid callData, batch is empty")
 		}
 
 		for _, execution := range executions {

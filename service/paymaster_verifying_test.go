@@ -145,6 +145,11 @@ func TestVerifyingPaymasterValidateCallData(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NoError(t, paymaster.validateCallData(callData))
 
+	// executeBatch - empty
+	callData, err = abi.Pack("executeBatch", []contract.Execution{})
+	assert.NoError(t, err)
+	assert.Error(t, paymaster.validateCallData(callData))
+
 	// executeBatch - target not whitelisted
 	callData, err = abi.Pack("executeBatch", []contract.Execution{
 		{Target: common.HexToAddress("0x1111"), Value: big.NewInt(10), CallData: []byte{1, 2, 3}},
