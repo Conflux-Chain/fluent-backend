@@ -154,20 +154,20 @@ func (scanner *UserOpEventScanner) scan() (bool, error) {
 	}
 
 	// already catch up to the finalized block
-	finalizedBlockNumber := finalizedBlock.Number.Uint64()
-	if scanner.config.nextBlock > finalizedBlockNumber {
+	nextBlock, finalizedBlockNumber := scanner.config.nextBlock, finalizedBlock.Number.Uint64()
+	if nextBlock > finalizedBlockNumber {
 		return false, nil
 	}
 
 	logrus.WithFields(logrus.Fields{
-		"from": scanner.config.nextBlock,
+		"from": nextBlock,
 		"to":   finalizedBlockNumber,
 	}).Debug("Scanning user op event logs from blockchain")
 
 	// retrieve event logs between nextBlock and finalizedBlockNumber.
-	logs, err := getLogs(scanner.client, scanner.config.Contract, scanner.config.nextBlock, finalizedBlockNumber, eventHashSponsored)
+	logs, err := getLogs(scanner.client, scanner.config.Contract, nextBlock, finalizedBlockNumber, eventHashSponsored)
 	if err != nil {
-		return false, errors.WithMessagef(err, "Failed to retrieve event logs, next = %v, finalized = %v", scanner.config.nextBlock, finalizedBlockNumber)
+		return false, errors.WithMessagef(err, "Failed to retrieve event logs, next = %v, finalized = %v", nextBlock, finalizedBlockNumber)
 	}
 
 	// handle the retrieved event logs
@@ -176,7 +176,7 @@ func (scanner *UserOpEventScanner) scan() (bool, error) {
 	}
 
 	logrus.WithFields(logrus.Fields{
-		"from": scanner.config.nextBlock,
+		"from": nextBlock,
 		"to":   finalizedBlockNumber,
 	}).Debug("Succeeded to scan and handle user op events")
 
