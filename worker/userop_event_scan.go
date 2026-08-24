@@ -18,6 +18,8 @@ import (
 )
 
 // configKeyEventScanNextBlock is the key used to store the next block number to scan user op events in the database.
+//
+// NOTE if the paymaster contract address changes, we should remove this key from the database to avoid scanning events from an incorrect block number.
 const configKeyEventScanNextBlock = "worker.userOpEventScan.nextBlock"
 
 // eventHashSponsored is the hash of the Sponsored event signature, used to filter logs for this specific event.
