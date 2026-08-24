@@ -7,6 +7,7 @@ import (
 	"github.com/Conflux-Chain/fluent-backend/api"
 	"github.com/Conflux-Chain/fluent-backend/service"
 	"github.com/Conflux-Chain/fluent-backend/store"
+	"github.com/Conflux-Chain/fluent-backend/worker"
 	"github.com/Conflux-Chain/go-conflux-util/cmd"
 	storeUtil "github.com/Conflux-Chain/go-conflux-util/store"
 	"github.com/Conflux-Chain/go-conflux-util/viper"
@@ -22,6 +23,7 @@ func start(*cobra.Command, []string) {
 	var config struct {
 		API     api.Config
 		Service service.Config
+		Worker  worker.Config
 		Store   storeUtil.Config
 	}
 	err := viper.Unmarshal(&config)
@@ -29,12 +31,16 @@ func start(*cobra.Command, []string) {
 
 	// store
 	db := config.Store.MustOpenOrCreate(store.AllTables...)
-	rawStore := storeUtil.NewStore(db)
-	defer rawStore.Close()
+	store := store.NewStore(db)
+	defer store.Close()
 
 	// services
-	services, err := service.New(config.Service, rawStore)
+	services, err := service.New(config.Service, store)
 	cmd.FatalIfErr(err, "Failed to create services")
+
+	// background workers
+	err = worker.Start(config.Worker, services.Client(), store)
+	cmd.FatalIfErr(err, "Failed to start background workers")
 
 	// api
 	go api.MustServe(config.API, services)
