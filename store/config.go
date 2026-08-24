@@ -39,24 +39,14 @@ func (store *ConfigStore) Upsert(key string, value string, tx ...*gorm.DB) error
 		db = tx[0]
 	}
 
-	// update by key
-	result := db.Model(&Config{}).Where("key = ?", key).Update("value", value)
-	if err := result.Error; err != nil {
-		return api.ErrDatabaseCausef(err, "Failed to update config by key %v", key)
-	}
+	err := db.Model(&Config{}).
+		Where("key = ?", key).
+		Assign(Config{Value: value}).
+		FirstOrCreate(&Config{Key: key}).
+		Error
 
-	if result.RowsAffected > 0 {
-		return nil
-	}
-
-	// create if absent
-	config := Config{
-		Key:   key,
-		Value: value,
-	}
-
-	if er := db.Create(&config).Error; er != nil {
-		return api.ErrDatabaseCausef(er, "Failed to create config of key %v", key)
+	if err != nil {
+		return api.ErrDatabaseCause(err, "Failed to upsert config by key")
 	}
 
 	return nil
