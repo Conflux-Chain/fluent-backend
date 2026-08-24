@@ -17,10 +17,10 @@ import (
 	"gorm.io/gorm"
 )
 
-// configKeyEventScanNextBlock is the key used to store the next block number to scan user op events in the database.
+// configNameEventScanNextBlock is the name used to store the next block number to scan user op events in the database.
 //
-// NOTE if the paymaster contract address changes, we should remove this key from the database to avoid scanning events from an incorrect block number.
-const configKeyEventScanNextBlock = "worker.userOpEventScan.nextBlock"
+// NOTE if the paymaster contract address changes, we should remove this name from the database to avoid scanning events from an incorrect block number.
+const configNameEventScanNextBlock = "worker.userOpEventScan.nextBlock"
 
 // eventHashSponsored is the hash of the Sponsored event signature, used to filter logs for this specific event.
 //
@@ -81,7 +81,7 @@ func NewUserOpEventScanner(config UserOpEventScanConfig, client *web3go.Client, 
 // loadNextBlock loads the next block number to scan user op events from the database or configuration.
 func (scanner *UserOpEventScanner) loadNextBlock() (uint64, error) {
 	// load break point from database
-	value, ok, err := scanner.store.Config.Get(configKeyEventScanNextBlock)
+	value, ok, err := scanner.store.Config.Get(configNameEventScanNextBlock)
 	if err != nil {
 		return 0, errors.WithMessage(err, "Failed to load next block from database")
 	}
@@ -209,8 +209,8 @@ func (scanner *UserOpEventScanner) handle(logs []types.Log, nextBlock uint64) er
 		}
 
 		// update config
-		if dbErr := scanner.store.Config.Upsert(configKeyEventScanNextBlock, fmt.Sprint(nextBlock), tx); dbErr != nil {
-			return errors.WithMessagef(dbErr, "Failed to update config in database by key %v", configKeyEventScanNextBlock)
+		if dbErr := scanner.store.Config.Upsert(configNameEventScanNextBlock, fmt.Sprint(nextBlock), tx); dbErr != nil {
+			return errors.WithMessagef(dbErr, "Failed to update config in database by name %v", configNameEventScanNextBlock)
 		}
 
 		return nil

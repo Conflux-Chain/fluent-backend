@@ -32,6 +32,6 @@ type UserOp struct {
 type Config struct {
 	Model
 
-	Key   string `gorm:"size:64;not null;unique"`
+	Name  string `gorm:"size:64;not null;unique"`
 	Value string `gorm:"size:1024;not null"`
 }
