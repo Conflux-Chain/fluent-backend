@@ -10,7 +10,7 @@ const (
 	UserOpStatusFailed    = "failed"
 )
 
-var AllTables = []any{&UserOp{}}
+var AllTables = []any{&UserOp{}, &Config{}}
 
 type Model struct {
 	ID        uint64    `gorm:"primarykey"`

@@ -52,6 +52,10 @@ func NewUserOpEventScanner(config UserOpEventScanConfig, client *web3go.Client, 
 		return nil, errors.New("Contract address is required")
 	}
 
+	if config.Interval <= 0 {
+		return nil, errors.New("Interval must be greater than 0")
+	}
+
 	caller, _ := client.ToClientForContract()
 	verifyingPaymasterFilterer, err := contract.NewVerifyingPaymasterFilterer(config.Contract, caller)
 	if err != nil {
@@ -72,9 +76,49 @@ func NewUserOpEventScanner(config UserOpEventScanConfig, client *web3go.Client, 
 	return &scanner, nil
 }
 
+// loadNextBlock loads the next block number to scan user op events from the database or configuration.
+func (scanner *UserOpEventScanner) loadNextBlock() (uint64, error) {
+	// load break point from database
+	value, ok, err := scanner.store.Config.Get(configKeyEventScanNextBlock)
+	if err != nil {
+		return 0, errors.WithMessage(err, "Failed to load next block from database")
+	}
+
+	if ok {
+		nextBlock, err := strconv.ParseUint(value, 10, 64)
+		if err != nil {
+			return 0, errors.WithMessage(err, "Failed to parse next block number as uint64 from database")
+		}
+
+		logrus.WithField("next", nextBlock).Debug("Succeeded to load next block to scan user op event from database")
+
+		return nextBlock, nil
+	}
+
+	// use the config value if set
+	if scanner.config.NextBlock > 0 {
+		logrus.WithField("next", scanner.config.NextBlock).Debug("Use configured next block value to scan user op event")
+		return scanner.config.NextBlock, nil
+	}
+
+	// otherwise, fallback to the finalized block number
+	block, err := scanner.client.Eth.BlockByNumber(types.FinalizedBlockNumber, false)
+	if err != nil {
+		return 0, errors.WithMessage(err, "Failed to get finalized block number from blockchain")
+	}
+
+	nextBlock := block.Number.Uint64()
+
+	logrus.WithField("next", nextBlock).Debug("Succeeded to retrieve finalized block number to scan user op event")
+
+	return nextBlock, nil
+}
+
 // Work starts the scanning process for user op events. It first catches up to the latest finalized block,
 // and then continues to scan for new events periodically.
 func (scanner *UserOpEventScanner) Work() {
+	logrus.WithField("next", scanner.config.nextBlock).Info("Begin to scan user op event")
+
 	// Firstly, catch up to the latest finalized block.
 	//
 	// Note: there are only few event logs at early phase, so we can retrieve them in one request from Confura.
@@ -99,37 +143,6 @@ func (scanner *UserOpEventScanner) Work() {
 	}
 }
 
-// loadNextBlock loads the next block number to scan user op events from the database or configuration.
-func (scanner *UserOpEventScanner) loadNextBlock() (uint64, error) {
-	// load break point from database
-	value, ok, err := scanner.store.Config.Get(configKeyEventScanNextBlock)
-	if err != nil {
-		return 0, errors.WithMessage(err, "Failed to load next block from database")
-	}
-
-	if ok {
-		nextBlock, err := strconv.ParseUint(value, 10, 64)
-		if err != nil {
-			return 0, errors.WithMessage(err, "Failed to parse next block number as uint64 from database")
-		}
-
-		return nextBlock, nil
-	}
-
-	// use the config value if set
-	if scanner.config.NextBlock > 0 {
-		return scanner.config.NextBlock, nil
-	}
-
-	// otherwise, fallback to the finalized block number
-	block, err := scanner.client.Eth.BlockByNumber(types.FinalizedBlockNumber, false)
-	if err != nil {
-		return 0, errors.WithMessage(err, "Failed to get finalized block number from blockchain")
-	}
-
-	return block.Number.Uint64(), nil
-}
-
 // scan retrieves user op event logs from the blockchain and updates the database accordingly.
 func (scanner *UserOpEventScanner) scan() (bool, error) {
 	// get the finalized block number
@@ -144,6 +157,11 @@ func (scanner *UserOpEventScanner) scan() (bool, error) {
 		return false, nil
 	}
 
+	logrus.WithFields(logrus.Fields{
+		"from": scanner.config.nextBlock,
+		"to":   finalizedBlockNumber,
+	}).Debug("Scanning user op event logs from blockchain")
+
 	// retrieve event logs between nextBlock and finalizedBlockNumber.
 	logs, err := getLogs(scanner.client, scanner.config.Contract, scanner.config.nextBlock, finalizedBlockNumber, eventHashSponsored)
 	if err != nil {
@@ -154,6 +172,11 @@ func (scanner *UserOpEventScanner) scan() (bool, error) {
 	if err = scanner.handle(logs, finalizedBlockNumber+1); err != nil {
 		return false, errors.WithMessage(err, "Failed to handle event logs")
 	}
+
+	logrus.WithFields(logrus.Fields{
+		"from": scanner.config.nextBlock,
+		"to":   finalizedBlockNumber,
+	}).Debug("Succeeded to scan and handle user op events")
 
 	return true, nil
 }
@@ -179,12 +202,12 @@ func (scanner *UserOpEventScanner) handle(logs []types.Log, nextBlock uint64) er
 			if updated, dbErr := scanner.store.UserOp.Update(v, tx); dbErr != nil {
 				return errors.WithMessage(dbErr, "Failed to update user op in database")
 			} else if !updated {
-				return fmt.Errorf("User op not found in database by hash %v", hexutil.Encode(v.UserOpHash[:]))
+				logrus.WithField("userOpHash", hexutil.Encode(v.UserOpHash[:])).Error("Sponsored event userOpHash not found in database")
 			}
 		}
 
 		// update config
-		if _, dbErr := scanner.store.Config.Update(configKeyEventScanNextBlock, fmt.Sprint(nextBlock), tx); dbErr != nil {
+		if dbErr := scanner.store.Config.Upsert(configKeyEventScanNextBlock, fmt.Sprint(nextBlock), tx); dbErr != nil {
 			return errors.WithMessagef(dbErr, "Failed to update config in database by key %v", configKeyEventScanNextBlock)
 		}
 

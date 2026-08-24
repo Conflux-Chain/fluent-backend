@@ -16,6 +16,7 @@ func NewConfigStore(store *store.Store) *ConfigStore {
 	}
 }
 
+// Get returns the value of the config by key. If the config does not exist, it returns false.
 func (store *ConfigStore) Get(key string) (string, bool, error) {
 	var config Config
 
@@ -31,20 +32,32 @@ func (store *ConfigStore) Get(key string) (string, bool, error) {
 	return config.Value, true, nil
 }
 
-func (store *ConfigStore) Update(key string, value string, tx ...*gorm.DB) (bool, error) {
+// Upsert updates the value of the config by key. If the config does not exist, it creates a new config with the given key and value.
+func (store *ConfigStore) Upsert(key string, value string, tx ...*gorm.DB) error {
 	db := store.inner.DB
 	if len(tx) > 0 {
 		db = tx[0]
 	}
 
-	result := db.Model(&Config{}).
-		Where("key = ?", key).
-		Where("value != ?", value).
-		Update("value", value)
-
+	// update by key
+	result := db.Model(&Config{}).Where("key = ?", key).Update("value", value)
 	if err := result.Error; err != nil {
-		return false, api.ErrDatabaseCause(err, "Failed to update config by key")
+		return api.ErrDatabaseCausef(err, "Failed to update config by key %v", key)
 	}
 
-	return result.RowsAffected > 0, nil
+	if result.RowsAffected > 0 {
+		return nil
+	}
+
+	// create if absent
+	config := Config{
+		Key:   key,
+		Value: value,
+	}
+
+	if er := db.Create(&config).Error; er != nil {
+		return api.ErrDatabaseCausef(er, "Failed to create config of key %v", key)
+	}
+
+	return nil
 }

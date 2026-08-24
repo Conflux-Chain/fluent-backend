@@ -174,6 +174,9 @@ func (paymaster *VerifyingPaymaster) Sign(userOp contract.PackedUserOperation, d
 	}
 
 	// validate the user operation
+	//
+	// NOTE To prevent abuse in future, we could blacklist the sender address and
+	// its IP address for a while, if failed to validate too many times.
 	if err := paymaster.validate(&userOp, delegatedContract); err != nil {
 		return nil, err
 	}
