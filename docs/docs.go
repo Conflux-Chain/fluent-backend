@@ -816,8 +816,7 @@ const docTemplate = `{
                 },
                 "callGasLimit": {
                     "type": "string",
-                    "maxLength": 34,
-                    "minLength": 4
+                    "maxLength": 32
                 },
                 "factory": {
                     "type": "string"
@@ -828,17 +827,14 @@ const docTemplate = `{
                 },
                 "maxFeePerGas": {
                     "type": "string",
-                    "maxLength": 34,
-                    "minLength": 4
+                    "maxLength": 32
                 },
                 "maxPriorityFeePerGas": {
                     "type": "string",
-                    "maxLength": 34,
-                    "minLength": 4
+                    "maxLength": 32
                 },
                 "nonce": {
-                    "type": "string",
-                    "minLength": 4
+                    "type": "string"
                 },
                 "paymaster": {
                     "description": "Paymaster",
@@ -851,18 +847,15 @@ const docTemplate = `{
                 },
                 "paymasterPostOpGasLimit": {
                     "type": "string",
-                    "maxLength": 34,
-                    "minLength": 4
+                    "maxLength": 32
                 },
                 "paymasterVerificationGasLimit": {
                     "type": "string",
-                    "maxLength": 34,
-                    "minLength": 4
+                    "maxLength": 32
                 },
                 "preVerificationGas": {
                     "type": "string",
-                    "maxLength": 34,
-                    "minLength": 4
+                    "maxLength": 32
                 },
                 "sender": {
                     "type": "string"
@@ -872,8 +865,7 @@ const docTemplate = `{
                 },
                 "verificationGasLimit": {
                     "type": "string",
-                    "maxLength": 34,
-                    "minLength": 4
+                    "maxLength": 32
                 }
             }
         },
@@ -902,8 +894,7 @@ const docTemplate = `{
                 },
                 "callGasLimit": {
                     "type": "string",
-                    "maxLength": 34,
-                    "minLength": 4
+                    "maxLength": 32
                 },
                 "delegatedContract": {
                     "description": "DelegatedContract is used when user operation carrying an EIP-7702 auth message to upgrade EOA to a smart account\nor replace the delegated smart account. If there is no EIP-7702 auth message, use empty value \"0x0000000000000000000000000000000000000000\".",
@@ -918,17 +909,14 @@ const docTemplate = `{
                 },
                 "maxFeePerGas": {
                     "type": "string",
-                    "maxLength": 34,
-                    "minLength": 4
+                    "maxLength": 32
                 },
                 "maxPriorityFeePerGas": {
                     "type": "string",
-                    "maxLength": 34,
-                    "minLength": 4
+                    "maxLength": 32
                 },
                 "nonce": {
-                    "type": "string",
-                    "minLength": 4
+                    "type": "string"
                 },
                 "paymaster": {
                     "description": "Paymaster",
@@ -941,18 +929,15 @@ const docTemplate = `{
                 },
                 "paymasterPostOpGasLimit": {
                     "type": "string",
-                    "maxLength": 34,
-                    "minLength": 4
+                    "maxLength": 32
                 },
                 "paymasterVerificationGasLimit": {
                     "type": "string",
-                    "maxLength": 34,
-                    "minLength": 4
+                    "maxLength": 32
                 },
                 "preVerificationGas": {
                     "type": "string",
-                    "maxLength": 34,
-                    "minLength": 4
+                    "maxLength": 32
                 },
                 "sender": {
                     "type": "string"
@@ -962,8 +947,7 @@ const docTemplate = `{
                 },
                 "verificationGasLimit": {
                     "type": "string",
-                    "maxLength": 34,
-                    "minLength": 4
+                    "maxLength": 32
                 }
             }
         }
