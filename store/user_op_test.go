@@ -8,7 +8,6 @@ import (
 	"github.com/Conflux-Chain/fluent-backend/contract"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -113,7 +112,7 @@ func TestUserOpUpdate(t *testing.T) {
 		UserOpHash:            [32]byte{0x01},
 		ActualGasCost:         big.NewInt(111),
 		ActualUserOpFeePerGas: big.NewInt(222),
-	})
+	}, 111)
 	assert.NoError(t, err)
 	assert.False(t, updated)
 
@@ -123,14 +122,11 @@ func TestUserOpUpdate(t *testing.T) {
 		Success:               true,
 		ActualGasCost:         big.NewInt(111),
 		ActualUserOpFeePerGas: big.NewInt(222),
-		Raw: types.Log{
-			BlockNumber: 555,
-		},
 	}
 
 	assertCreateUserOp(t, store, hexutil.Encode(event1.UserOpHash[:]), "0x01", 1)
 
-	updated, err = store.UserOp.Update(&event1)
+	updated, err = store.UserOp.Update(&event1, 555)
 	assert.NoError(t, err)
 	assert.True(t, updated)
 
@@ -148,12 +144,9 @@ func TestUserOpUpdate(t *testing.T) {
 		Success:               false,
 		ActualGasCost:         big.NewInt(333),
 		ActualUserOpFeePerGas: big.NewInt(444),
-		Raw: types.Log{
-			BlockNumber: 666,
-		},
 	}
 
-	updated, err = store.UserOp.Update(&event2)
+	updated, err = store.UserOp.Update(&event2, 666)
 	assert.NoError(t, err)
 	assert.True(t, updated)
 

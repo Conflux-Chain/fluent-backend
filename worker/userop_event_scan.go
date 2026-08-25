@@ -187,11 +187,22 @@ func (scanner *UserOpEventScanner) scan() (bool, error) {
 func (scanner *UserOpEventScanner) handle(logs []types.Log, nextBlock uint64) error {
 	// parse event logs
 	var events []*contract.VerifyingPaymasterSponsored
+	blockNumber2Timestamps := make(map[uint64]uint64)
 
 	for _, v := range logs {
 		event, err := scanner.filterer.ParseSponsored(*v.ToEthLog())
 		if err != nil {
 			return errors.WithMessage(err, "Failed to parse Sponsored event log")
+		}
+
+		// load block timestamp if absent
+		if _, ok := blockNumber2Timestamps[event.Raw.BlockNumber]; !ok {
+			block, err := scanner.client.Eth.BlockByNumber(types.BlockNumber(event.Raw.BlockNumber), false)
+			if err != nil {
+				return errors.WithMessage(err, "Failed to retrieve block by number")
+			}
+
+			blockNumber2Timestamps[event.Raw.BlockNumber] = block.Timestamp
 		}
 
 		events = append(events, event)
@@ -201,7 +212,9 @@ func (scanner *UserOpEventScanner) handle(logs []types.Log, nextBlock uint64) er
 	fc := func(tx *gorm.DB) error {
 		// update user ops
 		for _, v := range events {
-			if updated, dbErr := scanner.store.UserOp.Update(v, tx); dbErr != nil {
+			blockTimestamp := blockNumber2Timestamps[v.Raw.BlockNumber]
+
+			if updated, dbErr := scanner.store.UserOp.Update(v, blockTimestamp, tx); dbErr != nil {
 				return errors.WithMessage(dbErr, "Failed to update user op in database")
 			} else if !updated {
 				logrus.WithField("userOpHash", hexutil.Encode(v.UserOpHash[:])).Error("Sponsored event userOpHash not found in database")

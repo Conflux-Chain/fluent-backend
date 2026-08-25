@@ -76,7 +76,7 @@ func (store *UserOpStore) DeleteExpired(timeout time.Duration) (int64, error) {
 	return db.RowsAffected, nil
 }
 
-func (store *UserOpStore) Update(event *contract.VerifyingPaymasterSponsored, tx ...*gorm.DB) (bool, error) {
+func (store *UserOpStore) Update(event *contract.VerifyingPaymasterSponsored, blockTimestamp uint64, tx ...*gorm.DB) (bool, error) {
 	db := store.inner.DB
 	if len(tx) > 0 {
 		db = tx[0]
@@ -100,7 +100,7 @@ func (store *UserOpStore) Update(event *contract.VerifyingPaymasterSponsored, tx
 			Status:                status,
 			ActualGasCost:         decimal.NewFromBigInt(event.ActualGasCost, 0),
 			ActualUserOpFeePerGas: decimal.NewFromBigInt(event.ActualUserOpFeePerGas, 0),
-			BlockTimestamp:        event.Raw.BlockNumber,
+			BlockTimestamp:        blockTimestamp,
 		})
 
 	return result.RowsAffected > 0, result.Error
