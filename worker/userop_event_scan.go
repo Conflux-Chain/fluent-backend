@@ -187,6 +187,7 @@ func (scanner *UserOpEventScanner) scan() (bool, error) {
 func (scanner *UserOpEventScanner) handle(logs []types.Log, nextBlock uint64) error {
 	// parse event logs
 	var events []*contract.VerifyingPaymasterSponsored
+	var blocktimestamps []uint64
 
 	for _, v := range logs {
 		event, err := scanner.filterer.ParseSponsored(*v.ToEthLog())
@@ -195,13 +196,14 @@ func (scanner *UserOpEventScanner) handle(logs []types.Log, nextBlock uint64) er
 		}
 
 		events = append(events, event)
+		blocktimestamps = append(blocktimestamps, v.BlockTimestamp)
 	}
 
 	// update user ops and config in a transaction
 	fc := func(tx *gorm.DB) error {
 		// update user ops
-		for _, v := range events {
-			if updated, dbErr := scanner.store.UserOp.Update(v, tx); dbErr != nil {
+		for i, v := range events {
+			if updated, dbErr := scanner.store.UserOp.Update(v, blocktimestamps[i], tx); dbErr != nil {
 				return errors.WithMessage(dbErr, "Failed to update user op in database")
 			} else if !updated {
 				logrus.WithField("userOpHash", hexutil.Encode(v.UserOpHash[:])).Error("Sponsored event userOpHash not found in database")

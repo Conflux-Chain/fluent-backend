@@ -1,6 +1,7 @@
 package store
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/Conflux-Chain/fluent-backend/contract"
@@ -8,6 +9,8 @@ import (
 	"github.com/Conflux-Chain/go-conflux-util/store"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/pkg/errors"
+	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 )
 
@@ -34,8 +37,26 @@ func (store *UserOpStore) GetPendingCount(sender common.Address) (int64, error) 
 	return count, nil
 }
 
-func (store *UserOpStore) Create(userOp *UserOp) error {
-	if err := store.inner.DB.Create(userOp).Error; err != nil {
+func (store *UserOpStore) Create(userOp *contract.PackedUserOperation, hash string, validUntil time.Time) error {
+	rawUserOp, err := json.Marshal(convertPackedUserOp(userOp))
+	if err != nil {
+		return errors.WithMessage(err, "Failed to JSON marshal user op")
+	}
+
+	entity := UserOp{
+		Hash:       hash,
+		Sender:     userOp.Sender.Hex(),
+		Nonce:      hexutil.Encode(userOp.Nonce.Bytes()),
+		Status:     UserOpStatusSigned,
+		ValidUntil: validUntil,
+
+		ActualGasCost:         decimal.Zero,
+		ActualUserOpFeePerGas: decimal.Zero,
+
+		RawUserOp: string(rawUserOp),
+	}
+
+	if err := store.inner.DB.Create(&entity).Error; err != nil {
 		return api.ErrDatabaseCause(err, "Failed to create user operation")
 	}
 
@@ -55,7 +76,7 @@ func (store *UserOpStore) DeleteExpired(timeout time.Duration) (int64, error) {
 	return db.RowsAffected, nil
 }
 
-func (store *UserOpStore) Update(event *contract.VerifyingPaymasterSponsored, tx ...*gorm.DB) (bool, error) {
+func (store *UserOpStore) Update(event *contract.VerifyingPaymasterSponsored, blockTimestamp uint64, tx ...*gorm.DB) (bool, error) {
 	db := store.inner.DB
 	if len(tx) > 0 {
 		db = tx[0]
@@ -77,8 +98,9 @@ func (store *UserOpStore) Update(event *contract.VerifyingPaymasterSponsored, tx
 		Where("hash = ?", hexutil.Encode(event.UserOpHash[:])).
 		Updates(UserOp{
 			Status:                status,
-			ActualGasCost:         event.ActualGasCost.String(),
-			ActualUserOpFeePerGas: event.ActualUserOpFeePerGas.String(),
+			ActualGasCost:         decimal.NewFromBigInt(event.ActualGasCost, 0),
+			ActualUserOpFeePerGas: decimal.NewFromBigInt(event.ActualUserOpFeePerGas, 0),
+			BlockTimestamp:        blockTimestamp,
 		})
 
 	return result.RowsAffected > 0, result.Error

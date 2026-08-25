@@ -24,27 +24,44 @@ func (store *UserOpStore) assertGet(t *testing.T, hash string) (*UserOp, bool) {
 	return &userOp, true
 }
 
-func newTestUserOp(hash string, sender common.Address, nonce string, validUntilOffset ...time.Duration) *UserOp {
-	var offset time.Duration
-	if len(validUntilOffset) > 0 {
-		offset = validUntilOffset[0]
+func assertCreateUserOp(t *testing.T, store *Store, hash string, hexSender string, nonce int64, validUntilOffset ...time.Duration) {
+	var paymasterAndData [60]byte
+	copy(paymasterAndData[:], []byte{0x01, 0x02, 0x03})
+
+	userOp := contract.PackedUserOperation{
+		Sender:             common.HexToAddress(hexSender),
+		Nonce:              big.NewInt(nonce),
+		PreVerificationGas: big.NewInt(666),
+		PaymasterAndData:   paymasterAndData[:],
 	}
 
-	return &UserOp{
-		Hash:       hash,
-		Sender:     sender.Hex(),
-		Nonce:      nonce,
-		ValidUntil: time.Now().Add(offset),
-		Status:     UserOpStatusSigned,
+	validUntil := time.Now()
+	if len(validUntilOffset) > 0 {
+		validUntil = validUntil.Add(validUntilOffset[0])
 	}
+
+	err := store.UserOp.Create(&userOp, hash, validUntil)
+	assert.NoError(t, err)
+}
+
+func TestUserOpCreate(t *testing.T) {
+	store := newTestStore()
+
+	assertCreateUserOp(t, store, "hash-1", "0x01", 1)
+
+	userOp, ok := store.UserOp.assertGet(t, "hash-1")
+	assert.True(t, ok)
+	assert.NotNil(t, userOp)
+	assert.Equal(t, UserOpStatusSigned, userOp.Status)
+	assert.Greater(t, len(userOp.RawUserOp), 0)
 }
 
 func TestUserOpPendingCount(t *testing.T) {
 	store := newTestStore()
 
-	assert.NoError(t, store.UserOp.Create(newTestUserOp("hash-1", common.HexToAddress("0x01"), "1")))
-	assert.NoError(t, store.UserOp.Create(newTestUserOp("hash-2", common.HexToAddress("0x01"), "2")))
-	assert.NoError(t, store.UserOp.Create(newTestUserOp("hash-3", common.HexToAddress("0x02"), "1")))
+	assertCreateUserOp(t, store, "hash-1", "0x01", 1)
+	assertCreateUserOp(t, store, "hash-2", "0x01", 2)
+	assertCreateUserOp(t, store, "hash-3", "0x02", 1)
 
 	// 2 pending user ops for sender 0x01
 	count, err := store.UserOp.GetPendingCount(common.HexToAddress("0x01"))
@@ -60,9 +77,9 @@ func TestUserOpPendingCount(t *testing.T) {
 func TestUserOpDeleteExpired(t *testing.T) {
 	store := newTestStore()
 
-	assert.NoError(t, store.UserOp.Create(newTestUserOp("hash-1", common.HexToAddress("0x01"), "1", -time.Hour))) // expired
-	assert.NoError(t, store.UserOp.Create(newTestUserOp("hash-2", common.HexToAddress("0x01"), "2", time.Hour)))  // not expired
-	assert.NoError(t, store.UserOp.Create(newTestUserOp("hash-3", common.HexToAddress("0x02"), "1", -time.Hour))) // expired
+	assertCreateUserOp(t, store, "hash-1", "0x01", 1, -time.Hour) // expired
+	assertCreateUserOp(t, store, "hash-2", "0x01", 2, time.Hour)  // not expired
+	assertCreateUserOp(t, store, "hash-3", "0x02", 1, -time.Hour) // expired
 
 	// 2 expired user ops should be deleted
 	deleted, err := store.UserOp.DeleteExpired(time.Minute)
@@ -88,12 +105,14 @@ func TestUserOpDeleteExpired(t *testing.T) {
 func TestUserOpUpdate(t *testing.T) {
 	store := newTestStore()
 
-	assert.NoError(t, store.UserOp.Create(newTestUserOp("hash-1", common.HexToAddress("0x01"), "1")))
+	assertCreateUserOp(t, store, "hash-1", "0x01", 1)
 
 	// not found to update
 	updated, err := store.UserOp.Update(&contract.VerifyingPaymasterSponsored{
-		UserOpHash: [32]byte{0x01},
-	})
+		UserOpHash:            [32]byte{0x01},
+		ActualGasCost:         big.NewInt(111),
+		ActualUserOpFeePerGas: big.NewInt(222),
+	}, 111)
 	assert.NoError(t, err)
 	assert.False(t, updated)
 
@@ -105,9 +124,9 @@ func TestUserOpUpdate(t *testing.T) {
 		ActualUserOpFeePerGas: big.NewInt(222),
 	}
 
-	assert.NoError(t, store.UserOp.Create(newTestUserOp(hexutil.Encode(event1.UserOpHash[:]), common.HexToAddress("0x01"), "1")))
+	assertCreateUserOp(t, store, hexutil.Encode(event1.UserOpHash[:]), "0x01", 1)
 
-	updated, err = store.UserOp.Update(&event1)
+	updated, err = store.UserOp.Update(&event1, 555)
 	assert.NoError(t, err)
 	assert.True(t, updated)
 
@@ -115,8 +134,9 @@ func TestUserOpUpdate(t *testing.T) {
 	assert.True(t, ok)
 	assert.NotNil(t, userOp)
 	assert.Equal(t, UserOpStatusSucceeded, userOp.Status)
-	assert.Equal(t, event1.ActualGasCost.String(), userOp.ActualGasCost)
-	assert.Equal(t, event1.ActualUserOpFeePerGas.String(), userOp.ActualUserOpFeePerGas)
+	assert.Equal(t, event1.ActualGasCost, userOp.ActualGasCost.BigInt())
+	assert.Equal(t, event1.ActualUserOpFeePerGas, userOp.ActualUserOpFeePerGas.BigInt())
+	assert.Equal(t, uint64(555), userOp.BlockTimestamp)
 
 	// found to update - failed
 	event2 := contract.VerifyingPaymasterSponsored{
@@ -126,7 +146,7 @@ func TestUserOpUpdate(t *testing.T) {
 		ActualUserOpFeePerGas: big.NewInt(444),
 	}
 
-	updated, err = store.UserOp.Update(&event2)
+	updated, err = store.UserOp.Update(&event2, 666)
 	assert.NoError(t, err)
 	assert.True(t, updated)
 
@@ -134,6 +154,7 @@ func TestUserOpUpdate(t *testing.T) {
 	assert.True(t, ok)
 	assert.NotNil(t, userOp)
 	assert.Equal(t, UserOpStatusFailed, userOp.Status)
-	assert.Equal(t, event2.ActualGasCost.String(), userOp.ActualGasCost)
-	assert.Equal(t, event2.ActualUserOpFeePerGas.String(), userOp.ActualUserOpFeePerGas)
+	assert.Equal(t, event2.ActualGasCost, userOp.ActualGasCost.BigInt())
+	assert.Equal(t, event2.ActualUserOpFeePerGas, userOp.ActualUserOpFeePerGas.BigInt())
+	assert.Equal(t, uint64(666), userOp.BlockTimestamp)
 }
