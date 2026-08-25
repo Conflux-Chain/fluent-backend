@@ -206,15 +206,9 @@ func (paymaster *VerifyingPaymaster) Sign(userOp contract.PackedUserOperation, d
 		return nil, NewRPCError(err, "Failed to get user operation hash")
 	}
 
-	entity := store.UserOp{
-		Hash:       hexutil.Encode(userOpHash[:]),
-		Sender:     userOp.Sender.Hex(),
-		Nonce:      hexutil.Encode(userOp.Nonce.Bytes()),
-		ValidUntil: validUntil,
-		Status:     store.UserOpStatusSigned,
-	}
+	userOpHashHex := hexutil.Encode(userOpHash[:])
 
-	if err = paymaster.store.UserOp.Create(&entity); err != nil {
+	if err = paymaster.store.UserOp.Create(&userOp, userOpHashHex, validUntil); err != nil {
 		return nil, err
 	}
 
