@@ -97,17 +97,17 @@ type UserOperation struct {
 	Factory              string `json:"factory" binding:"omitempty,hex,len=42"`
 	FactoryData          string `json:"factoryData" binding:"omitempty,hex,min=2"`
 	CallData             string `json:"callData" binding:"required,hex,min=2"`
-	VerificationGasLimit string `json:"verificationGasLimit" binding:"required,hexadecimal,max=34"`
-	CallGasLimit         string `json:"callGasLimit" binding:"required,hexadecimal,max=34"`
-	PreVerificationGas   string `json:"preVerificationGas" binding:"required,hexadecimal,max=34"`
-	MaxFeePerGas         string `json:"maxFeePerGas" binding:"required,hexadecimal,max=34"`
-	MaxPriorityFeePerGas string `json:"maxPriorityFeePerGas" binding:"required,hexadecimal,max=34"`
+	VerificationGasLimit string `json:"verificationGasLimit" binding:"required,hexadecimal,max=32"`
+	CallGasLimit         string `json:"callGasLimit" binding:"required,hexadecimal,max=32"`
+	PreVerificationGas   string `json:"preVerificationGas" binding:"required,hexadecimal,max=32"`
+	MaxFeePerGas         string `json:"maxFeePerGas" binding:"required,hexadecimal,max=32"`
+	MaxPriorityFeePerGas string `json:"maxPriorityFeePerGas" binding:"required,hexadecimal,max=32"`
 	Signature            string `json:"signature" binding:"required,hex,len=132"`
 
 	// Paymaster
 	Paymaster                     string `json:"paymaster" binding:"required,hex,len=42"`
-	PaymasterVerificationGasLimit string `json:"paymasterVerificationGasLimit" binding:"required,hexadecimal,max=34"`
-	PaymasterPostOpGasLimit       string `json:"paymasterPostOpGasLimit" binding:"required,hexadecimal,max=34"`
+	PaymasterVerificationGasLimit string `json:"paymasterVerificationGasLimit" binding:"required,hexadecimal,max=32"`
+	PaymasterPostOpGasLimit       string `json:"paymasterPostOpGasLimit" binding:"required,hexadecimal,max=32"`
 	PaymasterData                 string `json:"paymasterData" binding:"required,hex,min=156"` // at least validAfter (6) || validUntil (6) || signature (65)
 }
 
