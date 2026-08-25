@@ -809,8 +809,7 @@
                 },
                 "callGasLimit": {
                     "type": "string",
-                    "maxLength": 34,
-                    "minLength": 4
+                    "maxLength": 32
                 },
                 "factory": {
                     "type": "string"
@@ -821,17 +820,14 @@
                 },
                 "maxFeePerGas": {
                     "type": "string",
-                    "maxLength": 34,
-                    "minLength": 4
+                    "maxLength": 32
                 },
                 "maxPriorityFeePerGas": {
                     "type": "string",
-                    "maxLength": 34,
-                    "minLength": 4
+                    "maxLength": 32
                 },
                 "nonce": {
-                    "type": "string",
-                    "minLength": 4
+                    "type": "string"
                 },
                 "paymaster": {
                     "description": "Paymaster",
@@ -844,18 +840,15 @@
                 },
                 "paymasterPostOpGasLimit": {
                     "type": "string",
-                    "maxLength": 34,
-                    "minLength": 4
+                    "maxLength": 32
                 },
                 "paymasterVerificationGasLimit": {
                     "type": "string",
-                    "maxLength": 34,
-                    "minLength": 4
+                    "maxLength": 32
                 },
                 "preVerificationGas": {
                     "type": "string",
-                    "maxLength": 34,
-                    "minLength": 4
+                    "maxLength": 32
                 },
                 "sender": {
                     "type": "string"
@@ -865,8 +858,7 @@
                 },
                 "verificationGasLimit": {
                     "type": "string",
-                    "maxLength": 34,
-                    "minLength": 4
+                    "maxLength": 32
                 }
             }
         },
@@ -895,8 +887,7 @@
                 },
                 "callGasLimit": {
                     "type": "string",
-                    "maxLength": 34,
-                    "minLength": 4
+                    "maxLength": 32
                 },
                 "delegatedContract": {
                     "description": "DelegatedContract is used when user operation carrying an EIP-7702 auth message to upgrade EOA to a smart account\nor replace the delegated smart account. If there is no EIP-7702 auth message, use empty value \"0x0000000000000000000000000000000000000000\".",
@@ -911,17 +902,14 @@
                 },
                 "maxFeePerGas": {
                     "type": "string",
-                    "maxLength": 34,
-                    "minLength": 4
+                    "maxLength": 32
                 },
                 "maxPriorityFeePerGas": {
                     "type": "string",
-                    "maxLength": 34,
-                    "minLength": 4
+                    "maxLength": 32
                 },
                 "nonce": {
-                    "type": "string",
-                    "minLength": 4
+                    "type": "string"
                 },
                 "paymaster": {
                     "description": "Paymaster",
@@ -934,18 +922,15 @@
                 },
                 "paymasterPostOpGasLimit": {
                     "type": "string",
-                    "maxLength": 34,
-                    "minLength": 4
+                    "maxLength": 32
                 },
                 "paymasterVerificationGasLimit": {
                     "type": "string",
-                    "maxLength": 34,
-                    "minLength": 4
+                    "maxLength": 32
                 },
                 "preVerificationGas": {
                     "type": "string",
-                    "maxLength": 34,
-                    "minLength": 4
+                    "maxLength": 32
                 },
                 "sender": {
                     "type": "string"
@@ -955,8 +940,7 @@
                 },
                 "verificationGasLimit": {
                     "type": "string",
-                    "maxLength": 34,
-                    "minLength": 4
+                    "maxLength": 32
                 }
             }
         }

@@ -141,8 +141,7 @@ definitions:
         minLength: 2
         type: string
       callGasLimit:
-        maxLength: 34
-        minLength: 4
+        maxLength: 32
         type: string
       factory:
         type: string
@@ -150,15 +149,12 @@ definitions:
         minLength: 2
         type: string
       maxFeePerGas:
-        maxLength: 34
-        minLength: 4
+        maxLength: 32
         type: string
       maxPriorityFeePerGas:
-        maxLength: 34
-        minLength: 4
+        maxLength: 32
         type: string
       nonce:
-        minLength: 4
         type: string
       paymaster:
         description: Paymaster
@@ -168,24 +164,20 @@ definitions:
         minLength: 156
         type: string
       paymasterPostOpGasLimit:
-        maxLength: 34
-        minLength: 4
+        maxLength: 32
         type: string
       paymasterVerificationGasLimit:
-        maxLength: 34
-        minLength: 4
+        maxLength: 32
         type: string
       preVerificationGas:
-        maxLength: 34
-        minLength: 4
+        maxLength: 32
         type: string
       sender:
         type: string
       signature:
         type: string
       verificationGasLimit:
-        maxLength: 34
-        minLength: 4
+        maxLength: 32
         type: string
     required:
     - callData
@@ -208,8 +200,7 @@ definitions:
         minLength: 2
         type: string
       callGasLimit:
-        maxLength: 34
-        minLength: 4
+        maxLength: 32
         type: string
       delegatedContract:
         description: |-
@@ -222,15 +213,12 @@ definitions:
         minLength: 2
         type: string
       maxFeePerGas:
-        maxLength: 34
-        minLength: 4
+        maxLength: 32
         type: string
       maxPriorityFeePerGas:
-        maxLength: 34
-        minLength: 4
+        maxLength: 32
         type: string
       nonce:
-        minLength: 4
         type: string
       paymaster:
         description: Paymaster
@@ -240,24 +228,20 @@ definitions:
         minLength: 156
         type: string
       paymasterPostOpGasLimit:
-        maxLength: 34
-        minLength: 4
+        maxLength: 32
         type: string
       paymasterVerificationGasLimit:
-        maxLength: 34
-        minLength: 4
+        maxLength: 32
         type: string
       preVerificationGas:
-        maxLength: 34
-        minLength: 4
+        maxLength: 32
         type: string
       sender:
         type: string
       signature:
         type: string
       verificationGasLimit:
-        maxLength: 34
-        minLength: 4
+        maxLength: 32
         type: string
     required:
     - callData

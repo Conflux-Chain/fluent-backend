@@ -1,7 +1,9 @@
 package api
 
 import (
+	"encoding/hex"
 	"math/big"
+	"strings"
 
 	"github.com/Conflux-Chain/fluent-backend/contract"
 	"github.com/Conflux-Chain/fluent-backend/service"
@@ -91,26 +93,34 @@ func ToPaymasterAndDataStub(paymasterAndData []byte) (stub PaymasterAndDataStub)
 
 type UserOperation struct {
 	Sender               string `json:"sender" binding:"required,hex,len=42"`
-	Nonce                string `json:"nonce" binding:"required,hex,min=4"`
+	Nonce                string `json:"nonce" binding:"required,hexadecimal"`
 	Factory              string `json:"factory" binding:"omitempty,hex,len=42"`
 	FactoryData          string `json:"factoryData" binding:"omitempty,hex,min=2"`
 	CallData             string `json:"callData" binding:"required,hex,min=2"`
-	VerificationGasLimit string `json:"verificationGasLimit" binding:"required,hex,min=4,max=34"`
-	CallGasLimit         string `json:"callGasLimit" binding:"required,hex,min=4,max=34"`
-	PreVerificationGas   string `json:"preVerificationGas" binding:"required,hex,min=4,max=34"`
-	MaxFeePerGas         string `json:"maxFeePerGas" binding:"required,hex,min=4,max=34"`
-	MaxPriorityFeePerGas string `json:"maxPriorityFeePerGas" binding:"required,hex,min=4,max=34"`
+	VerificationGasLimit string `json:"verificationGasLimit" binding:"required,hexadecimal,max=32"`
+	CallGasLimit         string `json:"callGasLimit" binding:"required,hexadecimal,max=32"`
+	PreVerificationGas   string `json:"preVerificationGas" binding:"required,hexadecimal,max=32"`
+	MaxFeePerGas         string `json:"maxFeePerGas" binding:"required,hexadecimal,max=32"`
+	MaxPriorityFeePerGas string `json:"maxPriorityFeePerGas" binding:"required,hexadecimal,max=32"`
 	Signature            string `json:"signature" binding:"required,hex,len=132"`
 
 	// Paymaster
 	Paymaster                     string `json:"paymaster" binding:"required,hex,len=42"`
-	PaymasterVerificationGasLimit string `json:"paymasterVerificationGasLimit" binding:"required,hex,min=4,max=34"`
-	PaymasterPostOpGasLimit       string `json:"paymasterPostOpGasLimit" binding:"required,hex,min=4,max=34"`
+	PaymasterVerificationGasLimit string `json:"paymasterVerificationGasLimit" binding:"required,hexadecimal,max=32"`
+	PaymasterPostOpGasLimit       string `json:"paymasterPostOpGasLimit" binding:"required,hexadecimal,max=32"`
 	PaymasterData                 string `json:"paymasterData" binding:"required,hex,min=156"` // at least validAfter (6) || validUntil (6) || signature (65)
 }
 
-func hexToBig(hex string) *big.Int {
-	dataBytes, _ := hexutil.Decode(hex)
+func hexToBig(hexNum string) *big.Int {
+	if strings.HasPrefix(hexNum, "0x") || strings.HasPrefix(hexNum, "0X") {
+		hexNum = hexNum[2:]
+	}
+
+	if len(hexNum)%2 == 1 {
+		hexNum = "0" + hexNum
+	}
+
+	dataBytes, _ := hex.DecodeString(hexNum)
 
 	if len(dataBytes) == 0 {
 		return common.Big0
