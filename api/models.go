@@ -1,7 +1,9 @@
 package api
 
 import (
+	"encoding/hex"
 	"math/big"
+	"strings"
 
 	"github.com/Conflux-Chain/fluent-backend/contract"
 	"github.com/Conflux-Chain/fluent-backend/service"
@@ -109,8 +111,16 @@ type UserOperation struct {
 	PaymasterData                 string `json:"paymasterData" binding:"required,hex,min=156"` // at least validAfter (6) || validUntil (6) || signature (65)
 }
 
-func hexToBig(hex string) *big.Int {
-	dataBytes, _ := hexutil.Decode(hex)
+func hexToBig(hexNum string) *big.Int {
+	if strings.HasPrefix(hexNum, "0x") || strings.HasPrefix(hexNum, "0X") {
+		hexNum = hexNum[2:]
+	}
+
+	if len(hexNum)%2 == 1 {
+		hexNum = "0" + hexNum
+	}
+
+	dataBytes, _ := hex.DecodeString(hexNum)
 
 	if len(dataBytes) == 0 {
 		return common.Big0
