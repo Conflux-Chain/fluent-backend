@@ -24,10 +24,11 @@ type UserOp struct {
 	Model
 
 	Hash       string    `gorm:"size:66;not null;unique"`
-	Sender     string    `gorm:"size:42;not null;index:idx_sender_status"`
+	IPAddress  string    `gorm:"size:64;not null;index:idx_ip_status"`
+	Sender     string    `gorm:"size:42;not null;index:idx_sender_valid_until;index:idx_sender_status"`
 	Nonce      string    `gorm:"size:66;not null"`
-	Status     string    `gorm:"size:32;not null;index:idx_sender_status;index:idx_status_valid_until"`
-	ValidUntil time.Time `gorm:"not null;index:idx_status_valid_until"`
+	Status     string    `gorm:"size:32;not null;index:idx_ip_status;index:idx_sender_status;index:idx_status_valid_until"`
+	ValidUntil time.Time `gorm:"not null;index:idx_sender_valid_until;index:idx_status_valid_until"`
 
 	ActualGasCost         decimal.Decimal `gorm:"type:decimal(32,0);not null"`
 	ActualUserOpFeePerGas decimal.Decimal `gorm:"type:decimal(32,0);not null"`

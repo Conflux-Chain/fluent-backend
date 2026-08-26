@@ -40,7 +40,7 @@ func assertCreateUserOp(t *testing.T, store *Store, hash string, hexSender strin
 		validUntil = validUntil.Add(validUntilOffset[0])
 	}
 
-	err := store.UserOp.Create(&userOp, hash, validUntil)
+	err := store.UserOp.Create(&userOp, hash, validUntil, "DummyIP")
 	assert.NoError(t, err)
 }
 
@@ -54,6 +54,23 @@ func TestUserOpCreate(t *testing.T) {
 	assert.NotNil(t, userOp)
 	assert.Equal(t, UserOpStatusSigned, userOp.Status)
 	assert.Greater(t, len(userOp.RawUserOp), 0)
+}
+
+func TestUserOpCountByValidUntil(t *testing.T) {
+	store := newTestStore()
+
+	assertCreateUserOp(t, store, "hash-1", "0x01", 1)
+	assertCreateUserOp(t, store, "hash-2", "0x01", 2)
+
+	// count valid until 1 hour ago for sender 0x01
+	count, err := store.UserOp.GetCountByValidUntil(common.HexToAddress("0x01"), time.Now().Add(-time.Hour))
+	assert.NoError(t, err)
+	assert.Equal(t, int64(2), count)
+
+	// count valid until 1 hour later for sender 0x01
+	count, err = store.UserOp.GetCountByValidUntil(common.HexToAddress("0x01"), time.Now().Add(time.Hour))
+	assert.NoError(t, err)
+	assert.Equal(t, int64(0), count)
 }
 
 func TestUserOpPendingCount(t *testing.T) {

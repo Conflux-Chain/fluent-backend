@@ -24,20 +24,31 @@ func NewUserOpStore(store *store.Store) *UserOpStore {
 	}
 }
 
-func (store *UserOpStore) GetPendingCount(sender common.Address) (int64, error) {
-	db := store.inner.DB.Model(&UserOp{}).
-		Where("sender = ?", sender.Hex()).
-		Where("status = ?", UserOpStatusSigned)
-
+func (store *UserOpStore) getCount(whereClause string, args ...any) (int64, error) {
 	var count int64
+
+	db := store.inner.DB.Model(&UserOp{}).Where(whereClause, args...)
+
 	if err := db.Count(&count).Error; err != nil {
-		return 0, api.ErrDatabaseCause(err, "Failed to query pending userOp count")
+		return 0, api.ErrDatabaseCause(err, "Failed to query user op count by filter")
 	}
 
 	return count, nil
 }
 
-func (store *UserOpStore) Create(userOp *contract.PackedUserOperation, hash string, validUntil time.Time) error {
+func (store *UserOpStore) GetCountByValidUntil(sender common.Address, since time.Time) (int64, error) {
+	return store.getCount("sender = ? AND valid_until >= ?", sender.Hex(), since)
+}
+
+func (store *UserOpStore) GetPendingCount(sender common.Address) (int64, error) {
+	return store.getCount("sender = ? AND status = ?", sender.Hex(), UserOpStatusSigned)
+}
+
+func (store *UserOpStore) GetPendingCountByIP(ip string) (int64, error) {
+	return store.getCount("ip_address = ? AND status = ?", ip, UserOpStatusSigned)
+}
+
+func (store *UserOpStore) Create(userOp *contract.PackedUserOperation, hash string, validUntil time.Time, ip string) error {
 	rawUserOp, err := json.Marshal(convertPackedUserOp(userOp))
 	if err != nil {
 		return errors.WithMessage(err, "Failed to JSON marshal user op")
@@ -45,6 +56,7 @@ func (store *UserOpStore) Create(userOp *contract.PackedUserOperation, hash stri
 
 	entity := UserOp{
 		Hash:       hash,
+		IPAddress:  ip,
 		Sender:     userOp.Sender.Hex(),
 		Nonce:      hexutil.Encode(userOp.Nonce.Bytes()),
 		Status:     UserOpStatusSigned,
