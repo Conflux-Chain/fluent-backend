@@ -34,7 +34,7 @@ type VerifyingPaymasterConfig struct {
 	maxGasCost        *big.Int
 	SignatureTimeout  time.Duration `default:"5m"`
 
-	MaxPendingOps int64 `default:"10"` // max pending user ops per sender
+	Limiter LimitConfig
 }
 
 type VerifyingPaymaster struct {
@@ -47,6 +47,7 @@ type VerifyingPaymaster struct {
 	signer             interfaces.Signer
 	store              *store.Store
 	inflightSenders    sync.Map
+	limiter            Limiter
 }
 
 func NewVerifyingPaymaster(config VerifyingPaymasterConfig, client *web3go.Client, store *store.Store) (*VerifyingPaymaster, error) {
@@ -131,6 +132,7 @@ func NewVerifyingPaymaster(config VerifyingPaymasterConfig, client *web3go.Clien
 		executeBatchMethod: &executeBatchMethod,
 		signer:             signers[0],
 		store:              store,
+		limiter:            NewLimiter(config.Limiter, store),
 	}, nil
 }
 
@@ -149,7 +151,7 @@ func (paymaster *VerifyingPaymaster) Stub() []byte {
 
 // Sign validates the user operation and signs the user operation with the paymaster's private key.
 // It returns the signed paymasterAndData, which includes the paymaster address, gas limits, validAfter, validUntil, and signature.
-func (paymaster *VerifyingPaymaster) Sign(userOp contract.PackedUserOperation, delegatedContract common.Address) ([]byte, error) {
+func (paymaster *VerifyingPaymaster) Sign(userOp contract.PackedUserOperation, delegatedContract common.Address, ip string) ([]byte, error) {
 	// check if the sender is already inflight
 	//
 	// Currently, use simple sync.Map to store inflight senders, which is enough for low QPS phase.
@@ -163,14 +165,9 @@ func (paymaster *VerifyingPaymaster) Sign(userOp contract.PackedUserOperation, d
 
 	defer paymaster.inflightSenders.Delete(userOp.Sender)
 
-	// limit the number of pending user ops
-	pendings, err := paymaster.store.UserOp.GetPendingCount(userOp.Sender)
-	if err != nil {
+	// rate limit
+	if err := paymaster.limiter.Limit(&userOp, ip); err != nil {
 		return nil, err
-	}
-
-	if pendings >= paymaster.config.MaxPendingOps {
-		return nil, ErrVerifyingPaymasterTooManyPendingOps.WithData(fmt.Sprintf("max = %v", paymaster.config.MaxPendingOps))
 	}
 
 	// validate the user operation
@@ -208,7 +205,7 @@ func (paymaster *VerifyingPaymaster) Sign(userOp contract.PackedUserOperation, d
 
 	userOpHashHex := hexutil.Encode(userOpHash[:])
 
-	if err = paymaster.store.UserOp.Create(&userOp, userOpHashHex, validUntil); err != nil {
+	if err = paymaster.store.UserOp.Create(&userOp, userOpHashHex, validUntil, ip); err != nil {
 		return nil, err
 	}
 
