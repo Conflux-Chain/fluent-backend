@@ -58,7 +58,7 @@ func (store *UserOpStore) Create(userOp *contract.PackedUserOperation, hash stri
 		Hash:       hash,
 		IPAddress:  ip,
 		Sender:     userOp.Sender.Hex(),
-		Nonce:      hexutil.Encode(userOp.Nonce.Bytes()),
+		Nonce:      hexutil.EncodeBig(userOp.Nonce),
 		Status:     UserOpStatusSigned,
 		ValidUntil: validUntil,
 
