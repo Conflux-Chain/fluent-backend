@@ -1,6 +1,7 @@
 package service
 
 import (
+	"bytes"
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -8,7 +9,9 @@ import (
 	"github.com/openweb3/web3go"
 )
 
-const delegatedCodePrefix = "0xef0100" // EIP-7702 standard
+const delegatedCodePrefixHex = "0xef0100" // EIP-7702 standard
+
+var delegatedCodePrefix = hexutil.MustDecode(delegatedCodePrefixHex)
 
 // GetDelegatedContract reads the on-chain code of authority and extracts the 20-byte contract
 // address from the EIP-7702 delegation designator (prefix 0xef0100 + address).
@@ -31,10 +34,10 @@ func GetDelegatedContract(client *web3go.Client, authority common.Address) (comm
 		)
 	}
 
-	if prefix := hexutil.Encode(code[0:3]); prefix != delegatedCodePrefix {
+	if !bytes.Equal(code[0:3], delegatedCodePrefix) {
 		return common.Address{}, fmt.Errorf(
 			"Invalid code prefix, expected = %v, got = %v, authority = %v, code = %v",
-			delegatedCodePrefix, prefix, authority, hexutil.Encode(code),
+			delegatedCodePrefixHex, hexutil.Encode(code[0:3]), authority, hexutil.Encode(code),
 		)
 	}
 
