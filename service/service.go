@@ -75,7 +75,6 @@ func New(config Config, store *store.Store) (Services, error) {
 
 	services := Services{
 		PriceOracle: priceOracle,
-		TokenPay:    NewTokenPay(config.TokenPay, txSender, priceOracle),
 		client:      client,
 	}
 
@@ -96,6 +95,11 @@ func New(config Config, store *store.Store) (Services, error) {
 		if services.GasTank, err = NewGasTankPaymaster(config.GasTank, priceOracle, client); err != nil {
 			return Services{}, errors.WithMessage(err, "Failed to create gas tank paymaster service")
 		}
+	}
+
+	// TokenPay service is optional, only create it if the recipient and tokens are specified
+	if config.TokenPay.Recipient != (common.Address{}) && len(config.TokenPay.Tokens) > 0 {
+		services.TokenPay = NewTokenPay(config.TokenPay, txSender, priceOracle)
 	}
 
 	return services, nil

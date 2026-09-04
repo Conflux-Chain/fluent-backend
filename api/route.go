@@ -70,10 +70,12 @@ func MustServe(config Config, services service.Services) {
 		}
 
 		// token pay
-		tokenPayController := NewTokenPayController(services)
-		api.GET("/tokenpay/config", middleware.Metrics("api.tokenpay.config"), middleware.Wrap(tokenPayController.Config))
-		api.GET("/tokenpay/price", rateLimiters.Middleware("getPrice"), middleware.Metrics("api.tokenpay.price"), middleware.Wrap(tokenPayController.GetETHPrice))
-		api.POST("/tokenpay/submit", rateLimiters.Middleware("sponsor"), middleware.Metrics("api.tokenpay.submit"), middleware.Wrap(tokenPayController.Submit))
+		if services.TokenPay != nil {
+			controller := NewTokenPayController(services)
+			api.GET("/tokenpay/config", middleware.Metrics("api.tokenpay.config"), middleware.Wrap(controller.Config))
+			api.GET("/tokenpay/price", rateLimiters.Middleware("getPrice"), middleware.Metrics("api.tokenpay.price"), middleware.Wrap(controller.GetETHPrice))
+			api.POST("/tokenpay/submit", rateLimiters.Middleware("sponsor"), middleware.Metrics("api.tokenpay.submit"), middleware.Wrap(controller.Submit))
+		}
 	})
 }
 
