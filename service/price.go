@@ -49,6 +49,10 @@ func NewPriceOracle(config PriceConfig, client *web3go.Client) (*PriceOracle, er
 	// initialize USDT token exponents
 	caller, _ := client.ToClientForContract()
 	for _, v := range config.USDT {
+		if _, ok := oracle.usdtTokens[v]; ok {
+			return nil, errors.Errorf("Duplicated USDT token configured %v", v)
+		}
+
 		erc20Caller, err := contract.NewERC20Caller(v, caller)
 		if err != nil {
 			return nil, errors.WithMessagef(err, "Failed to create ERC20 caller for token %v", v)
@@ -67,6 +71,14 @@ func NewPriceOracle(config PriceConfig, client *web3go.Client) (*PriceOracle, er
 
 	// initialize CNH token exponents
 	for _, v := range config.CNH {
+		if _, ok := oracle.cnhTokens[v]; ok {
+			return nil, errors.Errorf("Duplicated CNH token configured %v", v)
+		}
+
+		if _, ok := oracle.usdtTokens[v]; ok {
+			return nil, errors.Errorf("Token mis-configured as both USDT and CNH token %v", v)
+		}
+
 		erc20Caller, err := contract.NewERC20Caller(v, caller)
 		if err != nil {
 			return nil, errors.WithMessagef(err, "Failed to create ERC20 caller for token %v", v)

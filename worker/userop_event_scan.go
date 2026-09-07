@@ -49,6 +49,10 @@ type UserOpEventScanner struct {
 // It initializes the scanner and loads the next block number to scan from the database or configuration.
 // It will return an error if the config is invalid or initialization fails.
 func NewUserOpEventScanner(paymaster common.Address, config UserOpEventScanConfig, client *web3go.Client, store *store.Store) (*UserOpEventScanner, error) {
+	if paymaster == (common.Address{}) {
+		return nil, errors.New("Paymaster address is required")
+	}
+
 	if config.Interval <= 0 {
 		return nil, errors.New("Interval must be greater than 0")
 	}

@@ -16,10 +16,6 @@ type Config struct {
 
 // Start starts all background workers in separate goroutines. It returns an error if any worker fails to initialize.
 func Start(paymaster common.Address, config Config, client *web3go.Client, store *store.Store) error {
-	if paymaster == (common.Address{}) {
-		return errors.New("Paymaster address is required")
-	}
-
 	userOpEventScanner, err := NewUserOpEventScanner(paymaster, config.UserOp.EventScan, client, store)
 	if err != nil {
 		return errors.WithMessage(err, "Failed to create user op event scanner")
