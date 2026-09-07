@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/Conflux-Chain/fluent-backend/contract"
 	"github.com/Conflux-Chain/go-conflux-util/api"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/go-resty/resty/v2"
+	"github.com/openweb3/web3go"
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
 )
@@ -16,58 +18,92 @@ const (
 	okxPriceUrlUSDTCNY     = "https://www.okx.com/v3/c2c/otc-ticker/quotedPrice?baseCurrency=USDT&quoteCurrency=CNY&side=sell"
 )
 
+type PriceConfig struct {
+	USDT []common.Address // e.g. USDT0, USDT, USDC
+	CNH  []common.Address // e.g. AxCNH, AxCNH0
+}
+
 type PriceOracle struct {
 	client *resty.Client
 
-	allowedTokenSymbols map[common.Address]string          // token address => token symbol
-	allowedTokenExps    map[common.Address]decimal.Decimal // token address => 10^decimals
+	usdtTokenExps map[common.Address]decimal.Decimal // token address => 10^decimals
+	cnhTokenExps  map[common.Address]decimal.Decimal // token address => 10^decimals
 }
 
-func NewPriceOracle(tokens map[common.Address]ERC20TokenStub) *PriceOracle {
-	allowedTokenSymbols := make(map[common.Address]string)
-	allowedTokenExps := make(map[common.Address]decimal.Decimal)
-	for token, stub := range tokens {
-		allowedTokenSymbols[token] = stub.Symbol
-		allowedTokenExps[token] = decimal.New(1, int32(stub.Decimals))
+func NewPriceOracle(config PriceConfig, client *web3go.Client) (*PriceOracle, error) {
+	if len(config.USDT) == 0 && len(config.CNH) == 0 {
+		return nil, errors.New("PriceConfig must have at least one USDT or CNH token")
 	}
 
-	return &PriceOracle{
-		client:              resty.New(),
-		allowedTokenSymbols: allowedTokenSymbols,
-		allowedTokenExps:    allowedTokenExps,
+	oracle := PriceOracle{
+		client:        resty.New(),
+		usdtTokenExps: make(map[common.Address]decimal.Decimal),
+		cnhTokenExps:  make(map[common.Address]decimal.Decimal),
 	}
+
+	// initialize USDT token exponents
+	caller, _ := client.ToClientForContract()
+	for _, v := range config.USDT {
+		erc20Caller, err := contract.NewERC20Caller(v, caller)
+		if err != nil {
+			return nil, errors.WithMessagef(err, "Failed to create ERC20 caller for token %v", v)
+		}
+
+		decimals, err := erc20Caller.Decimals(nil)
+		if err != nil {
+			return nil, errors.WithMessagef(err, "Failed to get decimals for token %v", v)
+		}
+
+		oracle.usdtTokenExps[v] = decimal.New(1, int32(decimals))
+	}
+
+	// initialize CNH token exponents
+	for _, v := range config.CNH {
+		erc20Caller, err := contract.NewERC20Caller(v, caller)
+		if err != nil {
+			return nil, errors.WithMessagef(err, "Failed to create ERC20 caller for token %v", v)
+		}
+
+		decimals, err := erc20Caller.Decimals(nil)
+		if err != nil {
+			return nil, errors.WithMessagef(err, "Failed to get decimals for token %v", v)
+		}
+
+		oracle.cnhTokenExps[v] = decimal.New(1, int32(decimals))
+	}
+
+	return &oracle, nil
 }
 
 // GetETHPrice returns the price of ETH/token.
 func (oracle *PriceOracle) GetETHPrice(quoteToken common.Address) (*big.Int, error) {
-	symbol, ok := oracle.allowedTokenSymbols[quoteToken]
-	if !ok {
-		return nil, api.ErrValidationStr("Unsupported token")
-	}
+	// USDT
+	if exp, ok := oracle.usdtTokenExps[quoteToken]; ok {
+		usdtPerCfx, err := oracle.getBinancePrice(binancePriceUrlCFXUSDT)
+		if err != nil {
+			return nil, errors.WithMessage(err, "Failed to get binance CFX/USDT price")
+		}
 
-	exp := oracle.allowedTokenExps[quoteToken]
-
-	usdtPerCfx, err := oracle.getBinancePrice(binancePriceUrlCFXUSDT)
-	if err != nil {
-		return nil, errors.WithMessage(err, "Failed to get binance CFX/USDT price")
-	}
-
-	// CFX/USDT, CFX/USDT0 or CFX/USDC
-	if symbol == "USDT" || symbol == "USDT0" || symbol == "USDC" {
 		return usdtPerCfx.Mul(exp).BigInt(), nil
 	}
 
-	// currently we do not support other tokens except AxCNH0 or AxCNH
-	if symbol != "AxCNH" && symbol != "AxCNH0" {
-		return nil, api.ErrValidationStrf("Unsupported token symbol: %v", symbol)
+	// CNH
+	if exp, ok := oracle.cnhTokenExps[quoteToken]; ok {
+		usdtPerCfx, err := oracle.getBinancePrice(binancePriceUrlCFXUSDT)
+		if err != nil {
+			return nil, errors.WithMessage(err, "Failed to get binance CFX/USDT price")
+		}
+
+		cnyPerUsdt, err := oracle.getOkxPrice(okxPriceUrlUSDTCNY)
+		if err != nil {
+			return nil, errors.WithMessage(err, "Failed to get OKX USDT/CNY price")
+		}
+
+		return cnyPerUsdt.Mul(usdtPerCfx).Mul(exp).BigInt(), nil
 	}
 
-	cnyPerUsdt, err := oracle.getOkxPrice(okxPriceUrlUSDTCNY)
-	if err != nil {
-		return nil, errors.WithMessage(err, "Failed to get OKX USDT/CNY price")
-	}
-
-	return cnyPerUsdt.Mul(usdtPerCfx).Mul(exp).BigInt(), nil
+	// Unsupported
+	return nil, api.ErrValidationStrf("Unsupported token %v", quoteToken)
 }
 
 func (oracle *PriceOracle) getBinancePrice(url string) (decimal.Decimal, error) {

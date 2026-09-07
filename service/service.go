@@ -19,6 +19,8 @@ type Config struct {
 		LogEnabled     bool
 	}
 
+	Price PriceConfig
+
 	AccountAbstract struct {
 		DelegatedContract common.Address
 	}
@@ -82,21 +84,27 @@ func New(config Config, store *store.Store) (Services, error) {
 		}
 	}
 
-	// create TokenPay service if the recipient and tokens are specified
-	if config.TokenPay.Recipient != (common.Address{}) && len(config.TokenPay.Tokens) > 0 {
-		// normalize config
-		if err = config.TokenPay.Normalize(client); err != nil {
-			return Services{}, errors.WithMessage(err, "Failed to normalize token-pay config")
+	// create price oracle service if any stable coin configured
+	if len(config.Price.USDT) > 0 || len(config.Price.CNH) > 0 {
+		if services.PriceOracle, err = NewPriceOracle(config.Price, client); err != nil {
+			return Services{}, errors.WithMessage(err, "Failed to create price oracle service")
 		}
 
-		services.PriceOracle = NewPriceOracle(config.TokenPay.normalizedTokens)
-		services.TokenPay = NewTokenPay(config.TokenPay, txSender, services.PriceOracle)
-
-		// create GasTankPaymaster service if the gas tank paymaster address is specified
+		// create gas tank paymaster service if the paymaster address is specified
 		if config.GasTank.Address != (common.Address{}) {
 			if services.GasTank, err = NewGasTankPaymaster(config.GasTank, services.PriceOracle, client); err != nil {
 				return Services{}, errors.WithMessage(err, "Failed to create gas tank paymaster service")
 			}
+		}
+
+		// create token pay service if the recipient and tokens are specified
+		if config.TokenPay.Recipient != (common.Address{}) && len(config.TokenPay.Tokens) > 0 {
+			// normalize config
+			if err = config.TokenPay.Normalize(client); err != nil {
+				return Services{}, errors.WithMessage(err, "Failed to normalize token-pay config")
+			}
+
+			services.TokenPay = NewTokenPay(config.TokenPay, txSender, services.PriceOracle)
 		}
 	}
 
