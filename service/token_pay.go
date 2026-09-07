@@ -49,17 +49,19 @@ type TokenPay struct {
 	blacklisted sync.Map
 }
 
-func NewTokenPay(config TokenPayConfig, sender *TxSender, priceOracle *PriceOracle) *TokenPay {
+func NewTokenPay(config TokenPayConfig, sender *TxSender, priceOracle *PriceOracle) (*TokenPay, error) {
+	if config.Recipient == (common.Address{}) {
+		return nil, errors.New("Recipient not specified")
+	}
+
+	config.normalize()
+
 	return &TokenPay{
 		TxSender:    sender,
 		config:      config,
 		priceOracle: priceOracle,
 		txSigner:    gethTypes.LatestSignerForChainID(sender.chainIdBig.ToInt()),
-	}
-}
-
-func (tp *TokenPay) Config() TokenPayConfig {
-	return tp.config
+	}, nil
 }
 
 func (tp *TokenPay) Sponsor(rawTransferTokenTx, rawBusinessTx []byte, ip string) error {

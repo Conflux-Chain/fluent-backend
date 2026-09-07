@@ -23,11 +23,16 @@ type PriceConfig struct {
 	CNH  []common.Address // e.g. AxCNH, AxCNH0
 }
 
+type ERC20TokenStub struct {
+	caller     *contract.ERC20Caller
+	decimalExp decimal.Decimal // 10^decimals
+}
+
 type PriceOracle struct {
 	client *resty.Client
 
-	usdtTokenExps map[common.Address]decimal.Decimal // token address => 10^decimals
-	cnhTokenExps  map[common.Address]decimal.Decimal // token address => 10^decimals
+	usdtTokens map[common.Address]ERC20TokenStub
+	cnhTokens  map[common.Address]ERC20TokenStub
 }
 
 func NewPriceOracle(config PriceConfig, client *web3go.Client) (*PriceOracle, error) {
@@ -36,9 +41,9 @@ func NewPriceOracle(config PriceConfig, client *web3go.Client) (*PriceOracle, er
 	}
 
 	oracle := PriceOracle{
-		client:        resty.New(),
-		usdtTokenExps: make(map[common.Address]decimal.Decimal),
-		cnhTokenExps:  make(map[common.Address]decimal.Decimal),
+		client:     resty.New(),
+		usdtTokens: make(map[common.Address]ERC20TokenStub),
+		cnhTokens:  make(map[common.Address]ERC20TokenStub),
 	}
 
 	// initialize USDT token exponents
@@ -54,7 +59,10 @@ func NewPriceOracle(config PriceConfig, client *web3go.Client) (*PriceOracle, er
 			return nil, errors.WithMessagef(err, "Failed to get decimals for token %v", v)
 		}
 
-		oracle.usdtTokenExps[v] = decimal.New(1, int32(decimals))
+		oracle.usdtTokens[v] = ERC20TokenStub{
+			caller:     erc20Caller,
+			decimalExp: decimal.New(1, int32(decimals)),
+		}
 	}
 
 	// initialize CNH token exponents
@@ -69,26 +77,42 @@ func NewPriceOracle(config PriceConfig, client *web3go.Client) (*PriceOracle, er
 			return nil, errors.WithMessagef(err, "Failed to get decimals for token %v", v)
 		}
 
-		oracle.cnhTokenExps[v] = decimal.New(1, int32(decimals))
+		oracle.cnhTokens[v] = ERC20TokenStub{
+			caller:     erc20Caller,
+			decimalExp: decimal.New(1, int32(decimals)),
+		}
 	}
 
 	return &oracle, nil
 }
 
+// GetERC20TokenStub returns the ERC20TokenStub and a boolean indicating if the token is supported.
+func (oracle *PriceOracle) GetERC20TokenStub(token common.Address) (ERC20TokenStub, bool) {
+	if stub, ok := oracle.usdtTokens[token]; ok {
+		return stub, true
+	}
+
+	if stub, ok := oracle.cnhTokens[token]; ok {
+		return stub, true
+	}
+
+	return ERC20TokenStub{}, false
+}
+
 // GetETHPrice returns the price of ETH/token.
 func (oracle *PriceOracle) GetETHPrice(quoteToken common.Address) (*big.Int, error) {
 	// USDT
-	if exp, ok := oracle.usdtTokenExps[quoteToken]; ok {
+	if stub, ok := oracle.usdtTokens[quoteToken]; ok {
 		usdtPerCfx, err := oracle.getBinancePrice(binancePriceUrlCFXUSDT)
 		if err != nil {
 			return nil, errors.WithMessage(err, "Failed to get binance CFX/USDT price")
 		}
 
-		return usdtPerCfx.Mul(exp).BigInt(), nil
+		return usdtPerCfx.Mul(stub.decimalExp).BigInt(), nil
 	}
 
 	// CNH
-	if exp, ok := oracle.cnhTokenExps[quoteToken]; ok {
+	if stub, ok := oracle.cnhTokens[quoteToken]; ok {
 		usdtPerCfx, err := oracle.getBinancePrice(binancePriceUrlCFXUSDT)
 		if err != nil {
 			return nil, errors.WithMessage(err, "Failed to get binance CFX/USDT price")
@@ -99,7 +123,7 @@ func (oracle *PriceOracle) GetETHPrice(quoteToken common.Address) (*big.Int, err
 			return nil, errors.WithMessage(err, "Failed to get OKX USDT/CNY price")
 		}
 
-		return cnyPerUsdt.Mul(usdtPerCfx).Mul(exp).BigInt(), nil
+		return cnyPerUsdt.Mul(usdtPerCfx).Mul(stub.decimalExp).BigInt(), nil
 	}
 
 	// Unsupported

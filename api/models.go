@@ -196,20 +196,25 @@ type TokenPayConfig struct {
 	SuggestedTokenPriceBumpRatio uint64 `json:"suggestedTokenPriceBumpRatio"`
 }
 
-func NewTokenPayConfig(config service.TokenPayConfig) TokenPayConfig {
+func NewTokenPayConfig(config *service.Config) TokenPayConfig {
 	var tokens []string
-	for _, token := range config.Tokens {
-		tokens = append(tokens, token.Hex())
+
+	for _, v := range config.Price.USDT {
+		tokens = append(tokens, v.Hex())
+	}
+
+	for _, v := range config.Price.CNH {
+		tokens = append(tokens, v.Hex())
 	}
 
 	return TokenPayConfig{
 		Tokens:                       tokens,
-		Recipient:                    config.Recipient.Hex(),
-		MinGasFeeRatio:               config.MinGasFeeRatio,
-		MinGasTipRatio:               config.MinGasTipRatio,
-		MaxGasCost:                   config.MaxGasCost,
-		SuggestedGasPriceBumpRatio:   config.SuggestedGasPriceBumpRatio,
-		SuggestedTokenPriceBumpRatio: config.SuggestedTokenPriceBumpRatio,
+		Recipient:                    config.TokenPay.Recipient.Hex(),
+		MinGasFeeRatio:               config.TokenPay.MinGasFeeRatio,
+		MinGasTipRatio:               config.TokenPay.MinGasTipRatio,
+		MaxGasCost:                   config.TokenPay.MaxGasCost,
+		SuggestedGasPriceBumpRatio:   config.TokenPay.SuggestedGasPriceBumpRatio,
+		SuggestedTokenPriceBumpRatio: config.TokenPay.SuggestedTokenPriceBumpRatio,
 	}
 }
 

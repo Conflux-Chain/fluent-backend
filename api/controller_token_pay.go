@@ -30,9 +30,7 @@ func NewTokenPayController(services service.Services) *TokenPayController {
 // @Failure			600	{object}	api.BusinessError{data=string}	"Internal server error"
 // @Router			/tokenpay/config	[get]
 func (controller *TokenPayController) Config(c *gin.Context) (any, error) {
-	config := controller.services.TokenPay.Config()
-
-	return NewTokenPayConfig(config), nil
+	return NewTokenPayConfig(controller.services.Config()), nil
 }
 
 // GetETHPrice returns how many units of the specified token equal 1 ETH.
