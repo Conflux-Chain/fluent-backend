@@ -19,7 +19,7 @@ const (
 )
 
 type PriceConfig struct {
-	USDT []common.Address // e.g. USDT0, USDT, USDC
+	USDT []common.Address // e.g. USDT0, USDT, USDC, at least one
 	CNH  []common.Address // e.g. AxCNH, AxCNH0
 }
 

@@ -87,7 +87,7 @@ func New(config Config, store *store.Store) (Services, error) {
 		}
 	}
 
-	// create price oracle service if any stable coin configured
+	// create price oracle service if at least one USDT configured
 	if len(config.Price.USDT) > 0 {
 		if services.PriceOracle, err = NewPriceOracle(config.Price, client); err != nil {
 			return Services{}, errors.WithMessage(err, "Failed to create price oracle service")
@@ -111,8 +111,17 @@ func New(config Config, store *store.Store) (Services, error) {
 	return services, nil
 }
 
-func (s Services) Config() *Config {
-	return &s.config
+func (s Services) Config() struct {
+	Price    PriceConfig
+	TokenPay TokenPayConfig
+} {
+	return struct {
+		Price    PriceConfig
+		TokenPay TokenPayConfig
+	}{
+		Price:    s.config.Price,
+		TokenPay: s.config.TokenPay,
+	}
 }
 
 func (s Services) Client() *web3go.Client {
