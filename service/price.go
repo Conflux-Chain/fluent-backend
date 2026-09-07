@@ -36,8 +36,8 @@ type PriceOracle struct {
 }
 
 func NewPriceOracle(config PriceConfig, client *web3go.Client) (*PriceOracle, error) {
-	if len(config.USDT) == 0 && len(config.CNH) == 0 {
-		return nil, errors.New("PriceConfig must have at least one USDT or CNH token")
+	if len(config.USDT) == 0 {
+		return nil, errors.New("PriceConfig must have at least one USDT token")
 	}
 
 	oracle := PriceOracle{

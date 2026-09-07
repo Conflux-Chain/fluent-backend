@@ -88,7 +88,7 @@ func New(config Config, store *store.Store) (Services, error) {
 	}
 
 	// create price oracle service if any stable coin configured
-	if len(config.Price.USDT) > 0 || len(config.Price.CNH) > 0 {
+	if len(config.Price.USDT) > 0 {
 		if services.PriceOracle, err = NewPriceOracle(config.Price, client); err != nil {
 			return Services{}, errors.WithMessage(err, "Failed to create price oracle service")
 		}
