@@ -60,46 +60,44 @@ func New(config Config, store *store.Store) (Services, error) {
 		return Services{}, errors.WithMessage(err, "Failed to create RPC client")
 	}
 
-	// normalize config
-	if err = config.TokenPay.Normalize(client); err != nil {
-		return Services{}, errors.WithMessage(err, "Failed to normalize token-pay config")
-	}
-
 	// services
 	txSender, err := NewTxSender(client)
 	if err != nil {
 		return Services{}, errors.WithMessage(err, "Failed to create transaction sender")
 	}
 
-	priceOracle := NewPriceOracle(config.TokenPay.normalizedTokens)
-
 	services := Services{
-		PriceOracle: priceOracle,
-		client:      client,
+		client: client,
 	}
 
-	// AccountAbstract service is optional, only create it if the delegated contract address is specified
+	// create AccountAbstract service if the delegated contract address is specified
 	if config.AccountAbstract.DelegatedContract != (common.Address{}) {
 		services.AccountAbstract = NewAccountAbstract(txSender, config.AccountAbstract.DelegatedContract)
 	}
 
-	// VerifyingPaymaster service is optional, only create it if required configurations specified
+	// create VerifyingPaymaster service if paymaster address and whitelist are specified
 	if config.VerifyingPaymaster.Address != (common.Address{}) && len(config.VerifyingPaymaster.ContractWhitelist) > 0 {
 		if services.VerifyingPaymaster, err = NewVerifyingPaymaster(config.VerifyingPaymaster, client, store); err != nil {
 			return Services{}, errors.WithMessage(err, "Failed to create verifying paymaster service")
 		}
 	}
 
-	// GasTankPaymaster service is optional, only create it if the gas tank paymaster address is specified
-	if config.GasTank.Address != (common.Address{}) {
-		if services.GasTank, err = NewGasTankPaymaster(config.GasTank, priceOracle, client); err != nil {
-			return Services{}, errors.WithMessage(err, "Failed to create gas tank paymaster service")
-		}
-	}
-
-	// TokenPay service is optional, only create it if the recipient and tokens are specified
+	// create TokenPay service if the recipient and tokens are specified
 	if config.TokenPay.Recipient != (common.Address{}) && len(config.TokenPay.Tokens) > 0 {
-		services.TokenPay = NewTokenPay(config.TokenPay, txSender, priceOracle)
+		// normalize config
+		if err = config.TokenPay.Normalize(client); err != nil {
+			return Services{}, errors.WithMessage(err, "Failed to normalize token-pay config")
+		}
+
+		services.PriceOracle = NewPriceOracle(config.TokenPay.normalizedTokens)
+		services.TokenPay = NewTokenPay(config.TokenPay, txSender, services.PriceOracle)
+
+		// create GasTankPaymaster service if the gas tank paymaster address is specified
+		if config.GasTank.Address != (common.Address{}) {
+			if services.GasTank, err = NewGasTankPaymaster(config.GasTank, services.PriceOracle, client); err != nil {
+				return Services{}, errors.WithMessage(err, "Failed to create gas tank paymaster service")
+			}
+		}
 	}
 
 	return services, nil
