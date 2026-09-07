@@ -11,6 +11,7 @@ import (
 	"github.com/Conflux-Chain/go-conflux-util/cmd"
 	storeUtil "github.com/Conflux-Chain/go-conflux-util/store"
 	"github.com/Conflux-Chain/go-conflux-util/viper"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -39,8 +40,10 @@ func start(*cobra.Command, []string) {
 	cmd.FatalIfErr(err, "Failed to create services")
 
 	// background workers
-	err = worker.Start(config.Worker, services.Client(), store)
-	cmd.FatalIfErr(err, "Failed to start background workers")
+	if config.Service.VerifyingPaymaster.Address != (common.Address{}) {
+		err = worker.Start(config.Service.VerifyingPaymaster.Address, config.Worker, services.Client(), store)
+		cmd.FatalIfErr(err, "Failed to start background workers")
+	}
 
 	// api
 	go api.MustServe(config.API, services)

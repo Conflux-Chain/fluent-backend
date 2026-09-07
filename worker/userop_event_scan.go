@@ -28,8 +28,6 @@ const configNameEventScanNextBlock = "worker.userOpEventScan.nextBlock"
 var eventHashSponsored = common.HexToHash("0x9e4d0db315fe76b23fdbfa2d345dd700140cae22039688064727b295782b0204")
 
 type UserOpEventScanConfig struct {
-	Contract common.Address
-
 	// NextBlock is the next block number to start scanning events from, 0 means the finalized block.
 	NextBlock uint64
 	nextBlock uint64
@@ -40,35 +38,33 @@ type UserOpEventScanConfig struct {
 
 // UserOpEventScanner is a worker that scans user op events from the blockchain and updates the database accordingly.
 type UserOpEventScanner struct {
-	config   UserOpEventScanConfig
-	client   *web3go.Client
-	store    *store.Store
-	filterer *contract.VerifyingPaymasterFilterer
+	paymaster common.Address
+	config    UserOpEventScanConfig
+	client    *web3go.Client
+	store     *store.Store
+	filterer  *contract.VerifyingPaymasterFilterer
 }
 
 // NewUserOpEventScanner creates a new UserOpEventScanner with the given configuration, web3 client, and store.
 // It initializes the scanner and loads the next block number to scan from the database or configuration.
 // It will return an error if the config is invalid or initialization fails.
-func NewUserOpEventScanner(config UserOpEventScanConfig, client *web3go.Client, store *store.Store) (*UserOpEventScanner, error) {
-	if config.Contract == (common.Address{}) {
-		return nil, errors.New("Contract address is required")
-	}
-
+func NewUserOpEventScanner(paymaster common.Address, config UserOpEventScanConfig, client *web3go.Client, store *store.Store) (*UserOpEventScanner, error) {
 	if config.Interval <= 0 {
 		return nil, errors.New("Interval must be greater than 0")
 	}
 
 	caller, _ := client.ToClientForContract()
-	verifyingPaymasterFilterer, err := contract.NewVerifyingPaymasterFilterer(config.Contract, caller)
+	verifyingPaymasterFilterer, err := contract.NewVerifyingPaymasterFilterer(paymaster, caller)
 	if err != nil {
 		return nil, errors.WithMessage(err, "Failed to create VerifyingPaymasterFilterer")
 	}
 
 	scanner := UserOpEventScanner{
-		config:   config,
-		client:   client,
-		store:    store,
-		filterer: verifyingPaymasterFilterer,
+		paymaster: paymaster,
+		config:    config,
+		client:    client,
+		store:     store,
+		filterer:  verifyingPaymasterFilterer,
 	}
 
 	if scanner.config.nextBlock, err = scanner.loadNextBlock(); err != nil {
@@ -165,7 +161,7 @@ func (scanner *UserOpEventScanner) scan() (bool, error) {
 	}).Debug("Scanning user op event logs from blockchain")
 
 	// retrieve event logs between nextBlock and finalizedBlockNumber.
-	logs, err := getLogs(scanner.client, scanner.config.Contract, nextBlock, finalizedBlockNumber, eventHashSponsored)
+	logs, err := getLogs(scanner.client, scanner.paymaster, nextBlock, finalizedBlockNumber, eventHashSponsored)
 	if err != nil {
 		return false, errors.WithMessagef(err, "Failed to retrieve event logs, next = %v, finalized = %v", nextBlock, finalizedBlockNumber)
 	}
