@@ -15,15 +15,13 @@ type Config struct {
 }
 
 // Start starts all background workers in separate goroutines. It returns an error if any worker fails to initialize.
-func Start(config Config, client *web3go.Client, store *store.Store) error {
-	if config.UserOp.EventScan.Contract != (common.Address{}) {
-		userOpEventScanner, err := NewUserOpEventScanner(config.UserOp.EventScan, client, store)
-		if err != nil {
-			return errors.WithMessage(err, "Failed to create user op event scanner")
-		}
-
-		go userOpEventScanner.Work()
+func Start(paymaster common.Address, config Config, client *web3go.Client, store *store.Store) error {
+	userOpEventScanner, err := NewUserOpEventScanner(paymaster, config.UserOp.EventScan, client, store)
+	if err != nil {
+		return errors.WithMessage(err, "Failed to create user op event scanner")
 	}
+
+	go userOpEventScanner.Work()
 
 	go ExpireUserOps(config.UserOp.Expiration, store)
 

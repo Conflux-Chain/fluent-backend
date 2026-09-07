@@ -165,7 +165,7 @@ func (tp *TokenPay) staticCheckTransferTokenTx(tx *types.Transaction) (sender, t
 	}
 	token = *toAddr
 
-	if _, ok := tp.config.normalizedTokens[token]; !ok {
+	if _, ok := tp.priceOracle.GetERC20TokenStub(token); !ok {
 		return common.Address{}, common.Address{}, nil, errors.Errorf("Transferred token is not allowed: %v", token.Hex())
 	}
 
@@ -252,7 +252,12 @@ func (tp *TokenPay) dynamicCheckTransferTokenTx(tx *types.Transaction, sender, t
 	}
 
 	// token balance
-	balance, err := tp.config.normalizedTokens[token].Caller.BalanceOf(nil, sender)
+	stub, ok := tp.priceOracle.GetERC20TokenStub(token)
+	if !ok {
+		return api.ErrValidationStrf("Transferred token is not allowed: %v", token.Hex())
+	}
+
+	balance, err := stub.caller.BalanceOf(nil, sender)
 	if err != nil {
 		return NewRPCError(err, "Failed to retrieve token balance")
 	}

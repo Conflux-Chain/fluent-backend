@@ -39,8 +39,10 @@ func start(*cobra.Command, []string) {
 	cmd.FatalIfErr(err, "Failed to create services")
 
 	// background workers
-	err = worker.Start(config.Worker, services.Client(), store)
-	cmd.FatalIfErr(err, "Failed to start background workers")
+	if services.VerifyingPaymaster != nil {
+		err = worker.Start(config.Service.VerifyingPaymaster.Address, config.Worker, services.Client(), store)
+		cmd.FatalIfErr(err, "Failed to start background workers")
+	}
 
 	// api
 	go api.MustServe(config.API, services)
