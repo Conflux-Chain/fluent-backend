@@ -297,14 +297,9 @@ func (paymaster *VerifyingPaymaster) validateCallData(callData []byte) error {
 
 	if bytes.Equal(paymaster.executeMethod.ID, selector) {
 		// single execute
-		unpacked, err := paymaster.executeMethod.Inputs.Unpack(args)
-		if err != nil {
-			return api.ErrValidation(errors.WithMessage(err, "Failed to unpack callData for execute method"))
-		}
-
 		var execution contract.Execution
-		if err = paymaster.executeMethod.Inputs.Copy(&execution, unpacked); err != nil {
-			return api.ErrValidation(errors.WithMessage(err, "Failed to copy unpacked data to Execution struct"))
+		if err := UnpackArguments(paymaster.executeMethod.Inputs, args, &execution); err != nil {
+			return api.ErrValidation(errors.WithMessage(err, "Failed to unpack callData for execute method"))
 		}
 
 		if !paymaster.config.contractWhitelist[execution.Target] {
@@ -312,14 +307,9 @@ func (paymaster *VerifyingPaymaster) validateCallData(callData []byte) error {
 		}
 	} else if bytes.Equal(paymaster.executeBatchMethod.ID, selector) {
 		// batch execute
-		unpacked, err := paymaster.executeBatchMethod.Inputs.Unpack(args)
-		if err != nil {
-			return api.ErrValidation(errors.WithMessage(err, "Failed to unpack callData for executeBatch method"))
-		}
-
 		var executions []contract.Execution
-		if err = paymaster.executeBatchMethod.Inputs.Copy(&executions, unpacked); err != nil {
-			return api.ErrValidation(errors.WithMessage(err, "Failed to copy unpacked data to []Execution struct"))
+		if err := UnpackArguments(paymaster.executeBatchMethod.Inputs, args, &executions); err != nil {
+			return api.ErrValidation(errors.WithMessage(err, "Failed to unpack callData for executeBatch method"))
 		}
 
 		if len(executions) == 0 {

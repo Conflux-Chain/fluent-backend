@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"fmt"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/openweb3/web3go"
+	"github.com/pkg/errors"
 )
 
 const delegatedCodePrefixHex = "0xef0100" // EIP-7702 standard
@@ -42,4 +44,20 @@ func GetDelegatedContract(client *web3go.Client, authority common.Address) (comm
 	}
 
 	return common.BytesToAddress(code[3:]), nil
+}
+
+// UnpackArguments unpacks ABI encoded data into the provided target structure (of pointer type).
+//
+// Generally, the length of the packedData should be 32x bytes, as per the ABI encoding rules.
+func UnpackArguments(args abi.Arguments, packedData []byte, v any) error {
+	values, err := args.Unpack(packedData)
+	if err != nil {
+		return errors.WithMessage(err, "Failed to unpack ABI encoded data")
+	}
+
+	if err = args.Copy(v, values); err != nil {
+		return errors.WithMessage(err, "Failed to copy unpacked values to the target structure")
+	}
+
+	return nil
 }
