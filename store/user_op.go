@@ -11,6 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
+	"gorm.io/gorm"
 )
 
 type UserOpStore struct {
@@ -39,7 +40,12 @@ func (store *UserOpStore) GetCountByBlockTimestamp(sender common.Address, since 
 	return store.getCount("sender = ? AND block_time >= ?", sender.Hex(), since)
 }
 
-func (store *UserOpStore) Create(userOp *contract.PackedUserOperation, event *contract.EntryPointUserOperationEvent, blockTime time.Time) error {
+func (store *UserOpStore) Create(userOp *contract.PackedUserOperation, event *contract.EntryPointUserOperationEvent, blockTime time.Time, tx ...*gorm.DB) error {
+	db := store.inner.DB
+	if len(tx) > 0 {
+		db = tx[0]
+	}
+
 	rawUserOp, err := json.Marshal(convertPackedUserOp(userOp))
 	if err != nil {
 		return errors.WithMessage(err, "Failed to JSON marshal user op")
@@ -58,7 +64,7 @@ func (store *UserOpStore) Create(userOp *contract.PackedUserOperation, event *co
 		RawUserOp: string(rawUserOp),
 	}
 
-	if err := store.inner.DB.Create(&entity).Error; err != nil {
+	if err := db.Create(&entity).Error; err != nil {
 		return api.ErrDatabaseCause(err, "Failed to create user operation")
 	}
 

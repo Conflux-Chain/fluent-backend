@@ -25,7 +25,7 @@ const (
 var eventHashUserOperation = common.HexToHash("0x49628fd1471006c1482da88028e9ce4dbb080b815c9b0344d39e5a8e6ec1419f")
 
 type Sponsorship struct {
-	Log            *types.Log
+	Log            types.Log
 	SponsoredEvent *contract.VerifyingPaymasterSponsored
 	UserOpEvent    *contract.EntryPointUserOperationEvent
 	UserOp         *contract.PackedUserOperation
@@ -78,7 +78,7 @@ func NewUserOpEventParser(client *web3go.Client, paymaster common.Address) (*Use
 	}, nil
 }
 
-func (parser *UserOpEventParser) Parse(log *types.Log) (*Sponsorship, error) {
+func (parser *UserOpEventParser) Parse(log types.Log) (*Sponsorship, error) {
 	// parse VerifyingPaymaster.Sponsored event
 	sponsoredEvent, err := parser.paymasterFilterer.ParseSponsored(*log.ToEthLog())
 	if err != nil {
@@ -116,7 +116,7 @@ func (parser *UserOpEventParser) findUserOperationEvent(sponsoredEvent *contract
 	}
 
 	for _, v := range receipt.Logs {
-		if v.Topics[0] != eventHashUserOperation {
+		if len(v.Topics) == 0 || v.Topics[0] != eventHashUserOperation {
 			continue
 		}
 
@@ -197,14 +197,16 @@ func (parser *UserOpEventParser) unpackUserOp(sponsoredEvent *contract.Verifying
 	}
 
 	// find the user operation by hash
-	for _, v := range userOps {
-		userOpHash, err := parser.calculateUserOpHash(v, delegates[v.Sender])
+	for i := range userOps {
+		userOp := userOps[i]
+
+		userOpHash, err := parser.calculateUserOpHash(userOp, delegates[userOp.Sender])
 		if err != nil {
 			return nil, errors.WithMessage(err, "Failed to calculate user operation hash")
 		}
 
 		if userOpHash == sponsoredEvent.UserOpHash {
-			return &v, nil
+			return &userOp, nil
 		}
 	}
 

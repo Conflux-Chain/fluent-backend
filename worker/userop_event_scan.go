@@ -185,7 +185,7 @@ func (scanner *UserOpEventScanner) handle(logs []types.Log, nextBlock uint64) er
 	var sponsorships []*Sponsorship
 
 	for _, v := range logs {
-		sponsorship, err := scanner.parser.Parse(&v)
+		sponsorship, err := scanner.parser.Parse(v)
 		if err != nil {
 			return errors.WithMessage(err, "Failed to parse sponsorship from Sponsored event log")
 		}
@@ -199,7 +199,7 @@ func (scanner *UserOpEventScanner) handle(logs []types.Log, nextBlock uint64) er
 		for _, v := range sponsorships {
 			blockTime := time.Unix(int64(v.Log.BlockTimestamp), 0)
 
-			if err := scanner.store.UserOp.Create(v.UserOp, v.UserOpEvent, blockTime); err != nil {
+			if err := scanner.store.UserOp.Create(v.UserOp, v.UserOpEvent, blockTime, tx); err != nil {
 				return errors.WithMessage(err, "Failed to insert user op in database")
 			}
 		}
