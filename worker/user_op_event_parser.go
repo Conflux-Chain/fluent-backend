@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"bytes"
 	"fmt"
 	"strings"
 
@@ -38,6 +39,8 @@ type Sponsorship struct {
 type UserOpEventParser struct {
 	client *web3go.Client
 
+	paymaster common.Address
+
 	paymasterFilterer *contract.VerifyingPaymasterFilterer
 
 	entryPointAddr     common.Address
@@ -74,6 +77,7 @@ func NewUserOpEventParser(client *web3go.Client, paymaster common.Address) (*Use
 
 	return &UserOpEventParser{
 		client:             client,
+		paymaster:          paymaster,
 		paymasterFilterer:  &verifyingPaymaster.VerifyingPaymasterFilterer,
 		entryPointAddr:     entryPointAddr,
 		entryPointFilterer: entryPointFilterer,
@@ -81,7 +85,17 @@ func NewUserOpEventParser(client *web3go.Client, paymaster common.Address) (*Use
 	}, nil
 }
 
+// Parse parses a Sponsored event log and retrieves the associated user operation and its details.
 func (parser *UserOpEventParser) Parse(log types.Log) (*Sponsorship, error) {
+	// validate the paymaster address and Sponsored event signature
+	if log.Address != parser.paymaster {
+		return nil, fmt.Errorf("Log is not from the expected paymaster contract: %v", parser.paymaster)
+	}
+
+	if len(log.Topics) == 0 || log.Topics[0] != eventHashSponsored {
+		return nil, fmt.Errorf("Log is not a Sponsored event, expected event hash: %v", eventHashSponsored)
+	}
+
 	// parse VerifyingPaymaster.Sponsored event
 	sponsoredEvent, err := parser.paymasterFilterer.ParseSponsored(*log.ToEthLog())
 	if err != nil {
@@ -95,7 +109,7 @@ func (parser *UserOpEventParser) Parse(log types.Log) (*Sponsorship, error) {
 	}
 
 	// unpack user op from tx input data
-	userOp, err := parser.unpackUserOp(sponsoredEvent)
+	userOp, err := parser.unpackUserOp(userOpEvent)
 	if err != nil {
 		return nil, errors.WithMessage(err, "Failed to unpack user operation from transaction input data")
 	}
@@ -119,7 +133,18 @@ func (parser *UserOpEventParser) findUserOperationEvent(sponsoredEvent *contract
 	}
 
 	for _, v := range receipt.Logs {
+		// should be from the expected EntryPoint contract
+		if v.Address != parser.entryPointAddr {
+			continue
+		}
+
+		// should be an EntryPoint.UserOperationEvent
 		if len(v.Topics) == 0 || v.Topics[0] != eventHashUserOperation {
+			continue
+		}
+
+		// UserOperationEvent.topic[1] should match the UserOpHash of the Sponsored event
+		if len(v.Topics) < 2 || v.Topics[1] != sponsoredEvent.UserOpHash {
 			continue
 		}
 
@@ -128,23 +153,21 @@ func (parser *UserOpEventParser) findUserOperationEvent(sponsoredEvent *contract
 			return nil, errors.WithMessage(err, "Failed to parse UserOperation event log")
 		}
 
-		if event.UserOpHash == sponsoredEvent.UserOpHash {
-			return event, nil
-		}
+		return event, nil
 	}
 
 	return nil, fmt.Errorf("UserOperation event not found for userOpHash %v", sponsoredEvent.UserOpHash)
 }
 
-func (parser *UserOpEventParser) unpackUserOp(sponsoredEvent *contract.VerifyingPaymasterSponsored) (*contract.PackedUserOperation, error) {
+func (parser *UserOpEventParser) unpackUserOp(userOpEvent *contract.EntryPointUserOperationEvent) (*contract.PackedUserOperation, error) {
 	// get the bundle transaction to parse input data
-	tx, err := parser.client.Eth.TransactionByHash(sponsoredEvent.Raw.TxHash)
+	tx, err := parser.client.Eth.TransactionByHash(userOpEvent.Raw.TxHash)
 	if err != nil {
 		return nil, errors.WithMessage(err, "Failed to get bundle transaction by hash")
 	}
 
 	if tx == nil {
-		return nil, fmt.Errorf("Bundle transaction not found by hash %v", sponsoredEvent.Raw.TxHash)
+		return nil, fmt.Errorf("Bundle transaction not found by hash %v", userOpEvent.Raw.TxHash)
 	}
 
 	// handle 7702 auth messages
@@ -160,7 +183,7 @@ func (parser *UserOpEventParser) unpackUserOp(sponsoredEvent *contract.Verifying
 
 	// unpack the user operation from the bundle transaction input data
 	if len(tx.Input) < 4 {
-		return nil, fmt.Errorf("Transaction input data too short for tx hash %v", sponsoredEvent.Raw.TxHash)
+		return nil, fmt.Errorf("Transaction input data too short for tx hash %v", userOpEvent.Raw.TxHash)
 	}
 
 	method, err := parser.entryPointABI.MethodById(tx.Input[:4])
@@ -196,24 +219,34 @@ func (parser *UserOpEventParser) unpackUserOp(sponsoredEvent *contract.Verifying
 			userOps = append(userOps, v.UserOps...)
 		}
 	default:
-		return nil, fmt.Errorf("Unsupported method %v in transaction input for tx hash %v", method.Name, sponsoredEvent.Raw.TxHash)
+		return nil, fmt.Errorf("Unsupported method %v in transaction input for tx hash %v", method.Name, userOpEvent.Raw.TxHash)
 	}
 
 	// find the user operation by hash
 	for i := range userOps {
 		userOp := userOps[i]
 
+		// skip user operations that do not match the sender and nonce of the user operation event
+		if userOp.Sender != userOpEvent.Sender || userOp.Nonce.Cmp(userOpEvent.Nonce) != 0 {
+			continue
+		}
+
+		// skip user operations not sponsored by the expected paymaster
+		if len(userOp.PaymasterAndData) < 20 || !bytes.Equal(userOp.PaymasterAndData[:20], userOpEvent.Paymaster.Bytes()) {
+			continue
+		}
+
 		userOpHash, err := parser.calculateUserOpHash(userOp, delegates[userOp.Sender])
 		if err != nil {
 			return nil, errors.WithMessage(err, "Failed to calculate user operation hash")
 		}
 
-		if userOpHash == sponsoredEvent.UserOpHash {
+		if userOpHash == userOpEvent.UserOpHash {
 			return &userOp, nil
 		}
 	}
 
-	return nil, fmt.Errorf("UserOperation not found for userOpHash %v", sponsoredEvent.UserOpHash)
+	return nil, fmt.Errorf("UserOperation not found for userOpHash %v", userOpEvent.UserOpHash)
 }
 
 func (parser *UserOpEventParser) calculateUserOpHash(userOp contract.PackedUserOperation, delegation common.Address) (common.Hash, error) {
