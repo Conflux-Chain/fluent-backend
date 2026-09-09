@@ -27,6 +27,7 @@ var (
 	ErrVerifyingPaymasterContractNotWhitelisted = api.NewBusinessError(4003, "Contract is not in whitelist")
 	ErrVerifyingPaymasterPaused                 = api.NewBusinessError(4004, "Verifying paymaster contract is paused")
 	ErrVerifyingPaymasterTooManyOps             = api.NewBusinessError(4005, "Too many user operations")
+	ErrVerifyingPaymasterInsufficientBalance    = api.NewBusinessError(4006, "Insufficient balance in verifying paymaster")
 )
 
 func NewRPCError(err error, message string, args ...any) *api.BusinessError {

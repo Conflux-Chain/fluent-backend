@@ -197,7 +197,8 @@ func (paymaster *VerifyingPaymaster) validate(userOp *contract.PackedUserOperati
 	}
 
 	// check max cost
-	if maxCost := paymaster.maxCost(userOp); paymaster.config.maxGasCost.Cmp(maxCost) < 0 {
+	maxCost := paymaster.maxCost(userOp)
+	if paymaster.config.maxGasCost.Cmp(maxCost) < 0 {
 		return ErrVerifyingPaymasterMaxGasCostExceeded.WithData(fmt.Sprintf("max = %v, actual = %v", paymaster.config.maxGasCost, maxCost))
 	}
 
@@ -219,6 +220,16 @@ func (paymaster *VerifyingPaymaster) validate(userOp *contract.PackedUserOperati
 
 	if paused {
 		return ErrVerifyingPaymasterPaused
+	}
+
+	// check paymaster deposit balance
+	balance, err := paymaster.caller.Balance(nil)
+	if err != nil {
+		return NewRPCError(err, "Failed to get paymaster deposit balance")
+	}
+
+	if balance.Cmp(maxCost) < 0 {
+		return ErrVerifyingPaymasterInsufficientBalance.WithData(fmt.Sprintf("balance = %v, required = %v", balance, maxCost))
 	}
 
 	return nil
