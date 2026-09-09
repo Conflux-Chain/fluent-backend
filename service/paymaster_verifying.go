@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/Conflux-Chain/fluent-backend/contract"
@@ -16,7 +15,6 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/openweb3/web3go"
 	"github.com/openweb3/web3go/interfaces"
-	"github.com/openweb3/web3go/types"
 	"github.com/pkg/errors"
 )
 
@@ -42,14 +40,9 @@ type VerifyingPaymaster struct {
 	config             VerifyingPaymasterConfig
 	client             *web3go.Client
 	caller             *contract.VerifyingPaymasterCaller
-	entryPointCaller   *contract.EntryPointCaller
-	entryPointABI      *abi.ABI
-	entryPointAddress  common.Address
 	executeMethod      *abi.Method
 	executeBatchMethod *abi.Method
 	signer             interfaces.Signer
-	store              *store.Store
-	inflightSenders    sync.Map
 	limiter            Limiter
 }
 
@@ -104,22 +97,6 @@ func NewVerifyingPaymaster(config VerifyingPaymasterConfig, client *web3go.Clien
 		return nil, errors.WithMessage(err, "Failed to create VerifyingPaymaster contract caller")
 	}
 
-	entryPointAddress, err := verifyingPaymasterCaller.EntryPoint(nil)
-	if err != nil {
-		return nil, errors.WithMessage(err, "Failed to get EntryPoint address from VerifyingPaymaster")
-	}
-
-	entryPointCaller, err := contract.NewEntryPointCaller(entryPointAddress, caller)
-	if err != nil {
-		return nil, errors.WithMessage(err, "Failed to create EntryPoint contract caller")
-	}
-
-	// entry point ABI
-	entryPointABI, err := abi.JSON(strings.NewReader(contract.EntryPointMetaData.ABI))
-	if err != nil {
-		return nil, errors.WithMessage(err, "Failed to parse EntryPoint ABI")
-	}
-
 	// check if the signer is whitelisted by the paymaster
 	signerAddr := signers[0].Address()
 
@@ -136,13 +113,9 @@ func NewVerifyingPaymaster(config VerifyingPaymasterConfig, client *web3go.Clien
 		config:             config,
 		client:             client,
 		caller:             verifyingPaymasterCaller,
-		entryPointCaller:   entryPointCaller,
-		entryPointABI:      &entryPointABI,
-		entryPointAddress:  entryPointAddress,
 		executeMethod:      &executeMethod,
 		executeBatchMethod: &executeBatchMethod,
 		signer:             signers[0],
-		store:              store,
 		limiter:            NewLimiter(config.Limiter, store),
 	}, nil
 }
@@ -162,22 +135,9 @@ func (paymaster *VerifyingPaymaster) Stub() []byte {
 
 // Sign validates the user operation and signs the user operation with the paymaster's private key.
 // It returns the signed paymasterAndData, which includes the paymaster address, gas limits, validAfter, validUntil, and signature.
-func (paymaster *VerifyingPaymaster) Sign(userOp contract.PackedUserOperation, delegatedContract common.Address, ip string) ([]byte, error) {
-	// check if the sender is already inflight
-	//
-	// Currently, use simple sync.Map to store inflight senders, which is enough for low QPS phase.
-	if userOp.Sender == (common.Address{}) {
-		return nil, api.ErrValidationStr("Invalid sender address")
-	}
-
-	if _, loaded := paymaster.inflightSenders.LoadOrStore(userOp.Sender, struct{}{}); loaded {
-		return nil, api.ErrValidationStr("Sender already inflight")
-	}
-
-	defer paymaster.inflightSenders.Delete(userOp.Sender)
-
+func (paymaster *VerifyingPaymaster) Sign(userOp contract.PackedUserOperation, delegatedContract common.Address) ([]byte, error) {
 	// rate limit
-	if err := paymaster.limiter.Limit(&userOp, ip); err != nil {
+	if err := paymaster.limiter.Limit(&userOp); err != nil {
 		return nil, err
 	}
 
@@ -190,9 +150,9 @@ func (paymaster *VerifyingPaymaster) Sign(userOp contract.PackedUserOperation, d
 	}
 
 	// re-assemble paymasterData for signing, including validAfter and validUntil
-	validUntil := time.Now().Add(paymaster.config.SignatureTimeout)
-	big.NewInt(0).FillBytes(userOp.PaymasterAndData[52:58])                 // validAfter
-	big.NewInt(validUntil.Unix()).FillBytes(userOp.PaymasterAndData[58:64]) // validUntil
+	validUntil := time.Now().Add(paymaster.config.SignatureTimeout).Unix()
+	big.NewInt(0).FillBytes(userOp.PaymasterAndData[52:58])          // validAfter
+	big.NewInt(validUntil).FillBytes(userOp.PaymasterAndData[58:64]) // validUntil
 
 	// compute the paymaster signature
 	hash, err := paymaster.caller.GetPaymasterHash(nil, userOp)
@@ -208,22 +168,15 @@ func (paymaster *VerifyingPaymaster) Sign(userOp contract.PackedUserOperation, d
 	// re-assemble signature into paymasterAndData
 	copy(userOp.PaymasterAndData[64:], signature)
 
-	// persistent the user op to database
-	userOpHash, err := paymaster.calculateUserOpHash(userOp, delegatedContract)
-	if err != nil {
-		return nil, err
-	}
-
-	userOpHashHex := hexutil.Encode(userOpHash[:])
-
-	if err = paymaster.store.UserOp.Create(&userOp, userOpHashHex, validUntil, ip); err != nil {
-		return nil, err
-	}
-
 	return userOp.PaymasterAndData, nil
 }
 
 func (paymaster *VerifyingPaymaster) validate(userOp *contract.PackedUserOperation, delegatedContract common.Address) error {
+	// validate the sender address is not empty
+	if userOp.Sender == (common.Address{}) {
+		return api.ErrValidationStr("Invalid sender address")
+	}
+
 	// validate the paymasterAndData length at first, to avoid panic when accessing the slice
 	if len(userOp.PaymasterAndData) != verifyingPaymasterDataLength {
 		return api.ErrValidationStrf("Invalid paymaster data length: %d, expected %d", len(userOp.PaymasterAndData), verifyingPaymasterDataLength)
@@ -353,50 +306,4 @@ func (paymaster *VerifyingPaymaster) validateSmartAccount(sender common.Address,
 	}
 
 	return nil
-}
-
-// calculateUserOpHash calculates the hash of the given user operation using the entry point contract.
-//
-// Note, the EntryPoint.getUserOpHash method requires the sender has already been delegated to a contract if the
-// userOp.initCode is 7702 marker value. So, we have to call the EntryPoint.getUserOpHash method with the state override.
-func (paymaster *VerifyingPaymaster) calculateUserOpHash(userOp contract.PackedUserOperation, delegatedContract common.Address) ([]byte, error) {
-	if delegatedContract == (common.Address{}) {
-		userOpHash, err := paymaster.entryPointCaller.GetUserOpHash(nil, userOp)
-		if err != nil {
-			return nil, NewRPCError(err, "Failed to get user operation hash")
-		}
-
-		return userOpHash[:], nil
-	}
-
-	input, err := paymaster.entryPointABI.Pack("getUserOpHash", userOp)
-	if err != nil {
-		return nil, errors.WithMessage(err, "Failed to ABI encode user op")
-	}
-
-	callRequest := types.CallRequest{
-		To:   &paymaster.entryPointAddress,
-		Data: input,
-	}
-
-	latestBlockNumber := types.BlockNumberOrHashWithNumber(types.LatestBlockNumber)
-
-	code := hexutil.Bytes(append(delegatedCodePrefix, delegatedContract.Bytes()...))
-
-	stateOverride := types.StateOverride{
-		userOp.Sender: types.OverrideAccount{
-			Code: &code,
-		},
-	}
-
-	result, err := paymaster.client.Eth.Call(callRequest, &latestBlockNumber, &stateOverride, nil)
-	if err != nil {
-		return nil, NewRPCError(err, "Failed to call EntryPoint.getUserOpHash")
-	}
-
-	if len(result) != 32 {
-		return nil, fmt.Errorf("Invalid result length from EntryPoint.getUserOpHash, expected 32 bytes but got %d", len(result))
-	}
-
-	return result, nil
 }

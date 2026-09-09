@@ -6,12 +6,6 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-const (
-	UserOpStatusSigned    = "signed"
-	UserOpStatusSucceeded = "succeeded"
-	UserOpStatusFailed    = "failed"
-)
-
 var AllTables = []any{&UserOp{}, &Config{}}
 
 type Model struct {
@@ -23,16 +17,14 @@ type Model struct {
 type UserOp struct {
 	Model
 
-	Hash       string    `gorm:"size:66;not null;unique"`
-	IPAddress  string    `gorm:"size:64;not null;index:idx_ip_status"`
-	Sender     string    `gorm:"size:42;not null;index:idx_sender_valid_until;index:idx_sender_status"`
-	Nonce      string    `gorm:"size:66;not null"`
-	Status     string    `gorm:"size:32;not null;index:idx_ip_status;index:idx_sender_status;index:idx_status_valid_until"`
-	ValidUntil time.Time `gorm:"not null;index:idx_sender_valid_until;index:idx_status_valid_until"`
+	Hash    string `gorm:"size:66;not null;unique"`
+	Sender  string `gorm:"size:42;not null;index:idx_sender_time"`
+	Nonce   string `gorm:"size:66;not null"`
+	Success bool   `gorm:"not null"`
 
-	ActualGasCost         decimal.Decimal `gorm:"type:decimal(32,0);not null"`
-	ActualUserOpFeePerGas decimal.Decimal `gorm:"type:decimal(32,0);not null"`
-	BlockTimestamp        uint64          `gorm:"not null;index:idx_block_time"`
+	ActualGasCost decimal.Decimal `gorm:"type:decimal(32,0);not null"`
+	ActualGasUsed uint64          `gorm:"not null"`
+	BlockTime     time.Time       `gorm:"not null;index:idx_sender_time;index:idx_block_time"`
 
 	RawUserOp string `gorm:"type:text;not null"`
 }

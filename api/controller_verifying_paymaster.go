@@ -3,7 +3,6 @@ package api
 import (
 	"github.com/Conflux-Chain/fluent-backend/service"
 	"github.com/Conflux-Chain/go-conflux-util/api"
-	"github.com/Conflux-Chain/go-conflux-util/api/middleware"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
 )
@@ -57,9 +56,8 @@ func (controller *VerifyingPaymasterController) Sign(c *gin.Context) (any, error
 
 	userOp := input.ToPackedUserOperation()
 	delegatedContract := common.HexToAddress(input.DelegatedContract)
-	ip := middleware.GetRealIP(c)
 
-	paymasterAndData, err := controller.services.VerifyingPaymaster.Sign(userOp, delegatedContract, ip)
+	paymasterAndData, err := controller.services.VerifyingPaymaster.Sign(userOp, delegatedContract)
 	if err != nil {
 		return nil, err
 	}
