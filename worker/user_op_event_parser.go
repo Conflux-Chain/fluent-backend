@@ -32,6 +32,9 @@ type Sponsorship struct {
 }
 
 // UserOpEventParser is responsible for parsing Sponsored event and relevant data from the blockchain log.
+//
+// If bundle transaction contains many user operations too frequently, it's better to add a LRU cache for
+// the retrieved bundle transaction and receipt.
 type UserOpEventParser struct {
 	client *web3go.Client
 
