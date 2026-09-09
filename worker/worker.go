@@ -9,8 +9,7 @@ import (
 
 type Config struct {
 	UserOp struct {
-		EventScan  UserOpEventScanConfig
-		Expiration UserOpExpirationConfig
+		EventScan UserOpEventScanConfig
 	}
 }
 
@@ -22,8 +21,6 @@ func Start(paymaster common.Address, config Config, client *web3go.Client, store
 	}
 
 	go userOpEventScanner.Work()
-
-	go ExpireUserOps(config.UserOp.Expiration, store)
 
 	return nil
 }

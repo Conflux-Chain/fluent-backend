@@ -9,18 +9,14 @@ import (
 )
 
 type LimitConfig struct {
-	// MaxPending is the maximum number of pending user operations allowed per sender
-	// and per IP address. If set to a non-positive value, this limit is disabled.
-	MaxPending int64 `default:"100"`
-
-	// ValidUntils defines the limits for user operations based on their signature expiration time.
+	// Finalized defines the limits for finalized user operations on chain.
 	// The key is a descriptive name (e.g., "daily", "monthly"), and the value specifies the duration
 	// and the maximum number of user operations allowed within that duration. For example, use below
 	// configuration for both daily and monthly limits:
 	//
-	// "daily": { 24h, 10}
-	// "monthly": { 720h, 100 }
-	ValidUntils map[string]struct {
+	// "daily": { 24h, 10 } means a maximum of 10 finalized user operations are allowed within a 24-hour period.
+	// "monthly": { 720h, 100 } means a maximum of 100 finalized user operations are allowed within a 720-hour period.
+	Finalized map[string]struct {
 		Duration time.Duration
 		Max      int64
 	}
@@ -28,18 +24,14 @@ type LimitConfig struct {
 
 // Limiter is an interface for limiting the signed user operations.
 type Limiter interface {
-	Limit(userOp *contract.PackedUserOperation, ip string) error
+	Limit(userOp *contract.PackedUserOperation) error
 }
 
 func NewLimiter(config LimitConfig, store *store.Store) Limiter {
 	var limiters []Limiter
 
-	if config.MaxPending > 0 {
-		limiters = append(limiters, NewPendingCountLimiter(config.MaxPending, store))
-	}
-
-	for _, v := range config.ValidUntils {
-		limiters = append(limiters, NewValidUntilLimiter(v.Duration, v.Max, store))
+	for _, v := range config.Finalized {
+		limiters = append(limiters, NewFinalizedLimiter(v.Duration, v.Max, store))
 	}
 
 	return CompositeLimiter(limiters)
@@ -48,9 +40,9 @@ func NewLimiter(config LimitConfig, store *store.Store) Limiter {
 // CompositeLimiter is a composite of multiple Limiter instances.
 type CompositeLimiter []Limiter
 
-func (limiter CompositeLimiter) Limit(userOp *contract.PackedUserOperation, ip string) error {
+func (limiter CompositeLimiter) Limit(userOp *contract.PackedUserOperation) error {
 	for _, v := range limiter {
-		if err := v.Limit(userOp, ip); err != nil {
+		if err := v.Limit(userOp); err != nil {
 			return err
 		}
 	}
@@ -58,64 +50,25 @@ func (limiter CompositeLimiter) Limit(userOp *contract.PackedUserOperation, ip s
 	return nil
 }
 
-// PendingCountLimiter limits the number of pending user operations per sender and/or per IP address.
-type PendingCountLimiter struct {
-	maxPendings int64
-	store       *store.Store
-}
-
-func NewPendingCountLimiter(maxPendings int64, store *store.Store) *PendingCountLimiter {
-	return &PendingCountLimiter{
-		maxPendings: maxPendings,
-		store:       store,
-	}
-}
-
-func (limiter *PendingCountLimiter) Limit(userOp *contract.PackedUserOperation, ip string) error {
-	pendingsBySender, err := limiter.store.UserOp.GetPendingCount(userOp.Sender)
-	if err != nil {
-		return err
-	}
-
-	if pendingsBySender >= limiter.maxPendings {
-		return ErrVerifyingPaymasterTooManyOps.WithData(fmt.Sprintf(
-			"Exceeds the maximum %v pending user operations by sender %v", limiter.maxPendings, userOp.Sender,
-		))
-	}
-
-	pendingsByIP, err := limiter.store.UserOp.GetPendingCountByIP(ip)
-	if err != nil {
-		return err
-	}
-
-	if pendingsByIP >= limiter.maxPendings {
-		return ErrVerifyingPaymasterTooManyOps.WithData(fmt.Sprintf(
-			"Exceeds the maximum %v pending user operations by IP %v", limiter.maxPendings, ip,
-		))
-	}
-
-	return nil
-}
-
-// ValidUntilLimiter limits the number of user operations based on signature expiration time.
-type ValidUntilLimiter struct {
+// FinalizedLimiter limits the number of finalized user operations on chain.
+type FinalizedLimiter struct {
 	duration time.Duration
 	max      int64
 	store    *store.Store
 }
 
-func NewValidUntilLimiter(duration time.Duration, max int64, store *store.Store) *ValidUntilLimiter {
-	return &ValidUntilLimiter{
+func NewFinalizedLimiter(duration time.Duration, max int64, store *store.Store) *FinalizedLimiter {
+	return &FinalizedLimiter{
 		duration: duration,
 		max:      max,
 		store:    store,
 	}
 }
 
-func (limiter *ValidUntilLimiter) Limit(userOp *contract.PackedUserOperation, ip string) error {
+func (limiter *FinalizedLimiter) Limit(userOp *contract.PackedUserOperation) error {
 	since := time.Now().Add(-limiter.duration)
 
-	count, err := limiter.store.UserOp.GetCountByValidUntil(userOp.Sender, since)
+	count, err := limiter.store.UserOp.GetCountByBlockTimestamp(userOp.Sender, since)
 	if err != nil {
 		return err
 	}

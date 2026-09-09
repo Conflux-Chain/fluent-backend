@@ -43,6 +43,8 @@ func assertNewTestVerifyingPaymaster(t *testing.T) *VerifyingPaymaster {
 }
 
 func assertVerifyingPaymasterValidateBizErr(t *testing.T, expectedBizErr *api.BusinessError, userOp contract.PackedUserOperation, delegation ...common.Address) {
+	userOp.Sender = common.HexToAddress("0x01")
+
 	paymaster := assertNewTestVerifyingPaymaster(t)
 
 	var delegatedContract common.Address
