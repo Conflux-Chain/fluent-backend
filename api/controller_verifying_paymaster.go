@@ -23,11 +23,24 @@ func NewVerifyingPaymasterController(services service.Services) *VerifyingPaymas
 // @Tags			Paymaster
 // @Accept			json
 // @Produce			json
+// @Param			request	body	VerifyingPaymasterStubRequest	true	"Verifying paymaster stub request"
 // @Success			200	{object}	api.BusinessError{data=PaymasterAndDataStub}	"Paymaster address and data (0x-prefixed hex)"
 // @Failure			600	{object}	api.BusinessError{data=string}	"Internal server error"
-// @Router			/aa/paymaster/stub	[get]
+// @Router			/aa/paymaster/stub	[post]
 func (controller *VerifyingPaymasterController) Stub(c *gin.Context) (any, error) {
-	stub := controller.services.VerifyingPaymaster.Stub()
+	var input VerifyingPaymasterStubRequest
+
+	if err := c.ShouldBind(&input); err != nil {
+		return nil, api.ErrValidation(err)
+	}
+
+	sender := common.HexToAddress(input.Sender)
+	delegation := common.HexToAddress(input.Delegation)
+
+	stub, err := controller.services.VerifyingPaymaster.Stub(sender, delegation)
+	if err != nil {
+		return nil, err
+	}
 
 	return ToPaymasterAndDataStub(stub), nil
 }
@@ -43,21 +56,20 @@ func (controller *VerifyingPaymasterController) Stub(c *gin.Context) (any, error
 // @Tags			Paymaster
 // @Accept			json
 // @Produce			json
-// @Param			userOp	body	UserOperationWithAuth	true	"UserOperation for paymaster signing"
+// @Param			userOp	body	UserOperation	true	"UserOperation for paymaster signing"
 // @Success			200	{object}	api.BusinessError{data=string}	"Signed and reassembled paymasterData (0x-prefixed hex, 77 bytes)"
 // @Failure			600	{object}	api.BusinessError{data=string}	"Internal server error"
 // @Router			/aa/paymaster/sign	[post]
 func (controller *VerifyingPaymasterController) Sign(c *gin.Context) (any, error) {
-	var input UserOperationWithAuth
+	var input UserOperation
 
 	if err := c.ShouldBind(&input); err != nil {
 		return nil, api.ErrValidation(err)
 	}
 
 	userOp := input.ToPackedUserOperation()
-	delegatedContract := common.HexToAddress(input.DelegatedContract)
 
-	paymasterAndData, err := controller.services.VerifyingPaymaster.Sign(userOp, delegatedContract)
+	paymasterAndData, err := controller.services.VerifyingPaymaster.Sign(userOp)
 	if err != nil {
 		return nil, err
 	}

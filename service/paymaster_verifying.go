@@ -19,21 +19,53 @@ import (
 )
 
 const (
-	// VerifyingPaymaster Encoding: address(20) || validationGasLimit(16) || postOpGasLimit(16) || validAfter(6) || validUntil(6) || signature(65)
-	verifyingPaymasterDataLength = 129
+	// VerifyingPaymaster Encoding: address(20) || validationGasLimit(16) || postOpGasLimit(16) || delegation(20) || validAfter(6) || validUntil(6) || signature(65)
+	verifyingPaymasterDataLength = 149
 
 	initCode7702Marker = "0x7702000000000000000000000000000000000000"
 )
 
 type VerifyingPaymasterConfig struct {
-	Address           common.Address
-	ContractWhitelist []common.Address
-	contractWhitelist map[common.Address]bool
-	MaxGasCost        int64 `default:"100000000000000000"` // 0.1 CFX by default, and could up to 1 CFX for int64 type
-	maxGasCost        *big.Int
-	SignatureTimeout  time.Duration `default:"5m"`
+	Address               common.Address
+	SmartAccountWhitelist []common.Address
+	smartAccountMap       map[common.Address]bool
+	ContractWhitelist     []common.Address
+	contractMap           map[common.Address]bool
+	MaxGasCost            int64 `default:"100000000000000000"` // 0.1 CFX by default, and could up to 1 CFX for int64 type
+	maxGasCostBig         *big.Int
+	SignatureTimeout      time.Duration `default:"5m"`
 
 	Limiter LimitConfig
+}
+
+func (config *VerifyingPaymasterConfig) validateAndNormalize() error {
+	// validate
+	if config.Address == (common.Address{}) {
+		return errors.New("Address is required")
+	}
+
+	if len(config.SmartAccountWhitelist) == 0 {
+		return errors.New("Smart account whitelist is required")
+	}
+
+	if len(config.ContractWhitelist) == 0 {
+		return errors.New("Contract whitelist is required")
+	}
+
+	// normalize
+	config.smartAccountMap = make(map[common.Address]bool)
+	for _, addr := range config.SmartAccountWhitelist {
+		config.smartAccountMap[addr] = true
+	}
+
+	config.contractMap = make(map[common.Address]bool)
+	for _, addr := range config.ContractWhitelist {
+		config.contractMap[addr] = true
+	}
+
+	config.maxGasCostBig = big.NewInt(config.MaxGasCost)
+
+	return nil
 }
 
 type VerifyingPaymaster struct {
@@ -47,19 +79,8 @@ type VerifyingPaymaster struct {
 }
 
 func NewVerifyingPaymaster(config VerifyingPaymasterConfig, client *web3go.Client, store *store.Store) (*VerifyingPaymaster, error) {
-	// check config and normalize it
-	if config.Address == (common.Address{}) {
-		return nil, errors.New("VerifyingPaymaster address is required")
-	}
-
-	if len(config.ContractWhitelist) == 0 {
-		return nil, errors.New("Contract whitelist is required")
-	}
-
-	config.maxGasCost = big.NewInt(config.MaxGasCost)
-	config.contractWhitelist = make(map[common.Address]bool)
-	for _, addr := range config.ContractWhitelist {
-		config.contractWhitelist[addr] = true
+	if err := config.validateAndNormalize(); err != nil {
+		return nil, errors.WithMessage(err, "Invalid VerifyingPaymaster config")
 	}
 
 	// get the default signer
@@ -121,21 +142,37 @@ func NewVerifyingPaymaster(config VerifyingPaymasterConfig, client *web3go.Clien
 }
 
 // Stub returns a stub paymasterAndData for gas estimation.
-func (paymaster *VerifyingPaymaster) Stub() []byte {
+func (paymaster *VerifyingPaymaster) Stub(sender, delegation common.Address) ([]byte, error) {
+	// retrieve the delegated contract if not provided
+	if delegation == (common.Address{}) {
+		var err error
+
+		if delegation, err = GetDelegatedContract(paymaster.client, sender); err != nil {
+			return nil, err
+		}
+	}
+
+	// check whitelist
+	if !paymaster.config.smartAccountMap[delegation] {
+		return nil, ErrVerifyingPaymasterInvalidSmartAccount.WithData(delegation)
+	}
+
+	// assemble the paymaster data
 	var buf [verifyingPaymasterDataLength]byte
 
 	validUntil := time.Now().Add(paymaster.config.SignatureTimeout).Unix()
 
 	copy(buf[:20], paymaster.config.Address.Bytes()) // address
-	big.NewInt(validUntil).FillBytes(buf[58:64])     // validUntil
-	copy(buf[64:], dummySignature)                   // dummy signature
+	copy(buf[52:72], delegation.Bytes())             // delegation
+	big.NewInt(validUntil).FillBytes(buf[78:84])     // validUntil
+	copy(buf[84:], dummySignature)                   // dummy signature
 
-	return buf[:]
+	return buf[:], nil
 }
 
 // Sign validates the user operation and signs the user operation with the paymaster's private key.
-// It returns the signed paymasterAndData, which includes the paymaster address, gas limits, validAfter, validUntil, and signature.
-func (paymaster *VerifyingPaymaster) Sign(userOp contract.PackedUserOperation, delegatedContract common.Address) ([]byte, error) {
+// It returns the signed paymasterAndData, which includes the paymaster address, gas limits, delegation, validAfter, validUntil and signature.
+func (paymaster *VerifyingPaymaster) Sign(userOp contract.PackedUserOperation) ([]byte, error) {
 	// rate limit
 	if err := paymaster.limiter.Limit(&userOp); err != nil {
 		return nil, err
@@ -145,14 +182,14 @@ func (paymaster *VerifyingPaymaster) Sign(userOp contract.PackedUserOperation, d
 	//
 	// NOTE To prevent abuse in future, we could blacklist the sender address and
 	// its IP address for a while, if failed to validate too many times.
-	if err := paymaster.validate(&userOp, delegatedContract); err != nil {
+	if err := paymaster.validate(&userOp); err != nil {
 		return nil, err
 	}
 
 	// re-assemble paymasterData for signing, including validAfter and validUntil
 	validUntil := time.Now().Add(paymaster.config.SignatureTimeout).Unix()
-	big.NewInt(0).FillBytes(userOp.PaymasterAndData[52:58])          // validAfter
-	big.NewInt(validUntil).FillBytes(userOp.PaymasterAndData[58:64]) // validUntil
+	big.NewInt(0).FillBytes(userOp.PaymasterAndData[72:78])          // validAfter
+	big.NewInt(validUntil).FillBytes(userOp.PaymasterAndData[78:84]) // validUntil
 
 	// compute the paymaster signature
 	hash, err := paymaster.caller.GetPaymasterHash(nil, userOp)
@@ -166,12 +203,12 @@ func (paymaster *VerifyingPaymaster) Sign(userOp contract.PackedUserOperation, d
 	}
 
 	// re-assemble signature into paymasterAndData
-	copy(userOp.PaymasterAndData[64:], signature)
+	copy(userOp.PaymasterAndData[84:], signature)
 
 	return userOp.PaymasterAndData, nil
 }
 
-func (paymaster *VerifyingPaymaster) validate(userOp *contract.PackedUserOperation, delegatedContract common.Address) error {
+func (paymaster *VerifyingPaymaster) validate(userOp *contract.PackedUserOperation) error {
 	// validate the sender address is not empty
 	if userOp.Sender == (common.Address{}) {
 		return api.ErrValidationStr("Invalid sender address")
@@ -187,19 +224,16 @@ func (paymaster *VerifyingPaymaster) validate(userOp *contract.PackedUserOperati
 		return api.ErrValidationStrf("Invalid paymaster address: %s, expected %s", paymasterAddress, paymaster.config.Address)
 	}
 
-	// check init code
-	if delegatedContract == (common.Address{}) && len(userOp.InitCode) > 0 {
-		return api.ErrValidationStr("Invalid initCode, empty value required")
-	}
-
-	if delegatedContract != (common.Address{}) && hexutil.Encode(userOp.InitCode) != initCode7702Marker {
-		return api.ErrValidationStrf("Invalid initCode, expected %s", initCode7702Marker)
+	// check delegation address
+	delegation := common.BytesToAddress(userOp.PaymasterAndData[52:72])
+	if !paymaster.config.smartAccountMap[delegation] {
+		return api.ErrValidationStrf("Invalid delegation address: %s", delegation)
 	}
 
 	// check max cost
 	maxCost := paymaster.maxCost(userOp)
-	if paymaster.config.maxGasCost.Cmp(maxCost) < 0 {
-		return ErrVerifyingPaymasterMaxGasCostExceeded.WithData(fmt.Sprintf("max = %v, actual = %v", paymaster.config.maxGasCost, maxCost))
+	if paymaster.config.maxGasCostBig.Cmp(maxCost) < 0 {
+		return ErrVerifyingPaymasterMaxGasCostExceeded.WithData(fmt.Sprintf("max = %v, actual = %v", paymaster.config.maxGasCostBig, maxCost))
 	}
 
 	// check calldata
@@ -207,8 +241,8 @@ func (paymaster *VerifyingPaymaster) validate(userOp *contract.PackedUserOperati
 		return err
 	}
 
-	// check if delegation is whitelisted
-	if err := paymaster.validateSmartAccount(userOp.Sender, delegatedContract); err != nil {
+	// check init code based on the delegated contract
+	if err := paymaster.validateInitCode(userOp.Sender, delegation, userOp.InitCode); err != nil {
 		return err
 	}
 
@@ -266,7 +300,7 @@ func (paymaster *VerifyingPaymaster) validateCallData(callData []byte) error {
 			return api.ErrValidation(errors.WithMessage(err, "Failed to unpack callData for execute method"))
 		}
 
-		if !paymaster.config.contractWhitelist[execution.Target] {
+		if !paymaster.config.contractMap[execution.Target] {
 			return ErrVerifyingPaymasterContractNotWhitelisted.WithData(execution.Target)
 		}
 	} else if bytes.Equal(paymaster.executeBatchMethod.ID, selector) {
@@ -281,7 +315,7 @@ func (paymaster *VerifyingPaymaster) validateCallData(callData []byte) error {
 		}
 
 		for _, execution := range executions {
-			if !paymaster.config.contractWhitelist[execution.Target] {
+			if !paymaster.config.contractMap[execution.Target] {
 				return ErrVerifyingPaymasterContractNotWhitelisted.WithData(execution.Target)
 			}
 		}
@@ -292,28 +326,22 @@ func (paymaster *VerifyingPaymaster) validateCallData(callData []byte) error {
 	return nil
 }
 
-// validateSmartAccount checks if the smart account is whitelisted by the paymaster.
-func (paymaster *VerifyingPaymaster) validateSmartAccount(sender common.Address, delegatedContract common.Address) error {
-	if delegatedContract == (common.Address{}) {
-		delegation, err := GetDelegatedContract(paymaster.client, sender)
-		if err != nil {
-			return err
-		}
-
-		if delegation == (common.Address{}) {
-			return api.ErrValidationStr("Delegated contract not found")
-		}
-
-		delegatedContract = delegation
-	}
-
-	whitelisted, err := paymaster.caller.SmartAccountWhitelist(nil, delegatedContract)
+// validateInitCode checks if the init code is valid for the smart account delegation.
+func (paymaster *VerifyingPaymaster) validateInitCode(sender, delegation common.Address, initCode []byte) error {
+	// retrieve the current delegation for the sender
+	currentDelegation, err := GetDelegatedContract(paymaster.client, sender)
 	if err != nil {
-		return NewRPCError(err, "Failed to check if smart account is whitelisted")
+		return err
 	}
 
-	if !whitelisted {
-		return ErrVerifyingPaymasterInvalidSmartAccount.WithData(delegatedContract)
+	// requires empty initCode if delegatoin unchanged
+	if currentDelegation == delegation && len(initCode) > 0 {
+		return api.ErrValidationStr("Invalid initCode, empty value required")
+	}
+
+	// requires 7702 marker if delegation changed (0 -> A or A -> B)
+	if currentDelegation != delegation && hexutil.Encode(initCode) != initCode7702Marker {
+		return api.ErrValidationStrf("Invalid initCode, expected %v", initCode7702Marker)
 	}
 
 	return nil

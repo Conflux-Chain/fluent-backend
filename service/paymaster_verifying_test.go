@@ -18,11 +18,14 @@ import (
 
 var testVerifyingPaymasterConfig = VerifyingPaymasterConfig{
 	Address: common.HexToAddress("0x6666"),
-	contractWhitelist: map[common.Address]bool{
+	smartAccountMap: map[common.Address]bool{
+		common.HexToAddress("0x9999"): true,
+	},
+	contractMap: map[common.Address]bool{
 		common.HexToAddress("0x1111"): true,
 		common.HexToAddress("0x2222"): true,
 	},
-	maxGasCost:       big.NewInt(100000000000000000),
+	maxGasCostBig:    big.NewInt(100000000000000000),
 	SignatureTimeout: time.Minute * 5,
 }
 
@@ -42,16 +45,10 @@ func assertNewTestVerifyingPaymaster(t *testing.T) *VerifyingPaymaster {
 	}
 }
 
-func assertVerifyingPaymasterValidateBizErr(t *testing.T, expectedBizErr *api.BusinessError, userOp contract.PackedUserOperation, delegation ...common.Address) {
-	userOp.Sender = common.HexToAddress("0x01")
-
+func assertVerifyingPaymasterValidateBizErr(t *testing.T, expectedBizErr *api.BusinessError, userOp contract.PackedUserOperation) {
 	paymaster := assertNewTestVerifyingPaymaster(t)
 
-	var delegatedContract common.Address
-	if len(delegation) > 0 {
-		delegatedContract = delegation[0]
-	}
-	err := paymaster.validate(&userOp, delegatedContract)
+	err := paymaster.validate(&userOp)
 	assert.Error(t, err)
 
 	bizErr, ok := err.(*api.BusinessError)
@@ -74,12 +71,17 @@ func assertVerifyingPaymasterValidateBizErr(t *testing.T, expectedBizErr *api.Bu
 }
 
 func TestVerifyingPaymasterValidate(t *testing.T) {
+	// invalid sender
+	assertVerifyingPaymasterValidateBizErr(t, api.ErrValidationStr("Invalid sender address"), contract.PackedUserOperation{})
+
 	// paymasterAndData - invalid length
 	assertVerifyingPaymasterValidateBizErr(t, api.ErrValidationStr("Invalid paymaster data length"), contract.PackedUserOperation{
+		Sender:           common.HexToAddress("0x01"),
 		PaymasterAndData: nil,
 	})
 
 	assertVerifyingPaymasterValidateBizErr(t, api.ErrValidationStr("Invalid paymaster data length"), contract.PackedUserOperation{
+		Sender:           common.HexToAddress("0x01"),
 		PaymasterAndData: make([]byte, verifyingPaymasterDataLength+1),
 	})
 
@@ -87,28 +89,25 @@ func TestVerifyingPaymasterValidate(t *testing.T) {
 	var data [verifyingPaymasterDataLength]byte
 	copy(data[:20], common.HexToAddress("0x6667").Bytes())
 	assertVerifyingPaymasterValidateBizErr(t, api.ErrValidationStr("Invalid paymaster address"), contract.PackedUserOperation{
+		Sender:           common.HexToAddress("0x01"),
 		PaymasterAndData: data[:],
 	})
 
-	// initCode - not empty
+	// paymasterAndData - invalid delegation address
 	paymasterAndData := make([]byte, verifyingPaymasterDataLength)
 	copy(paymasterAndData[:20], testVerifyingPaymasterConfig.Address.Bytes())
-
-	assertVerifyingPaymasterValidateBizErr(t, api.ErrValidationStr("Invalid initCode"), contract.PackedUserOperation{
+	copy(paymasterAndData[52:72], common.HexToAddress("0x9998").Bytes())
+	assertVerifyingPaymasterValidateBizErr(t, api.ErrValidationStr("Invalid delegation address"), contract.PackedUserOperation{
+		Sender:           common.HexToAddress("0x01"),
 		PaymasterAndData: paymasterAndData,
-		InitCode:         []byte{1},
 	})
 
-	// initCode - invalid 7702 marker
-	assertVerifyingPaymasterValidateBizErr(t, api.ErrValidationStr("Invalid initCode"), contract.PackedUserOperation{
-		PaymasterAndData: paymasterAndData,
-		InitCode:         []byte{1},
-	}, common.HexToAddress("0x9999"))
-
 	// maxCost - exceed maxGasCost
+	copy(paymasterAndData[52:72], common.HexToAddress("0x9999").Bytes())
 	userOp := contract.PackedUserOperation{
+		Sender:             common.HexToAddress("0x01"),
 		PaymasterAndData:   paymasterAndData,
-		PreVerificationGas: testVerifyingPaymasterConfig.maxGasCost,
+		PreVerificationGas: testVerifyingPaymasterConfig.maxGasCostBig,
 	}
 
 	big.NewInt(1).FillBytes(userOp.AccountGasLimits[:16])   // verification gas limit
@@ -118,7 +117,7 @@ func TestVerifyingPaymasterValidate(t *testing.T) {
 	big.NewInt(1).FillBytes(userOp.GasFees[16:])            // maxFeePerGas
 
 	var tmp VerifyingPaymaster
-	expectedMaxCost := new(big.Int).Add(testVerifyingPaymasterConfig.maxGasCost, big.NewInt(12))
+	expectedMaxCost := new(big.Int).Add(testVerifyingPaymasterConfig.maxGasCostBig, big.NewInt(12))
 	assert.Equal(t, expectedMaxCost, tmp.maxCost(&userOp))
 
 	assertVerifyingPaymasterValidateBizErr(t, ErrVerifyingPaymasterMaxGasCostExceeded, userOp)

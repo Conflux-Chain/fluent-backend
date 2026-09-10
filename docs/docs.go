@@ -359,7 +359,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.UserOperationWithAuth"
+                            "$ref": "#/definitions/api.UserOperation"
                         }
                     }
                 ],
@@ -404,7 +404,7 @@ const docTemplate = `{
             }
         },
         "/aa/paymaster/stub": {
-            "get": {
+            "post": {
                 "description": "Returns the stub paymasterData of verifying paymaster for gas estimation.",
                 "consumes": [
                     "application/json"
@@ -417,6 +417,17 @@ const docTemplate = `{
                 ],
                 "summary": "Returns the stub paymasterData of verifying paymaster for gas estimation",
                 "operationId": "aaPaymasterStub",
+                "parameters": [
+                    {
+                        "description": "Verifying paymaster stub request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.VerifyingPaymasterStubRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Paymaster address and data (0x-prefixed hex)",
@@ -869,85 +880,20 @@ const docTemplate = `{
                 }
             }
         },
-        "api.UserOperationWithAuth": {
+        "api.VerifyingPaymasterStubRequest": {
             "type": "object",
             "required": [
-                "callData",
-                "callGasLimit",
-                "delegatedContract",
-                "maxFeePerGas",
-                "maxPriorityFeePerGas",
-                "nonce",
-                "paymaster",
-                "paymasterData",
-                "paymasterPostOpGasLimit",
-                "paymasterVerificationGasLimit",
-                "preVerificationGas",
-                "sender",
-                "signature",
-                "verificationGasLimit"
+                "delegation",
+                "sender"
             ],
             "properties": {
-                "callData": {
-                    "type": "string",
-                    "minLength": 2
-                },
-                "callGasLimit": {
-                    "type": "string",
-                    "maxLength": 32
-                },
-                "delegatedContract": {
-                    "description": "DelegatedContract is used when user operation carrying an EIP-7702 auth message to upgrade EOA to a smart account\nor replace the delegated smart account. If there is no EIP-7702 auth message, use empty value \"0x0000000000000000000000000000000000000000\".",
+                "delegation": {
+                    "description": "Delegated contract address in hex format with 0x prefix. Set to non-zero value if user op carries a 7702 auth message.",
                     "type": "string"
-                },
-                "factory": {
-                    "type": "string"
-                },
-                "factoryData": {
-                    "type": "string",
-                    "minLength": 2
-                },
-                "maxFeePerGas": {
-                    "type": "string",
-                    "maxLength": 32
-                },
-                "maxPriorityFeePerGas": {
-                    "type": "string",
-                    "maxLength": 32
-                },
-                "nonce": {
-                    "type": "string"
-                },
-                "paymaster": {
-                    "description": "Paymaster",
-                    "type": "string"
-                },
-                "paymasterData": {
-                    "description": "at least validAfter (6) || validUntil (6) || signature (65)",
-                    "type": "string",
-                    "minLength": 156
-                },
-                "paymasterPostOpGasLimit": {
-                    "type": "string",
-                    "maxLength": 32
-                },
-                "paymasterVerificationGasLimit": {
-                    "type": "string",
-                    "maxLength": 32
-                },
-                "preVerificationGas": {
-                    "type": "string",
-                    "maxLength": 32
                 },
                 "sender": {
+                    "description": "Smart account address in hex format with 0x prefix.",
                     "type": "string"
-                },
-                "signature": {
-                    "type": "string"
-                },
-                "verificationGasLimit": {
-                    "type": "string",
-                    "maxLength": 32
                 }
             }
         }
