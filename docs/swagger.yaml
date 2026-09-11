@@ -16,7 +16,7 @@ definitions:
   api.GasTankPrepareCreditRequest:
     properties:
       amount:
-        description: Amount of tokens to deposit for gas fee payment.
+        description: Amount of tokens to deposit for gas fee payment in hex format.
         maxLength: 64
         type: string
       token:

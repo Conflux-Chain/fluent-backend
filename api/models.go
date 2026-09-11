@@ -61,7 +61,7 @@ type SetCodeResult struct {
 type GasTankPrepareCreditRequest struct {
 	// ERC20 token address to deposit for gas fee payment.
 	Token string `json:"token" binding:"required,hex,len=42"`
-	// Amount of tokens to deposit for gas fee payment.
+	// Amount of tokens to deposit for gas fee payment in hex format.
 	Amount string `json:"amount" binding:"required,hexadecimal,max=64"`
 }
 
