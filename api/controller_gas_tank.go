@@ -39,6 +39,9 @@ func (controller *GasTankController) PrepareCredit(c *gin.Context) (any, error) 
 
 	token := common.HexToAddress(input.Token)
 	amount := hexToBig(input.Amount)
+	if amount.Sign() <= 0 {
+		return nil, api.ErrValidationStr("Invalid amount")
+	}
 
 	paymasterData, err := controller.services.GasTank.StubCredit(token, amount)
 	if err != nil {

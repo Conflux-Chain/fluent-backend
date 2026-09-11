@@ -666,7 +666,7 @@ const docTemplate = `{
                 "amount": {
                     "description": "Amount of tokens to deposit for gas fee payment.",
                     "type": "string",
-                    "maxLength": 32
+                    "maxLength": 64
                 },
                 "token": {
                     "description": "ERC20 token address to deposit for gas fee payment.",
