@@ -3,7 +3,6 @@ package contract
 import (
 	"math/big"
 
-	"github.com/Conflux-Chain/fluent-backend/util"
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -41,8 +40,8 @@ func (userOp *PackedUserOperation) CallGasLimit() *big.Int {
 
 // SetAccountGasLimits sets the verification and call gas limits in the AccountGasLimits field of the user operation.
 func (userOp *PackedUserOperation) SetAccountGasLimits(verificationGasLimit, callGasLimit *big.Int) {
-	util.SafeBigFillBytes(verificationGasLimit, userOp.AccountGasLimits[:16])
-	util.SafeBigFillBytes(callGasLimit, userOp.AccountGasLimits[16:])
+	SafeBigFillBytes(verificationGasLimit, userOp.AccountGasLimits[:16])
+	SafeBigFillBytes(callGasLimit, userOp.AccountGasLimits[16:])
 }
 
 // MaxPriorityFeePerGas extracts the max priority fee per gas from the GasFees field of the user operation.
@@ -57,8 +56,8 @@ func (userOp *PackedUserOperation) MaxFeePerGas() *big.Int {
 
 // SetGasFees sets the max priority fee per gas and max fee per gas in the GasFees field of the user operation.
 func (userOp *PackedUserOperation) SetGasFees(maxPriorityFeePerGas, maxFeePerGas *big.Int) {
-	util.SafeBigFillBytes(maxPriorityFeePerGas, userOp.GasFees[:16])
-	util.SafeBigFillBytes(maxFeePerGas, userOp.GasFees[16:])
+	SafeBigFillBytes(maxPriorityFeePerGas, userOp.GasFees[:16])
+	SafeBigFillBytes(maxFeePerGas, userOp.GasFees[16:])
 }
 
 // Paymaster extracts the paymaster address from the PaymasterAndData field of the user operation.
@@ -90,8 +89,8 @@ func (userOp *PackedUserOperation) PaymasterPostOpGasLimit() *big.Int {
 // SetPaymasterGasLimits sets the paymaster verification and post-operation gas limits in the PaymasterAndData field of the user operation.
 func (userOp *PackedUserOperation) SetPaymasterGasLimits(paymasterVerificationGasLimit, paymasterPostOpGasLimit *big.Int) {
 	if len(userOp.PaymasterAndData) >= MinPaymasterAndDataLen {
-		util.SafeBigFillBytes(paymasterVerificationGasLimit, userOp.PaymasterAndData[20:36])
-		util.SafeBigFillBytes(paymasterPostOpGasLimit, userOp.PaymasterAndData[36:52])
+		SafeBigFillBytes(paymasterVerificationGasLimit, userOp.PaymasterAndData[20:36])
+		SafeBigFillBytes(paymasterPostOpGasLimit, userOp.PaymasterAndData[36:52])
 	}
 }
 
@@ -109,8 +108,8 @@ func (userOp *PackedUserOperation) SetPaymasterAndData(paymaster common.Address,
 	userOp.PaymasterAndData = make([]byte, MinPaymasterAndDataLen+len(paymasterData))
 
 	copy(userOp.PaymasterAndData[:20], paymaster.Bytes())
-	util.SafeBigFillBytes(paymasterVerificationGasLimit, userOp.PaymasterAndData[20:36])
-	util.SafeBigFillBytes(paymasterPostOpGasLimit, userOp.PaymasterAndData[36:52])
+	SafeBigFillBytes(paymasterVerificationGasLimit, userOp.PaymasterAndData[20:36])
+	SafeBigFillBytes(paymasterPostOpGasLimit, userOp.PaymasterAndData[36:52])
 	copy(userOp.PaymasterAndData[52:], paymasterData)
 }
 
