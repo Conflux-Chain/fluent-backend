@@ -1,8 +1,6 @@
 package api
 
 import (
-	"math/big"
-
 	"github.com/Conflux-Chain/fluent-backend/service"
 	"github.com/Conflux-Chain/go-conflux-util/api"
 	"github.com/ethereum/go-ethereum/common"
@@ -40,8 +38,8 @@ func (controller *GasTankController) PrepareCredit(c *gin.Context) (any, error) 
 	}
 
 	token := common.HexToAddress(input.Token)
-	amount, ok := new(big.Int).SetString(input.Amount, 10)
-	if !ok || amount.Sign() <= 0 {
+	amount := hexToBig(input.Amount)
+	if amount.Sign() <= 0 {
 		return nil, api.ErrValidationStr("Invalid amount")
 	}
 

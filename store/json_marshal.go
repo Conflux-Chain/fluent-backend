@@ -31,19 +31,19 @@ func convertPackedUserOp(userOp *contract.PackedUserOperation) PackedUserOperati
 		Nonce:                userOp.Nonce,
 		InitCode:             userOp.InitCode,
 		CallData:             userOp.CallData,
-		VerificationGasLimit: new(big.Int).SetBytes(userOp.AccountGasLimits[:16]),
-		CallGasLimit:         new(big.Int).SetBytes(userOp.AccountGasLimits[16:]),
+		VerificationGasLimit: userOp.VerificationGasLimit(),
+		CallGasLimit:         userOp.CallGasLimit(),
 		PreVerificationGas:   userOp.PreVerificationGas,
-		MaxPriorityFeePerGas: new(big.Int).SetBytes(userOp.GasFees[:16]),
-		MaxFeePerGas:         new(big.Int).SetBytes(userOp.GasFees[16:]),
+		MaxPriorityFeePerGas: userOp.MaxPriorityFeePerGas(),
+		MaxFeePerGas:         userOp.MaxFeePerGas(),
 		Signature:            userOp.Signature,
 	}
 
-	if len(userOp.PaymasterAndData) >= 52 {
-		result.Paymaster = common.BytesToAddress(userOp.PaymasterAndData[:20])
-		result.PaymasterVerificationGasLimit = new(big.Int).SetBytes(userOp.PaymasterAndData[20:36])
-		result.PaymasterPostOpGasLimit = new(big.Int).SetBytes(userOp.PaymasterAndData[36:52])
-		result.PaymasterData = userOp.PaymasterAndData[52:]
+	if len(userOp.PaymasterAndData) >= contract.MinPaymasterAndDataLen {
+		result.Paymaster = userOp.Paymaster()
+		result.PaymasterVerificationGasLimit = userOp.PaymasterVerificationGasLimit()
+		result.PaymasterPostOpGasLimit = userOp.PaymasterPostOpGasLimit()
+		result.PaymasterData = userOp.PaymasterData()
 	}
 
 	return result

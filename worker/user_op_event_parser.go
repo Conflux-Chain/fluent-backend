@@ -1,7 +1,6 @@
 package worker
 
 import (
-	"bytes"
 	"fmt"
 	"strings"
 
@@ -232,7 +231,7 @@ func (parser *UserOpEventParser) unpackUserOp(userOpEvent *contract.EntryPointUs
 		}
 
 		// skip user operations not sponsored by the expected paymaster
-		if len(userOp.PaymasterAndData) < 20 || !bytes.Equal(userOp.PaymasterAndData[:20], userOpEvent.Paymaster.Bytes()) {
+		if userOp.Paymaster() != userOpEvent.Paymaster {
 			continue
 		}
 

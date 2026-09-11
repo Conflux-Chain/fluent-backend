@@ -18,12 +18,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-const (
-	// VerifyingPaymaster Encoding: address(20) || validationGasLimit(16) || postOpGasLimit(16) || delegation(20) || validAfter(6) || validUntil(6) || signature(65)
-	verifyingPaymasterDataLength = 149
-
-	initCode7702Marker = "0x7702000000000000000000000000000000000000"
-)
+const initCode7702Marker = "0x7702000000000000000000000000000000000000"
 
 type VerifyingPaymasterConfig struct {
 	Address               common.Address
@@ -161,17 +156,7 @@ func (paymaster *VerifyingPaymaster) Stub(sender, delegation common.Address) ([]
 		return nil, ErrVerifyingPaymasterInvalidSmartAccount.WithData(delegation)
 	}
 
-	// assemble the paymaster data
-	var buf [verifyingPaymasterDataLength]byte
-
-	validUntil := time.Now().Add(paymaster.config.SignatureTimeout).Unix()
-
-	copy(buf[:20], paymaster.config.Address.Bytes()) // address
-	copy(buf[52:72], delegation.Bytes())             // delegation
-	big.NewInt(validUntil).FillBytes(buf[78:84])     // validUntil
-	copy(buf[84:], dummySignature)                   // dummy signature
-
-	return buf[:], nil
+	return contract.GeneratePaymasterAndDataStub(paymaster.config.Address, paymaster.config.SignatureTimeout, delegation), nil
 }
 
 // Sign validates the user operation and signs the user operation with the paymaster's private key.
@@ -190,10 +175,7 @@ func (paymaster *VerifyingPaymaster) Sign(userOp contract.PackedUserOperation) (
 		return nil, err
 	}
 
-	// re-assemble paymasterData for signing, including validAfter and validUntil
-	validUntil := time.Now().Add(paymaster.config.SignatureTimeout).Unix()
-	big.NewInt(0).FillBytes(userOp.PaymasterAndData[72:78])          // validAfter
-	big.NewInt(validUntil).FillBytes(userOp.PaymasterAndData[78:84]) // validUntil
+	userOp.UpdatePaymasterPreSign(paymaster.config.SignatureTimeout)
 
 	// compute the paymaster signature
 	hash, err := paymaster.caller.GetPaymasterHash(nil, userOp)
@@ -206,8 +188,7 @@ func (paymaster *VerifyingPaymaster) Sign(userOp contract.PackedUserOperation) (
 		return nil, errors.WithMessage(err, "Failed to sign paymaster hash")
 	}
 
-	// re-assemble signature into paymasterAndData
-	copy(userOp.PaymasterAndData[84:], signature)
+	userOp.UpdatePaymasterSignature(signature)
 
 	return userOp.PaymasterAndData, nil
 }
@@ -219,23 +200,23 @@ func (paymaster *VerifyingPaymaster) validate(userOp *contract.PackedUserOperati
 	}
 
 	// validate the paymasterAndData length at first, to avoid panic when accessing the slice
-	if len(userOp.PaymasterAndData) != verifyingPaymasterDataLength {
-		return api.ErrValidationStrf("Invalid paymaster data length: %d, expected %d", len(userOp.PaymasterAndData), verifyingPaymasterDataLength)
+	if len(userOp.PaymasterAndData) != contract.MinSignablePaymasterAndDataLen+common.AddressLength {
+		return api.ErrValidationStr("Invalid paymaster data length")
 	}
 
 	// check paymaster address
-	if paymasterAddress := common.BytesToAddress(userOp.PaymasterAndData[:20]); paymasterAddress != paymaster.config.Address {
-		return api.ErrValidationStrf("Invalid paymaster address: %s, expected %s", paymasterAddress, paymaster.config.Address)
+	if userOp.Paymaster() != paymaster.config.Address {
+		return api.ErrValidationStrf("Invalid paymaster address: %s, expected %s", userOp.Paymaster(), paymaster.config.Address)
 	}
 
 	// check delegation address
-	delegation := common.BytesToAddress(userOp.PaymasterAndData[52:72])
+	delegation := common.BytesToAddress(userOp.PaymasterCustomData())
 	if !paymaster.config.smartAccountMap[delegation] {
 		return api.ErrValidationStrf("Invalid delegation address: %s", delegation)
 	}
 
 	// check max cost
-	maxCost := paymaster.maxCost(userOp)
+	maxCost := userOp.MaxGasCost()
 	if paymaster.config.maxGasCostBig.Cmp(maxCost) < 0 {
 		return ErrVerifyingPaymasterMaxGasCostExceeded.WithData(fmt.Sprintf("max = %v, actual = %v", paymaster.config.maxGasCostBig, maxCost))
 	}
@@ -271,21 +252,6 @@ func (paymaster *VerifyingPaymaster) validate(userOp *contract.PackedUserOperati
 	}
 
 	return nil
-}
-
-// maxCost calculates the maximum cost of a user operation based on its gas limits and fees.
-func (paymaster *VerifyingPaymaster) maxCost(userOp *contract.PackedUserOperation) *big.Int {
-	maxCost := big.NewInt(0)
-
-	maxCost.Add(maxCost, userOp.PreVerificationGas)                             // pre-verification gas
-	maxCost.Add(maxCost, new(big.Int).SetBytes(userOp.AccountGasLimits[0:16]))  // account verification gas limit
-	maxCost.Add(maxCost, new(big.Int).SetBytes(userOp.AccountGasLimits[16:32])) // account call gas limit
-	maxCost.Add(maxCost, new(big.Int).SetBytes(userOp.PaymasterAndData[20:36])) // paymaster verification gas limit
-	maxCost.Add(maxCost, new(big.Int).SetBytes(userOp.PaymasterAndData[36:52])) // paymaster postOp gas limit
-
-	maxCost.Mul(maxCost, new(big.Int).SetBytes(userOp.GasFees[16:32])) // multiply by maxFeePerGas
-
-	return maxCost
 }
 
 // validateCallData checks if the call data is valid for the user operation.
