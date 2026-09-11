@@ -340,7 +340,7 @@ const docTemplate = `{
         },
         "/aa/paymaster/sign": {
             "post": {
-                "description": "Validates the given UserOperation, adds paymaster signature, and returns reassembled paymasterData.\nEncoding format (77 bytes): validAfter(6) || validUntil(6) || signature(65).\nNote: the on-chain paymaster contract will verify the delegated contract address, so users may be punished\nif sending another inconsistent EIP-7702 auth message to the bundler.",
+                "description": "Validates the given UserOperation, adds paymaster signature, and returns reassembled paymasterData.",
                 "consumes": [
                     "application/json"
                 ],
@@ -365,7 +365,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Signed and reassembled paymasterData (0x-prefixed hex, 77 bytes)",
+                        "description": "Signed and reassembled paymasterData (0x-prefixed hex)",
                         "schema": {
                             "allOf": [
                                 {

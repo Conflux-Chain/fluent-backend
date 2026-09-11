@@ -150,6 +150,10 @@ func (paymaster *VerifyingPaymaster) Stub(sender, delegation common.Address) ([]
 		if delegation, err = GetDelegatedContract(paymaster.client, sender); err != nil {
 			return nil, err
 		}
+
+		if delegation == (common.Address{}) {
+			return nil, api.ErrValidationStr("Delegation not provided for the EOA sender")
+		}
 	}
 
 	// check whitelist
@@ -334,7 +338,7 @@ func (paymaster *VerifyingPaymaster) validateInitCode(sender, delegation common.
 		return err
 	}
 
-	// requires empty initCode if delegatoin unchanged
+	// requires empty initCode if delegation unchanged
 	if currentDelegation == delegation && len(initCode) > 0 {
 		return api.ErrValidationStr("Invalid initCode, empty value required")
 	}

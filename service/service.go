@@ -81,7 +81,9 @@ func New(config Config, store *store.Store) (Services, error) {
 	}
 
 	// create VerifyingPaymaster service if paymaster address and whitelist are specified
-	if config.VerifyingPaymaster.Address != (common.Address{}) && len(config.VerifyingPaymaster.ContractWhitelist) > 0 {
+	if config.VerifyingPaymaster.Address != (common.Address{}) &&
+		len(config.VerifyingPaymaster.SmartAccountWhitelist) > 0 &&
+		len(config.VerifyingPaymaster.ContractWhitelist) > 0 {
 		if services.VerifyingPaymaster, err = NewVerifyingPaymaster(config.VerifyingPaymaster, client, store); err != nil {
 			return Services{}, errors.WithMessage(err, "Failed to create verifying paymaster service")
 		}

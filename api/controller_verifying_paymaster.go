@@ -50,14 +50,11 @@ func (controller *VerifyingPaymasterController) Stub(c *gin.Context) (any, error
 // @ID				aaPaymasterSign
 // @Summary			Sign paymasterData of given user operation and return reassembled paymasterData
 // @Description		Validates the given UserOperation, adds paymaster signature, and returns reassembled paymasterData.
-// @Description		Encoding format (77 bytes): validAfter(6) || validUntil(6) || signature(65).
-// @Description		Note: the on-chain paymaster contract will verify the delegated contract address, so users may be punished
-// @Description 	if sending another inconsistent EIP-7702 auth message to the bundler.
 // @Tags			Paymaster
 // @Accept			json
 // @Produce			json
 // @Param			userOp	body	UserOperation	true	"UserOperation for paymaster signing"
-// @Success			200	{object}	api.BusinessError{data=string}	"Signed and reassembled paymasterData (0x-prefixed hex, 77 bytes)"
+// @Success			200	{object}	api.BusinessError{data=string}	"Signed and reassembled paymasterData (0x-prefixed hex)"
 // @Failure			600	{object}	api.BusinessError{data=string}	"Internal server error"
 // @Router			/aa/paymaster/sign	[post]
 func (controller *VerifyingPaymasterController) Sign(c *gin.Context) (any, error) {
