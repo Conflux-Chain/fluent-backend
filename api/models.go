@@ -72,6 +72,13 @@ type GasTankPrepareRefundRequest struct {
 	Token string `json:"token" binding:"required,hex,len=42"`
 }
 
+type VerifyingPaymasterStubRequest struct {
+	// Smart account address in hex format with 0x prefix.
+	Sender string `json:"sender" form:"sender" binding:"required,hex,len=42"`
+	// Delegated contract address in hex format with 0x prefix. Set to non-zero value if user op carries a 7702 auth message.
+	Delegation string `json:"delegation" form:"delegation" binding:"required,hex,len=42"`
+}
+
 type PaymasterAndDataStub struct {
 	Address string `json:"address"`
 	Data    string `json:"data"`
@@ -169,14 +176,6 @@ func (userOp *UserOperation) ToPackedUserOperation() contract.PackedUserOperatio
 		PaymasterAndData:   append(paymasterBuf[:], paymasterData...),
 		Signature:          signature,
 	}
-}
-
-type UserOperationWithAuth struct {
-	UserOperation
-
-	// DelegatedContract is used when user operation carrying an EIP-7702 auth message to upgrade EOA to a smart account
-	// or replace the delegated smart account. If there is no EIP-7702 auth message, use empty value "0x0000000000000000000000000000000000000000".
-	DelegatedContract string `json:"delegatedContract" binding:"required,hex,len=42"`
 }
 
 type TokenPayConfig struct {

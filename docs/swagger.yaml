@@ -194,70 +194,18 @@ definitions:
     - signature
     - verificationGasLimit
     type: object
-  api.UserOperationWithAuth:
+  api.VerifyingPaymasterStubRequest:
     properties:
-      callData:
-        minLength: 2
-        type: string
-      callGasLimit:
-        maxLength: 32
-        type: string
-      delegatedContract:
-        description: |-
-          DelegatedContract is used when user operation carrying an EIP-7702 auth message to upgrade EOA to a smart account
-          or replace the delegated smart account. If there is no EIP-7702 auth message, use empty value "0x0000000000000000000000000000000000000000".
-        type: string
-      factory:
-        type: string
-      factoryData:
-        minLength: 2
-        type: string
-      maxFeePerGas:
-        maxLength: 32
-        type: string
-      maxPriorityFeePerGas:
-        maxLength: 32
-        type: string
-      nonce:
-        type: string
-      paymaster:
-        description: Paymaster
-        type: string
-      paymasterData:
-        description: at least validAfter (6) || validUntil (6) || signature (65)
-        minLength: 156
-        type: string
-      paymasterPostOpGasLimit:
-        maxLength: 32
-        type: string
-      paymasterVerificationGasLimit:
-        maxLength: 32
-        type: string
-      preVerificationGas:
-        maxLength: 32
+      delegation:
+        description: Delegated contract address in hex format with 0x prefix. Set
+          to non-zero value if user op carries a 7702 auth message.
         type: string
       sender:
-        type: string
-      signature:
-        type: string
-      verificationGasLimit:
-        maxLength: 32
+        description: Smart account address in hex format with 0x prefix.
         type: string
     required:
-    - callData
-    - callGasLimit
-    - delegatedContract
-    - maxFeePerGas
-    - maxPriorityFeePerGas
-    - nonce
-    - paymaster
-    - paymasterData
-    - paymasterPostOpGasLimit
-    - paymasterVerificationGasLimit
-    - preVerificationGas
+    - delegation
     - sender
-    - signature
-    - verificationGasLimit
     type: object
 info:
   contact: {}
@@ -464,11 +412,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: |-
-        Validates the given UserOperation, adds paymaster signature, and returns reassembled paymasterData.
-        Encoding format (77 bytes): validAfter(6) || validUntil(6) || signature(65).
-        Note: the on-chain paymaster contract will verify the delegated contract address, so users may be punished
-        if sending another inconsistent EIP-7702 auth message to the bundler.
+      description: Validates the given UserOperation, adds paymaster signature, and
+        returns reassembled paymasterData.
       operationId: aaPaymasterSign
       parameters:
       - description: UserOperation for paymaster signing
@@ -476,12 +421,12 @@ paths:
         name: userOp
         required: true
         schema:
-          $ref: '#/definitions/api.UserOperationWithAuth'
+          $ref: '#/definitions/api.UserOperation'
       produces:
       - application/json
       responses:
         "200":
-          description: Signed and reassembled paymasterData (0x-prefixed hex, 77 bytes)
+          description: Signed and reassembled paymasterData (0x-prefixed hex)
           schema:
             allOf:
             - $ref: '#/definitions/api.BusinessError'
@@ -502,11 +447,18 @@ paths:
       tags:
       - Paymaster
   /aa/paymaster/stub:
-    get:
+    post:
       consumes:
       - application/json
       description: Returns the stub paymasterData of verifying paymaster for gas estimation.
       operationId: aaPaymasterStub
+      parameters:
+      - description: Verifying paymaster stub request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.VerifyingPaymasterStubRequest'
       produces:
       - application/json
       responses:
