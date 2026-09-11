@@ -5,6 +5,7 @@ import (
 	"slices"
 	"time"
 
+	"github.com/Conflux-Chain/fluent-backend/util"
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -25,10 +26,10 @@ func GeneratePaymasterAndDataStub(paymaster common.Address, timeout time.Duratio
 
 	validUntil := time.Now().Add(timeout).Unix()
 
-	copy(buf[:20], paymaster.Bytes())                        // address
-	copy(buf[52:52+dataLen], dataBytes)                      // custom data
-	big.NewInt(validUntil).FillBytes(buf[size-71 : size-65]) // validUntil
-	copy(buf[size-65:], DummySignature)                      // dummy signature
+	copy(buf[:20], paymaster.Bytes())                                   // address
+	copy(buf[52:52+dataLen], dataBytes)                                 // custom data
+	util.SafeBigFillBytes(big.NewInt(validUntil), buf[size-71:size-65]) // validUntil
+	copy(buf[size-65:], DummySignature)                                 // dummy signature
 
 	return buf
 }
@@ -61,9 +62,9 @@ func (userOp *PackedUserOperation) UpdatePaymasterPreSign(timeout time.Duration)
 	size := len(userOp.PaymasterAndData)
 	validUntil := time.Now().Add(timeout).Unix()
 
-	big.NewInt(0).FillBytes(userOp.PaymasterAndData[size-77 : size-71])          // validAfter
-	big.NewInt(validUntil).FillBytes(userOp.PaymasterAndData[size-71 : size-65]) // validUntil
-	copy(userOp.PaymasterAndData[size-65:], DummySignature)                      // dummy signature
+	util.SafeBigFillBytes(big.NewInt(0), userOp.PaymasterAndData[size-77:size-71])          // validAfter
+	util.SafeBigFillBytes(big.NewInt(validUntil), userOp.PaymasterAndData[size-71:size-65]) // validUntil
+	copy(userOp.PaymasterAndData[size-65:], DummySignature)                                 // dummy signature
 
 	return true
 }

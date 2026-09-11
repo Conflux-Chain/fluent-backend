@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/Conflux-Chain/fluent-backend/contract"
+	"github.com/Conflux-Chain/fluent-backend/util"
 	"github.com/Conflux-Chain/go-conflux-util/api"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -348,9 +349,7 @@ func (data GasTankData) Bytes() []byte {
 
 	buf[0] = data.Mode
 	copy(buf[1:21], data.Token.Bytes())
-	if data.MaxTokenCost != nil {
-		data.MaxTokenCost.FillBytes(buf[21:53])
-	}
+	util.SafeBigFillBytes(data.MaxTokenCost, buf[21:53])
 
 	return buf[:]
 }
