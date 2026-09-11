@@ -38,6 +38,8 @@ API documentation is generated from the controller code annotations. The generat
 - [OpenAPI YAML](docs/swagger.yaml)
 - [OpenAPI JSON](docs/swagger.json)
 
+Run `swag init` after changing API annotations. The generated files should not be edited manually.
+
 When `SwaggerEnabled` is enabled in the API configuration, the interactive Swagger UI is available at `/swagger/index.html`.
 
 ## Business Errors
