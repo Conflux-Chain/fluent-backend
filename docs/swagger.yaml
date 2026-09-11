@@ -17,6 +17,7 @@ definitions:
     properties:
       amount:
         description: Amount of tokens to deposit for gas fee payment.
+        maxLength: 32
         type: string
       token:
         description: ERC20 token address to deposit for gas fee payment.
