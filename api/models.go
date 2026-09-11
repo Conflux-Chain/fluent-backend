@@ -136,46 +136,49 @@ func hexToBig(hexNum string) *big.Int {
 	return new(big.Int).SetBytes(dataBytes)
 }
 
+func shouldDecodeHex(hex string) []byte {
+	if len(hex) == 0 {
+		return nil
+	}
+
+	if !strings.HasPrefix(hex, "0x") && !strings.HasPrefix(hex, "0X") {
+		return nil
+	}
+
+	decoded, _ := hexutil.Decode(hex)
+
+	return decoded
+}
+
 func (userOp *UserOperation) ToPackedUserOperation() contract.PackedUserOperation {
-	var accountGasLimits [32]byte
-	hexToBig(userOp.VerificationGasLimit).FillBytes(accountGasLimits[0:16])
-	hexToBig(userOp.CallGasLimit).FillBytes(accountGasLimits[16:32])
-
-	var gasFees [32]byte
-	hexToBig(userOp.MaxPriorityFeePerGas).FillBytes(gasFees[0:16])
-	hexToBig(userOp.MaxFeePerGas).FillBytes(gasFees[16:32])
-
-	var paymasterBuf [52]byte
-	copy(paymasterBuf[0:20], common.HexToAddress(userOp.Paymaster).Bytes())
-	hexToBig(userOp.PaymasterVerificationGasLimit).FillBytes(paymasterBuf[20:36])
-	hexToBig(userOp.PaymasterPostOpGasLimit).FillBytes(paymasterBuf[36:52])
-
 	var initCode []byte
 	if len(userOp.Factory) > 2 {
-		factory, _ := hexutil.Decode(userOp.Factory)
-		initCode = append(initCode, factory...)
+		initCode = append(initCode, shouldDecodeHex(userOp.Factory)...)
 
 		if len(userOp.FactoryData) > 2 {
-			factoryData, _ := hexutil.Decode(userOp.FactoryData)
-			initCode = append(initCode, factoryData...)
+			initCode = append(initCode, shouldDecodeHex(userOp.FactoryData)...)
 		}
 	}
 
-	callData, _ := hexutil.Decode(userOp.CallData)
-	paymasterData, _ := hexutil.Decode(userOp.PaymasterData)
-	signature, _ := hexutil.Decode(userOp.Signature)
-
-	return contract.PackedUserOperation{
+	packed := contract.PackedUserOperation{
 		Sender:             common.HexToAddress(userOp.Sender),
 		Nonce:              hexToBig(userOp.Nonce),
 		InitCode:           initCode,
-		CallData:           callData,
-		AccountGasLimits:   accountGasLimits,
+		CallData:           shouldDecodeHex(userOp.CallData),
 		PreVerificationGas: hexToBig(userOp.PreVerificationGas),
-		GasFees:            gasFees,
-		PaymasterAndData:   append(paymasterBuf[:], paymasterData...),
-		Signature:          signature,
+		Signature:          shouldDecodeHex(userOp.Signature),
 	}
+
+	packed.SetAccountGasLimits(hexToBig(userOp.VerificationGasLimit), hexToBig(userOp.CallGasLimit))
+	packed.SetGasFees(hexToBig(userOp.MaxPriorityFeePerGas), hexToBig(userOp.MaxFeePerGas))
+	packed.SetPaymasterAndData(
+		common.HexToAddress(userOp.Paymaster),
+		hexToBig(userOp.PaymasterVerificationGasLimit),
+		hexToBig(userOp.PaymasterPostOpGasLimit),
+		shouldDecodeHex(userOp.PaymasterData),
+	)
+
+	return packed
 }
 
 type TokenPayConfig struct {

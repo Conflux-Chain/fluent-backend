@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"math/big"
-	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -23,8 +22,6 @@ const (
 	gasTankPaymasterModeRefund = byte(0)
 	gasTankPaymasterModeCredit = byte(1)
 )
-
-var dummySignature = slices.Repeat([]byte{0x1b}, 65)
 
 type GasTankPaymasterConfig struct {
 	Address common.Address
@@ -110,16 +107,15 @@ func (paymaster *GasTankPaymaster) StubCredit(token common.Address, amount *big.
 		return nil, api.ErrValidationStr("Token is not allowed")
 	}
 
-	data := GasTankPaymasterData{
-		Address:      paymaster.config.Address,
-		Mode:         gasTankPaymasterModeCredit,
-		Token:        token,
-		MaxTokenCost: amount,
-		ValidUntil:   time.Now().Add(paymaster.config.SignatureTimeout).Unix(),
-		Signature:    dummySignature,
-	}
-
-	return data.encode(), nil
+	return contract.GeneratePaymasterAndDataStub(
+		paymaster.config.Address,
+		paymaster.config.SignatureTimeout,
+		GasTankData{
+			Mode:         gasTankPaymasterModeCredit,
+			Token:        token,
+			MaxTokenCost: amount,
+		},
+	), nil
 }
 
 func (paymaster *GasTankPaymaster) StubRefund(sender, token common.Address) ([]byte, error) {
@@ -143,16 +139,15 @@ func (paymaster *GasTankPaymaster) StubRefund(sender, token common.Address) ([]b
 		return nil, api.ErrValidationStr("Insufficient token balance")
 	}
 
-	data := GasTankPaymasterData{
-		Address:      paymaster.config.Address,
-		Mode:         gasTankPaymasterModeRefund,
-		Token:        token,
-		MaxTokenCost: balance,
-		ValidUntil:   time.Now().Add(paymaster.config.SignatureTimeout).Unix(),
-		Signature:    dummySignature,
-	}
-
-	return data.encode(), nil
+	return contract.GeneratePaymasterAndDataStub(
+		paymaster.config.Address,
+		paymaster.config.SignatureTimeout,
+		GasTankData{
+			Mode:         gasTankPaymasterModeRefund,
+			Token:        token,
+			MaxTokenCost: balance,
+		},
+	), nil
 }
 
 func (paymaster *GasTankPaymaster) Sign(userOp contract.PackedUserOperation) ([]byte, error) {
@@ -162,41 +157,39 @@ func (paymaster *GasTankPaymaster) Sign(userOp contract.PackedUserOperation) ([]
 	}
 
 	// Parse and validate paymaster data.
-	paymasterData, err := parseGasTankPaymasterData(userOp.PaymasterAndData)
+	gasTankData, err := ParseGasTankData(userOp.PaymasterCustomData())
 	if err != nil {
 		return nil, err
 	}
 
-	if err = paymaster.validatePaymasterData(&paymasterData); err != nil {
+	if err = paymaster.validatePaymasterData(&userOp, &gasTankData); err != nil {
 		return nil, err
 	}
 
 	// calculate the max token cost
-	maxTokenCost, err := paymaster.calculateMaxTokenCost(&userOp, &paymasterData)
+	maxTokenCost, err := paymaster.calculateMaxTokenCost(&userOp, &gasTankData)
 	if err != nil {
 		return nil, err
 	}
 
 	// validate sender balance in refund mode
-	if paymasterData.Mode == gasTankPaymasterModeRefund {
-		if err = paymaster.validateSenderBalance(userOp.Sender, paymasterData.Token, maxTokenCost); err != nil {
+	if gasTankData.Mode == gasTankPaymasterModeRefund {
+		if err = paymaster.validateSenderBalance(userOp.Sender, gasTankData.Token, maxTokenCost); err != nil {
 			return nil, err
 		}
 	}
 
 	// validate calldata in credit mode
-	if paymasterData.Mode == gasTankPaymasterModeCredit {
-		if err = paymaster.validateCallData(userOp.Sender, userOp.CallData, &paymasterData, maxTokenCost); err != nil {
+	if gasTankData.Mode == gasTankPaymasterModeCredit {
+		if err = paymaster.validateCallData(&userOp, &gasTankData, maxTokenCost); err != nil {
 			return nil, err
 		}
 	}
 
 	// re-construct the paymaster data in user op
-	paymasterData.MaxTokenCost = maxTokenCost
-	paymasterData.ValidAfter = 0
-	paymasterData.ValidUntil = time.Now().Add(paymaster.config.SignatureTimeout).Unix()
-	paymasterData.Signature = dummySignature
-	userOp.PaymasterAndData = paymasterData.encode()
+	gasTankData.MaxTokenCost = maxTokenCost
+	userOp.UpdateCustomData(gasTankData.Bytes())
+	userOp.UpdatePaymasterPreSign(paymaster.config.SignatureTimeout)
 
 	// compute the paymaster signature
 	hash, err := paymaster.gasTankCaller.GetPaymasterHash(nil, userOp)
@@ -204,46 +197,42 @@ func (paymaster *GasTankPaymaster) Sign(userOp contract.PackedUserOperation) ([]
 		return nil, NewRPCError(err, "Failed to retrieve paymaster hash from blockchain")
 	}
 
-	if paymasterData.Signature, err = paymaster.signer.SignHash(hash); err != nil {
+	signature, err := paymaster.signer.SignHash(hash)
+	if err != nil {
 		return nil, errors.WithMessage(err, "Failed to sign paymaster hash")
 	}
 
-	return paymasterData.encode(), nil
+	userOp.UpdatePaymasterSignature(signature)
+
+	return userOp.PaymasterAndData, nil
 }
 
-func (paymaster *GasTankPaymaster) calculateMaxTokenCost(userOp *contract.PackedUserOperation, paymasterData *GasTankPaymasterData) (*big.Int, error) {
-	gasLimit := new(big.Int).Add(paymasterData.ValidationGas, paymasterData.PostOpGas)
-	gasLimit.Add(gasLimit, userOp.PreVerificationGas)
-	gasLimit.Add(gasLimit, new(big.Int).SetBytes(userOp.AccountGasLimits[0:16]))
-	gasLimit.Add(gasLimit, new(big.Int).SetBytes(userOp.AccountGasLimits[16:32]))
-
-	maxFeePerGas := new(big.Int).SetBytes(userOp.GasFees[16:32])
-	maxGasCost := new(big.Int).Mul(maxFeePerGas, gasLimit)
-
-	price, err := paymaster.priceOracle.GetETHPrice(paymasterData.Token)
+func (paymaster *GasTankPaymaster) calculateMaxTokenCost(userOp *contract.PackedUserOperation, gasTankData *GasTankData) (*big.Int, error) {
+	price, err := paymaster.priceOracle.GetETHPrice(gasTankData.Token)
 	if err != nil {
 		return nil, err
 	}
 
+	maxGasCost := userOp.MaxGasCost()
 	maxTokenCost := new(big.Int).Mul(maxGasCost, price)
 	maxTokenCost.Div(maxTokenCost, big10Exp18)
 
 	return maxTokenCost, nil
 }
 
-func (paymaster *GasTankPaymaster) validatePaymasterData(paymasterData *GasTankPaymasterData) error {
+func (paymaster *GasTankPaymaster) validatePaymasterData(userOp *contract.PackedUserOperation, gasTankData *GasTankData) error {
 	// address
-	if paymasterData.Address != paymaster.config.Address {
+	if userOp.Paymaster() != paymaster.config.Address {
 		return api.ErrValidationStr("Invalid paymaster address")
 	}
 
 	// mode
-	if paymasterData.Mode != gasTankPaymasterModeRefund && paymasterData.Mode != gasTankPaymasterModeCredit {
+	if gasTankData.Mode != gasTankPaymasterModeRefund && gasTankData.Mode != gasTankPaymasterModeCredit {
 		return api.ErrValidationStr("Invalid paymaster mode")
 	}
 
 	// token
-	allowed, err := paymaster.gasTankCaller.IsTokenAllowed(nil, paymasterData.Token)
+	allowed, err := paymaster.gasTankCaller.IsTokenAllowed(nil, gasTankData.Token)
 	if err != nil {
 		return NewRPCError(err, "Failed to check if token is allowed")
 	}
@@ -268,28 +257,28 @@ func (paymaster *GasTankPaymaster) validateSenderBalance(sender, token common.Ad
 	return nil
 }
 
-func (paymaster *GasTankPaymaster) validateCallData(sender common.Address, userOpCallData []byte, paymasterData *GasTankPaymasterData, maxTokenCost *big.Int) error {
-	depositAmount := paymasterData.MaxTokenCost
+func (paymaster *GasTankPaymaster) validateCallData(userOp *contract.PackedUserOperation, gasTankData *GasTankData, maxTokenCost *big.Int) error {
+	depositAmount := gasTankData.MaxTokenCost
 
 	if depositAmount.Cmp(maxTokenCost) < 0 {
 		return ErrGasTankInsufficientBalance.WithData(fmt.Sprintf("maxTokenCost = %v, depositAmount = %v", maxTokenCost, depositAmount))
 	}
 
-	packedCallData, err := paymaster.packApproveAndDeposit(paymasterData.Token, depositAmount)
+	packedCallData, err := paymaster.packApproveAndDeposit(gasTankData.Token, depositAmount)
 	if err != nil {
 		return errors.WithMessage(err, "Failed to pack approve + deposit calldata")
 	}
 
-	if !bytes.Equal(userOpCallData, packedCallData) {
+	if !bytes.Equal(userOp.CallData, packedCallData) {
 		return api.ErrValidationStr("Invalid user operation calldata")
 	}
 
-	erc20Caller, err := paymaster.loadOrCreateERC20Caller(paymasterData.Token)
+	erc20Caller, err := paymaster.loadOrCreateERC20Caller(gasTankData.Token)
 	if err != nil {
 		return errors.WithMessage(err, "Failed to load or create ERC20 caller")
 	}
 
-	balance, err := erc20Caller.BalanceOf(nil, sender)
+	balance, err := erc20Caller.BalanceOf(nil, userOp.Sender)
 	if err != nil {
 		return NewRPCError(err, "Failed to retrieve sender token balance")
 	}
@@ -348,58 +337,32 @@ func (paymaster *GasTankPaymaster) loadOrCreateERC20Caller(token common.Address)
 	return caller, nil
 }
 
-type GasTankPaymasterData struct {
-	Address       common.Address // 20
-	ValidationGas *big.Int       // 16
-	PostOpGas     *big.Int       // 16
-	Mode          byte           // 1
-	Token         common.Address // 20
-	MaxTokenCost  *big.Int       // 32
-	ValidAfter    int64          // 6
-	ValidUntil    int64          // 6
-	Signature     []byte         // 65
+type GasTankData struct {
+	Mode         byte
+	Token        common.Address
+	MaxTokenCost *big.Int
 }
 
-func parseGasTankPaymasterData(data []byte) (GasTankPaymasterData, error) {
-	if len(data) != 182 {
-		return GasTankPaymasterData{}, api.ErrValidationStrf("Invalid paymasterAndData length, expected 182, got %d", len(data))
-	}
+func (data GasTankData) Bytes() []byte {
+	var buf [53]byte
 
-	return GasTankPaymasterData{
-		Address:       common.BytesToAddress(data[0:20]),
-		ValidationGas: new(big.Int).SetBytes(data[20:36]),
-		PostOpGas:     new(big.Int).SetBytes(data[36:52]),
-		Mode:          data[52],
-		Token:         common.BytesToAddress(data[53:73]),
-		MaxTokenCost:  new(big.Int).SetBytes(data[73:105]),
-		ValidAfter:    new(big.Int).SetBytes(data[105:111]).Int64(),
-		ValidUntil:    new(big.Int).SetBytes(data[111:117]).Int64(),
-		Signature:     data[117:182],
-	}, nil
-}
-
-func (data *GasTankPaymasterData) encode() []byte {
-	var buf [182]byte
-
-	copy(buf[0:20], data.Address.Bytes())
-	if data.ValidationGas != nil {
-		data.ValidationGas.FillBytes(buf[20:36])
-	}
-	if data.PostOpGas != nil {
-		data.PostOpGas.FillBytes(buf[36:52])
-	}
-	buf[52] = data.Mode
-	copy(buf[53:73], data.Token.Bytes())
+	buf[0] = data.Mode
+	copy(buf[1:21], data.Token.Bytes())
 	if data.MaxTokenCost != nil {
-		data.MaxTokenCost.FillBytes(buf[73:105])
+		data.MaxTokenCost.FillBytes(buf[21:53])
 	}
-	if data.ValidAfter > 0 {
-		big.NewInt(data.ValidAfter).FillBytes(buf[105:111])
-	}
-	if data.ValidUntil > 0 {
-		big.NewInt(data.ValidUntil).FillBytes(buf[111:117])
-	}
-	copy(buf[117:182], data.Signature)
 
 	return buf[:]
+}
+
+func ParseGasTankData(data []byte) (GasTankData, error) {
+	if len(data) != 53 {
+		return GasTankData{}, api.ErrValidationStrf("Invalid GasTankData length, expected 53, got %d", len(data))
+	}
+
+	return GasTankData{
+		Mode:         data[0],
+		Token:        common.BytesToAddress(data[1:21]),
+		MaxTokenCost: new(big.Int).SetBytes(data[21:53]),
+	}, nil
 }
