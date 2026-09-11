@@ -26,7 +26,7 @@ type VerifyingPaymasterConfig struct {
 	smartAccountMap       map[common.Address]bool
 	ContractWhitelist     []common.Address
 	contractMap           map[common.Address]bool
-	MaxGasCost            int64 `default:"100000000000000000"` // 0.1 CFX by default, and could up to 1 CFX for int64 type
+	MaxGasCost            uint64 `default:"100000000000000000"` // 0.1 CFX by default, and could up to 1 CFX
 	maxGasCostBig         *big.Int
 	SignatureTimeout      time.Duration `default:"5m"`
 
@@ -58,7 +58,7 @@ func (config *VerifyingPaymasterConfig) validateAndNormalize() error {
 		config.contractMap[addr] = true
 	}
 
-	config.maxGasCostBig = big.NewInt(config.MaxGasCost)
+	config.maxGasCostBig = new(big.Int).SetUint64(config.MaxGasCost)
 
 	return nil
 }

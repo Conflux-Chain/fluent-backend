@@ -57,6 +57,7 @@ func MustServe(config Config, services service.Services) {
 		// verifying paymaster
 		if services.VerifyingPaymaster != nil {
 			controller := NewVerifyingPaymasterController(services)
+			api.GET("/aa/paymaster/config", middleware.Metrics("api.aa.paymaster.config"), middleware.Wrap(controller.Config))
 			api.POST("/aa/paymaster/stub", middleware.Metrics("api.aa.paymaster.stub"), middleware.Wrap(controller.Stub))
 			api.POST("/aa/paymaster/sign", rateLimiters.Middleware("signUserOp"), middleware.Metrics("api.aa.paymaster.sign"), middleware.Wrap(controller.Sign))
 		}

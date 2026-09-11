@@ -195,6 +195,19 @@ definitions:
     - signature
     - verificationGasLimit
     type: object
+  api.VerifyingPaymasterConfig:
+    properties:
+      contractWhitelist:
+        items:
+          type: string
+        type: array
+      maxGasCost:
+        type: integer
+      smartAccountWhitelist:
+        items:
+          type: string
+        type: array
+    type: object
   api.VerifyingPaymasterStubRequest:
     properties:
       delegation:
@@ -409,6 +422,36 @@ paths:
       summary: Prepare paymasterData for REFUND mode estimation
       tags:
       - GasTank
+  /aa/paymaster/config:
+    get:
+      consumes:
+      - application/json
+      description: Returns the configuration of the verifying paymaster.
+      operationId: aaPaymasterConfig
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Verifying paymaster configuration
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                data:
+                  $ref: '#/definitions/api.VerifyingPaymasterConfig'
+              type: object
+        "600":
+          description: Internal server error
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: Get verifying paymaster configuration
+      tags:
+      - Paymaster
   /aa/paymaster/sign:
     post:
       consumes:

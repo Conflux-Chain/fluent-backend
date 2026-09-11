@@ -338,6 +338,60 @@ const docTemplate = `{
                 }
             }
         },
+        "/aa/paymaster/config": {
+            "get": {
+                "description": "Returns the configuration of the verifying paymaster.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Paymaster"
+                ],
+                "summary": "Get verifying paymaster configuration",
+                "operationId": "aaPaymasterConfig",
+                "responses": {
+                    "200": {
+                        "description": "Verifying paymaster configuration",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/api.VerifyingPaymasterConfig"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "600": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/aa/paymaster/sign": {
             "post": {
                 "description": "Validates the given UserOperation, adds paymaster signature, and returns reassembled paymasterData.",
@@ -878,6 +932,26 @@ const docTemplate = `{
                 "verificationGasLimit": {
                     "type": "string",
                     "maxLength": 32
+                }
+            }
+        },
+        "api.VerifyingPaymasterConfig": {
+            "type": "object",
+            "properties": {
+                "contractWhitelist": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "maxGasCost": {
+                    "type": "integer"
+                },
+                "smartAccountWhitelist": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },

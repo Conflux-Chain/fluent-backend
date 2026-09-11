@@ -114,15 +114,18 @@ func New(config Config, store *store.Store) (Services, error) {
 }
 
 func (s Services) Config() struct {
-	Price    PriceConfig
-	TokenPay TokenPayConfig
+	VerifyingPaymaster VerifyingPaymasterConfig
+	Price              PriceConfig
+	TokenPay           TokenPayConfig
 } {
 	return struct {
-		Price    PriceConfig
-		TokenPay TokenPayConfig
+		VerifyingPaymaster VerifyingPaymasterConfig
+		Price              PriceConfig
+		TokenPay           TokenPayConfig
 	}{
-		Price:    s.config.Price,
-		TokenPay: s.config.TokenPay,
+		VerifyingPaymaster: s.config.VerifyingPaymaster,
+		Price:              s.config.Price,
+		TokenPay:           s.config.TokenPay,
 	}
 }
 
