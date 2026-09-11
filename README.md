@@ -44,7 +44,7 @@ When `SwaggerEnabled` is enabled in the API configuration, the interactive Swagg
 
 ## Business Errors
 
-Wallet clients should handle the business errors defined in [service/errors.go](service/errors.go). The API response includes an error code, message, and optional data field.
+Business errors are defined in [service/errors.go](service/errors.go).
 
 ## CLI Commands
 
