@@ -2,13 +2,17 @@
 
 The Verifying Paymaster sponsors EIP-4337 UserOperations after the backend validates the operation and signs the paymaster payload. The on-chain contract verifies the signer, validity period, and sender delegation before allowing the EntryPoint to use the paymaster.
 
+## Enablement
+
+The service is enabled only when the paymaster address, smart-account whitelist, and contract whitelist are all configured. Initialization must also succeed with a chain-authorized signer.
+
 ## Responsibilities
 
 The design keeps changeable sponsorship rules in the backend and keeps cryptographic and execution-critical checks in the contract:
 
 - The backend validates the UserOperation and signs the paymaster hash.
 - The contract verifies the authorized signer, validity period, and that the delegation in paymaster data matches the sender's actual delegation.
-- The worker indexes finalized sponsorship events for accounting and rate limiting.
+- The worker indexes finalized sponsorship events and stores UserOperation records used by rate limiting and operational reporting.
 
 The signed hash includes the complete paymaster data, including the sender delegation, and is bound to the chain, EntryPoint, and paymaster domain.
 
@@ -17,7 +21,7 @@ The signed hash includes the complete paymaster data, including the sender deleg
 Before signing, the backend checks:
 
 - UserOperation structure, paymaster address, and EIP-7702 init-code rules;
-- maximum gas cost and finalized-UserOperation limits;
+- maximum gas cost and configured finalized-UserOperation limits;
 - `execute` or `executeBatch` calldata and every target against the contract whitelist;
 - the delegation in paymaster data against the paymaster's smart-account whitelist;
 - paymaster pause state; and
@@ -38,13 +42,13 @@ The backend's stub endpoint returns the paymaster address and the data needed fo
 
 ## EIP-7702 Delegation
 
-The paymaster data contains the sender's delegation address. The backend encodes this address using the same layout as the contract. When the client does not supply a delegation, the backend reads it from chain state.
+The paymaster data contains the sender's delegation address. The backend encodes this address using the same layout as the contract. When the client supplies the zero address as delegation, the backend reads the current delegation from chain state.
 
-The signing service verifies that the delegation is included in the paymaster's whitelist.
+The signing service verifies that the delegation is included in the paymaster's whitelist. The request must include a `delegation` field; use the zero address when the backend should read the current delegation from chain state.
 
 When a bundle carries a new authorization, the client supplies the intended delegation address and the UserOperation uses the EIP-7702 init-code marker. This address is a signing-time input, not proof that the authorization will be included. The bundler must include a matching authorization.
 
-During validation, the contract checks that the delegation in paymaster data matches the sender's actual delegation. The whitelist check remains an off-chain signing policy. Because the signed hash covers the complete paymaster data, the delegation cannot be changed after signing.
+The deployed contract is expected to check during validation that the delegation in paymaster data matches the sender's actual delegation. The whitelist check remains an off-chain signing policy. Because the signed hash covers the complete paymaster data, the delegation cannot be changed after signing.
 
 ## Finalized Soft Limits
 
@@ -54,7 +58,7 @@ These are intentionally soft limits: multiple signatures may be issued before an
 
 - per-IP limiting;
 - a short `SignatureTimeout`;
-- per-operation `MaxGasCost`; and
+- per-operation `MaxGasCost` in the chain's native smallest unit; and
 - the paymaster deposit balance.
 
 Per-IP limiting is not a strict security boundary. The business must accept the worst-case cost of all valid signatures issued during one validity window:

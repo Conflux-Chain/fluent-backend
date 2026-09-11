@@ -15,8 +15,8 @@ The backend processes them in this order:
 2. Sends a funding transaction from the sponsor account.
 3. Waits for the funding transaction to confirm.
 4. Broadcasts the transfer-token transaction.
-5. Broadcasts the business transaction.
-6. Considers the flow successful only when both transactions execute successfully.
+5. Broadcasts the business transaction immediately after the transfer-token transaction is accepted for submission.
+6. Waits for the transaction receipts. The backend requires the transfer-token transaction to execute successfully, but currently does not act on the business transaction's execution result.
 
 The transfer-token and business transactions are signed by the user before submission. The backend does not have the user's private key.
 
@@ -44,8 +44,7 @@ The user may submit a competing transaction that changes nonce ordering or other
 
 - Validate both signed transactions before funding.
 - Apply per-IP rate limiting to the sponsor endpoint.
-- Blacklist the user address and client IP when risk-control conditions, such as a failed token transfer, are met.
-- Charge a service-fee buffer to absorb occasional losses.
+- Blacklist the sender address and client IP when transfer-token submission fails with selected transaction-pool errors, or when the transfer-token transaction executes unsuccessfully before timeout.
 - Keep the sponsor account funded with a controlled balance and monitor it continuously.
 
 These controls reduce exposure but do not make the flow atomic and do not eliminate the underlying race conditions.
@@ -58,9 +57,9 @@ Monitor at least the following signals:
 - failed transfer-token transactions by address and IP;
 - funding transactions that do not lead to successful token transfer;
 - unusual increases in rejected or blacklisted requests; and
-- aggregate sponsor losses compared with service-fee revenue.
+- aggregate sponsor losses.
 
-Review blacklist decisions for false positives and adjust rate limits, fee buffers, or the feature's enabled state when observed losses exceed the accepted operating boundary.
+Review blacklist decisions for false positives and adjust rate limits or the feature's enabled state when observed losses exceed the accepted operating boundary.
 
 ## Related Code
 
