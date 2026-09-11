@@ -15,6 +15,22 @@ func NewVerifyingPaymasterController(services service.Services) *VerifyingPaymas
 	return &VerifyingPaymasterController{services}
 }
 
+// Config returns the verifying paymaster configuration exposed to clients.
+//
+// @ID				aaPaymasterConfig
+// @Summary			Get verifying paymaster configuration
+// @Description		Returns the configuration of the verifying paymaster.
+// @Tags			Paymaster
+// @Accept			json
+// @Produce			json
+// @Success			200	{object}	api.BusinessError{data=VerifyingPaymasterConfig}	"Verifying paymaster configuration"
+// @Failure			600	{object}	api.BusinessError{data=string}	"Internal server error"
+// @Router			/aa/paymaster/config	[get]
+func (controller *VerifyingPaymasterController) Config(c *gin.Context) (any, error) {
+	config := controller.services.Config()
+	return NewVerifyingPaymasterConfig(config.VerifyingPaymaster), nil
+}
+
 // Stub returns the stub paymasterData of verifying paymaster for gas estimation.
 //
 // @ID				aaPaymasterStub

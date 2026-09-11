@@ -72,6 +72,30 @@ type GasTankPrepareRefundRequest struct {
 	Token string `json:"token" binding:"required,hex,len=42"`
 }
 
+type VerifyingPaymasterConfig struct {
+	SmartAccountWhitelist []string `json:"smartAccountWhitelist"`
+	ContractWhitelist     []string `json:"contractWhitelist"`
+	MaxGasCost            uint64   `json:"maxGasCost"`
+}
+
+func NewVerifyingPaymasterConfig(config service.VerifyingPaymasterConfig) VerifyingPaymasterConfig {
+	var smartAccountWhitelist []string
+	for _, v := range config.SmartAccountWhitelist {
+		smartAccountWhitelist = append(smartAccountWhitelist, v.Hex())
+	}
+
+	var contractWhitelist []string
+	for _, v := range config.ContractWhitelist {
+		contractWhitelist = append(contractWhitelist, v.Hex())
+	}
+
+	return VerifyingPaymasterConfig{
+		SmartAccountWhitelist: smartAccountWhitelist,
+		ContractWhitelist:     contractWhitelist,
+		MaxGasCost:            config.MaxGasCost,
+	}
+}
+
 type VerifyingPaymasterStubRequest struct {
 	// Smart account address in hex format with 0x prefix.
 	Sender string `json:"sender" form:"sender" binding:"required,hex,len=42"`
