@@ -1,27 +1,19 @@
 # Fluent Backend
 
-REST backend service that enables browser-extension wallets to upgrade an **EOA (Externally Owned Account)** to an **EIP-7702 Account Abstraction smart-contract wallet** on Conflux eSpace.
+REST backend service for browser-extension wallets on Conflux eSpace. It provides EIP-7702 account upgrades, EIP-4337 paymaster services, and ERC20-sponsored native-gas payment.
 
-The service includes three major capability groups:
+## Features
 
-1. **EIP-7702 Account Abstraction upgrade**
-2. **Gas Tank paymaster signing flow**
-3. **Token Pay sponsored transaction flow**
-
-For account-abstraction upgrade, the service accepts a pre-signed EIP-7702 authorization message from the wallet, broadcasts the corresponding type-4 set-code transaction using its own **fee-payer account**, and lets the wallet poll for the on-chain result. So, the user's EOA never needs to hold native tokens for gas.
-
-For Gas Tank and Token Pay, the service helps clients estimate/sign/pay gas in ERC20-denominated flows.
+- **EIP-7702 Account Abstraction**: accepts a signed authorization, submits the type-4 set-code transaction with the service account as fee payer, and provides a status endpoint.
+- **Verifying Paymaster**: validates and signs UserOperation paymaster data subject to delegation, contract, account, gas-cost, and deposit policies. See the [Verifying Paymaster documentation](docs/features/verifying-paymaster.md).
+- **Gas Tank**: prepares and signs ERC20 paymaster data for `REFUND` and `CREDIT` modes. `CREDIT` mode is not suitable for production; see the [Gas Tank documentation](docs/features/gas-tank.md).
+- **Token Pay**: sponsors native gas for a pair of user-signed transactions, one ERC20 payment and one business transaction. See the [Token Pay documentation](docs/features/token-pay.md).
 
 ## Configuration
 
-Please refer to `.env.example` file to prepare a `.env` file for service configurations.
+Configure the required environment variables in a `.env` file before deployment. The supported configuration items and their comments are documented in the [`.env.example`](.env.example) file.
 
-At minimum, make sure you configure:
-
-- RPC endpoint and sponsor private key (service signer)
-- EIP-7702 delegated contract (optional restriction)
-- Gas Tank paymaster address
-- Token Pay recipient and supported token list
+Keep sponsor private keys outside source control and do not expose them in shell history.
 
 ## Running the Service
 
@@ -29,99 +21,31 @@ At minimum, make sure you configure:
 # Build
 go build
 
-# Run (auto load .env file)
+# Run
 ./fluent-backend
 ```
 
-## Feature Overview
-
-### 1) Account Abstraction (EIP-7702)
-
-- `POST /api/aa/auth`: submit a signed EIP-7702 authorization
-- `GET /api/aa/auth/:txHash`: query execution status/result
-
-### 2) Gas Tank
-
-Gas Tank APIs help wallet clients prepare and sign `paymasterData` for UserOperation.
-
-- `POST /api/aa/gastank/prepare/credit`
-  - Prepare `paymasterData` for CREDIT mode (deposit flow)
-- `POST /api/aa/gastank/prepare/refund`
-  - Prepare `paymasterData` for REFUND mode (spend existing Gas Tank balance)
-- `POST /api/aa/gastank/sign`
-  - Calculate `maxTokenCost`, sign paymaster payload, and return final `paymasterData`
-
-Typical wallet flow:
-
-1. Call `prepare/credit` or `prepare/refund`.
-2. Put returned `paymasterData` into UserOperation and estimate gas.
-3. Call `sign` with estimated UserOperation.
-4. Replace UserOperation paymaster data with returned signed payload and submit.
-
-### 3) Token Pay
-
-Token Pay lets users submit two signed txs while backend sponsors native gas:
-
-- tx A: transfer ERC20 token to backend recipient (gas payment)
-- tx B: user business transaction
-
-APIs:
-
-- `GET /api/tokenpay/config`
-  - Return supported tokens, recipient, and gas/price policy params
-- `GET /api/tokenpay/price?token=0x...`
-  - Return token units equivalent to 1 ETH (integer in token smallest unit)
-- `POST /api/tokenpay/submit`
-  - Submit both signed raw txs: `rawTransferTokenTx` and `rawBusinessTx`
-
-Submit behavior:
-
-1. Backend validates both signed raw txs.
-2. Backend sends funding ETH tx from sponsor account.
-3. After funding confirms, backend broadcasts transfer-token tx then business tx.
-4. Completion is considered successful only when both transactions execute successfully.
-
-## Business errors
-
-There are some business errors for wallet to handle, see all defined errors on [github](./service/errors.go).
-
-## CLI Helper: Generate Auth Message
-
-A built-in `auth` sub-command generates and prints a signed EIP-7702 authorization message, useful for testing:
+Run the test suite with:
 
 ```bash
-./fluent-backend auth \
-  --url      https://evmtestnet.confluxrpc.com \
-  --key      0x<YOUR_PRIVATE_KEY> \
-  --contract 0x<DELEGATED_CONTRACT_ADDRESS>
+go test ./...
 ```
 
-The output is a JSON object ready to POST to `/api/aa/auth`.
+## API Documentation
 
-> **Warning:** Pass your private key via an environment variable or a secrets file in production to avoid shell history exposure.
+API documentation is generated from the controller code annotations. The generated OpenAPI files are available in the [`docs`](docs) directory:
 
-## CLI Helper: Test Token Pay End-to-End
+- [OpenAPI YAML](docs/swagger.yaml)
+- [OpenAPI JSON](docs/swagger.json)
 
-A built-in `test-token-pay` sub-command performs an end-to-end token-pay test flow:
+When `SwaggerEnabled` is enabled in the API configuration, the interactive Swagger UI is available at `/swagger/index.html`.
 
-```bash
-./fluent-backend test-token-pay \
-  --backend https://api-testnet.fluentwallet.com/api \
-  --rpc     https://evmtestnet.confluxrpc.com \
-  --key     0x<FAUCET_PRIVATE_KEY>
-```
+## Business Errors
 
-It will:
+Wallet clients should handle the business errors defined in [service/errors.go](service/errors.go). The API response includes an error code, message, and optional data field.
 
-1. Create a random test account
-2. Faucet supported token to that account
-3. Build transfer-token/business tx pair
-4. Simulate both txs
-5. Submit to `/api/tokenpay/submit`
-6. Wait for business tx receipt
+## CLI Commands
 
----
+The binary includes auxiliary commands for testing and development. Run `./fluent-backend --help` or `./fluent-backend <command> --help` for command usage and options.
 
-## Swagger UI
-
-When `api.swaggerEnabled: true`, the interactive Swagger UI is available at `swagger/index.html`.
+Commands that sign transactions require a private key. Use test keys only and avoid passing production keys on the command line.
