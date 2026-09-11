@@ -17,6 +17,13 @@ Keep sponsor private keys outside source control and do not expose them in shell
 
 ## Running the Service
 
+Before building and running the service, make sure that:
+
+- Go `1.23.0` or a compatible Go 1.23 toolchain is installed.
+- The required variables in [`.env.example`](.env.example) are configured in `.env`, including a reachable Conflux eSpace RPC endpoint.
+- The database settings are configured for the store used by the service.
+- A sponsor private key and sufficient on-chain funds are available when the enabled features need to submit transactions or sponsor gas.
+
 ```bash
 # Build
 go build
