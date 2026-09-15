@@ -109,25 +109,6 @@
       "inputs": [
         {
           "indexed": true,
-          "internalType": "address",
-          "name": "smartAccount",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "bool",
-          "name": "allowed",
-          "type": "bool"
-        }
-      ],
-      "name": "SmartAccountWhitelistUpdated",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": true,
           "internalType": "bytes32",
           "name": "userOpHash",
           "type": "bytes32"
@@ -425,43 +406,6 @@
       "name": "setSigner",
       "outputs": [],
       "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "smartAccount",
-          "type": "address"
-        },
-        {
-          "internalType": "bool",
-          "name": "allowed",
-          "type": "bool"
-        }
-      ],
-      "name": "setSmartAccountAllowed",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "smartAccount",
-          "type": "address"
-        }
-      ],
-      "name": "smartAccountWhitelist",
-      "outputs": [
-        {
-          "internalType": "bool",
-          "name": "allowed",
-          "type": "bool"
-        }
-      ],
-      "stateMutability": "view",
       "type": "function"
     },
     {

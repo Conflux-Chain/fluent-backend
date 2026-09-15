@@ -1,29 +1,17 @@
 [
     {
       "inputs": [],
-      "name": "ECDSAInvalidSignature",
+      "name": "EnforcedPause",
       "type": "error"
     },
     {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "length",
-          "type": "uint256"
-        }
-      ],
-      "name": "ECDSAInvalidSignatureLength",
+      "inputs": [],
+      "name": "ExpectedPause",
       "type": "error"
     },
     {
-      "inputs": [
-        {
-          "internalType": "bytes32",
-          "name": "s",
-          "type": "bytes32"
-        }
-      ],
-      "name": "ECDSAInvalidSignatureS",
+      "inputs": [],
+      "name": "InvalidShortString",
       "type": "error"
     },
     {
@@ -60,35 +48,15 @@
       "type": "error"
     },
     {
-      "anonymous": false,
       "inputs": [
         {
-          "indexed": true,
-          "internalType": "bytes32",
-          "name": "userOpHash",
-          "type": "bytes32"
-        },
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "sender",
-          "type": "address"
-        },
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "token",
-          "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
+          "internalType": "string",
+          "name": "str",
+          "type": "string"
         }
       ],
-      "name": "BadDebt",
-      "type": "event"
+      "name": "StringTooLong",
+      "type": "error"
     },
     {
       "anonymous": false,
@@ -160,6 +128,12 @@
     },
     {
       "anonymous": false,
+      "inputs": [],
+      "name": "EIP712DomainChanged",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
       "inputs": [
         {
           "indexed": true,
@@ -181,37 +155,32 @@
       "anonymous": false,
       "inputs": [
         {
-          "indexed": true,
-          "internalType": "bytes32",
-          "name": "userOpHash",
-          "type": "bytes32"
-        },
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "sender",
-          "type": "address"
-        },
-        {
           "indexed": false,
-          "internalType": "enum IPaymaster.PostOpMode",
-          "name": "mode",
-          "type": "uint8"
-        },
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "Paused",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
         {
           "indexed": false,
           "internalType": "uint256",
-          "name": "actualGasCost",
+          "name": "oldPostOpGasOverhead",
           "type": "uint256"
         },
         {
           "indexed": false,
           "internalType": "uint256",
-          "name": "actualUserOpFeePerGas",
+          "name": "newPostOpGasOverhead",
           "type": "uint256"
         }
       ],
-      "name": "PostOp",
+      "name": "PostOpGasOverheadUpdated",
       "type": "event"
     },
     {
@@ -222,12 +191,6 @@
           "internalType": "bytes32",
           "name": "userOpHash",
           "type": "bytes32"
-        },
-        {
-          "indexed": true,
-          "internalType": "address",
-          "name": "sender",
-          "type": "address"
         },
         {
           "indexed": false,
@@ -299,15 +262,51 @@
       "anonymous": false,
       "inputs": [
         {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "userOpHash",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "sender",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "token",
+          "type": "address"
+        },
+        {
           "indexed": false,
           "internalType": "uint256",
-          "name": "actualGasUsedBeforePostOp",
+          "name": "maxTokenCost",
           "type": "uint256"
         },
         {
           "indexed": false,
           "internalType": "uint256",
-          "name": "actualGasPrice",
+          "name": "maxGasCost",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "bool",
+          "name": "success",
+          "type": "bool"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "actualGasCost",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "actualUserOpFeePerGas",
           "type": "uint256"
         },
         {
@@ -319,17 +318,11 @@
         {
           "indexed": false,
           "internalType": "uint256",
-          "name": "priceMarkupBps",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
           "name": "actualTokenCost",
           "type": "uint256"
         }
       ],
-      "name": "SponsorReceipt",
+      "name": "Sponsored",
       "type": "event"
     },
     {
@@ -355,31 +348,13 @@
       "anonymous": false,
       "inputs": [
         {
-          "indexed": true,
-          "internalType": "uint8",
-          "name": "sponsorMode",
-          "type": "uint8"
-        },
-        {
-          "indexed": true,
+          "indexed": false,
           "internalType": "address",
-          "name": "token",
+          "name": "account",
           "type": "address"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "maxTokenCost",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "maxGasCost",
-          "type": "uint256"
         }
       ],
-      "name": "Validate",
+      "name": "Unpaused",
       "type": "event"
     },
     {
@@ -420,26 +395,134 @@
       "type": "event"
     },
     {
-      "inputs": [],
-      "name": "SPONSOR_MODE_CREDIT",
-      "outputs": [
+      "anonymous": false,
+      "inputs": [
         {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
+          "indexed": true,
+          "internalType": "address",
+          "name": "operator",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "token",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "recipient",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
         }
       ],
-      "stateMutability": "view",
-      "type": "function"
+      "name": "WithdrawPayment",
+      "type": "event"
     },
     {
-      "inputs": [],
-      "name": "SPONSOR_MODE_REFUND",
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "sender",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "token",
+          "type": "address"
+        }
+      ],
+      "name": "WithdrawalCancelled",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint48",
+          "name": "oldDelay",
+          "type": "uint48"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint48",
+          "name": "newDelay",
+          "type": "uint48"
+        }
+      ],
+      "name": "WithdrawalDelayUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "sender",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "token",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint48",
+          "name": "withdrawableAt",
+          "type": "uint48"
+        }
+      ],
+      "name": "WithdrawalRequested",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "token",
+          "type": "address"
+        }
+      ],
+      "name": "accounts",
       "outputs": [
         {
-          "internalType": "uint8",
-          "name": "",
-          "type": "uint8"
+          "internalType": "uint256",
+          "name": "balance",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint208",
+          "name": "withdrawAmount",
+          "type": "uint208"
+        },
+        {
+          "internalType": "uint48",
+          "name": "withdrawableAt",
+          "type": "uint48"
         }
       ],
       "stateMutability": "view",
@@ -459,19 +542,8 @@
       "type": "function"
     },
     {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        },
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "name": "balanceOf",
+      "inputs": [],
+      "name": "balance",
       "outputs": [
         {
           "internalType": "uint256",
@@ -480,6 +552,19 @@
         }
       ],
       "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "token",
+          "type": "address"
+        }
+      ],
+      "name": "cancelWithdraw",
+      "outputs": [],
+      "stateMutability": "nonpayable",
       "type": "function"
     },
     {
@@ -532,12 +617,42 @@
     },
     {
       "inputs": [],
-      "name": "entryPoint",
+      "name": "eip712Domain",
       "outputs": [
         {
-          "internalType": "contract IEntryPoint",
-          "name": "",
+          "internalType": "bytes1",
+          "name": "fields",
+          "type": "bytes1"
+        },
+        {
+          "internalType": "string",
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "version",
+          "type": "string"
+        },
+        {
+          "internalType": "uint256",
+          "name": "chainId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "verifyingContract",
           "type": "address"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "salt",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "uint256[]",
+          "name": "extensions",
+          "type": "uint256[]"
         }
       ],
       "stateMutability": "view",
@@ -545,12 +660,12 @@
     },
     {
       "inputs": [],
-      "name": "getBalance",
+      "name": "entryPoint",
       "outputs": [
         {
-          "internalType": "uint256",
+          "internalType": "contract IEntryPoint",
           "name": "",
-          "type": "uint256"
+          "type": "address"
         }
       ],
       "stateMutability": "view",
@@ -645,7 +760,7 @@
       "inputs": [
         {
           "internalType": "address",
-          "name": "",
+          "name": "token",
           "type": "address"
         }
       ],
@@ -668,6 +783,45 @@
           "internalType": "address",
           "name": "",
           "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "pause",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "paused",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "token",
+          "type": "address"
+        }
+      ],
+      "name": "payment",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
         }
       ],
       "stateMutability": "view",
@@ -716,20 +870,25 @@
     },
     {
       "inputs": [],
-      "name": "priceMarkupBps",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
+      "name": "renounceOwnership",
+      "outputs": [],
+      "stateMutability": "nonpayable",
       "type": "function"
     },
     {
-      "inputs": [],
-      "name": "renounceOwnership",
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "token",
+          "type": "address"
+        },
+        {
+          "internalType": "uint208",
+          "name": "amount",
+          "type": "uint208"
+        }
+      ],
+      "name": "requestWithdraw",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -740,14 +899,9 @@
           "internalType": "uint256",
           "name": "newPostOpGasOverhead",
           "type": "uint256"
-        },
-        {
-          "internalType": "uint256",
-          "name": "newPriceMarkupBps",
-          "type": "uint256"
         }
       ],
-      "name": "setConfig",
+      "name": "setPostOpGasOverhead",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -791,6 +945,19 @@
     {
       "inputs": [
         {
+          "internalType": "uint48",
+          "name": "newDelay",
+          "type": "uint48"
+        }
+      ],
+      "name": "setWithdrawalDelay",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
           "internalType": "address",
           "name": "newOwner",
           "type": "address"
@@ -804,6 +971,13 @@
     {
       "inputs": [],
       "name": "unlockStake",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "unpause",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -892,6 +1066,29 @@
     {
       "inputs": [
         {
+          "internalType": "address",
+          "name": "token",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "recipient",
+          "type": "address"
+        }
+      ],
+      "name": "withdrawPayment",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
           "internalType": "address payable",
           "name": "withdrawAddress",
           "type": "address"
@@ -926,11 +1123,6 @@
           "internalType": "address",
           "name": "token",
           "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
         }
       ],
       "name": "withdrawToken",
@@ -946,11 +1138,6 @@
           "type": "address"
         },
         {
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
-        },
-        {
           "internalType": "address",
           "name": "recipient",
           "type": "address"
@@ -959,6 +1146,19 @@
       "name": "withdrawTokenTo",
       "outputs": [],
       "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "withdrawalDelay",
+      "outputs": [
+        {
+          "internalType": "uint48",
+          "name": "",
+          "type": "uint48"
+        }
+      ],
+      "stateMutability": "view",
       "type": "function"
     },
     {
