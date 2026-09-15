@@ -54,7 +54,7 @@ func (controller *GasTankController) Stub(c *gin.Context) (any, error) {
 // @ID				aaGasTankSign
 // @Summary			Sign paymasterData for UserOperation
 // @Description		Calculates maxTokenCost for the given UserOperation, adds paymaster signature, and returns reassembled paymasterData.
-// @Description		Encoding format (129 bytes): token(20) || maxTokenCost(32) || validAfter(6) || validUntil(6) || signature(65). maxTokenCost is 0-based, big-endian uint256.
+// @Description		Encoding format (129 bytes): token(20) || maxTokenCost(32) || validAfter(6) || validUntil(6) || signature(65). maxTokenCost is hex encoded.
 // @Tags			GasTank
 // @Accept			json
 // @Produce			json

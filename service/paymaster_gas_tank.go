@@ -133,6 +133,16 @@ func (paymaster *GasTankPaymaster) validate(userOp *contract.PackedUserOperation
 		return nil, ErrGasTankTokenNotAllowed.WithData(gasTankData.Token)
 	}
 
+	// check if paymaster contract paused
+	paused, err := paymaster.inner.caller.Paused(nil)
+	if err != nil {
+		return nil, NewRPCError(err, "Failed to check if paymaster contract is paused")
+	}
+
+	if paused {
+		return nil, ErrVerifyingPaymasterPaused
+	}
+
 	return &gasTankData, nil
 }
 
