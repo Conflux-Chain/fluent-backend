@@ -23,14 +23,13 @@ const (
 	gasTankPaymasterModeCredit = byte(1)
 )
 
-type GasTankPaymasterConfig struct {
-	Address common.Address
-
+type PaymasterConfig struct {
+	Address          common.Address
 	SignatureTimeout time.Duration `default:"5m"`
 }
 
 type GasTankPaymaster struct {
-	config GasTankPaymasterConfig
+	config PaymasterConfig
 
 	priceOracle *PriceOracle
 
@@ -44,7 +43,7 @@ type GasTankPaymaster struct {
 	smartAccountABI abi.ABI
 }
 
-func NewGasTankPaymaster(config GasTankPaymasterConfig, priceOracle *PriceOracle, client *web3go.Client) (*GasTankPaymaster, error) {
+func NewGasTankPaymaster(config PaymasterConfig, priceOracle *PriceOracle, client *web3go.Client) (*GasTankPaymaster, error) {
 	// validate config
 	if config.Address == (common.Address{}) {
 		return nil, errors.New("GasTankPaymaster address is required")

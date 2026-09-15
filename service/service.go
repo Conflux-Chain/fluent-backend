@@ -26,9 +26,8 @@ type Config struct {
 	}
 
 	VerifyingPaymaster VerifyingPaymasterConfig
-	GasTank            GasTankPaymasterConfig
-
-	TokenPay TokenPayConfig
+	GasTank            PaymasterConfig
+	TokenPay           TokenPayConfig
 }
 
 type Services struct {

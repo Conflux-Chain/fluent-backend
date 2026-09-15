@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
-	"time"
 
 	"github.com/Conflux-Chain/fluent-backend/contract"
 	"github.com/Conflux-Chain/fluent-backend/store"
@@ -21,14 +20,14 @@ import (
 const initCode7702Marker = "0x7702000000000000000000000000000000000000"
 
 type VerifyingPaymasterConfig struct {
-	Address               common.Address
+	PaymasterConfig `mapstructure:",squash"`
+
 	SmartAccountWhitelist []common.Address
 	smartAccountMap       map[common.Address]bool
 	ContractWhitelist     []common.Address
 	contractMap           map[common.Address]bool
 	MaxGasCost            uint64 `default:"100000000000000000"` // 0.1 CFX by default, and could up to 1 CFX
 	maxGasCostBig         *big.Int
-	SignatureTimeout      time.Duration `default:"5m"`
 
 	Limiter LimitConfig
 }

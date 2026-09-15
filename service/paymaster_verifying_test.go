@@ -17,7 +17,10 @@ import (
 )
 
 var testVerifyingPaymasterConfig = VerifyingPaymasterConfig{
-	Address: common.HexToAddress("0x6666"),
+	PaymasterConfig: PaymasterConfig{
+		Address:          common.HexToAddress("0x6666"),
+		SignatureTimeout: time.Minute * 5,
+	},
 	smartAccountMap: map[common.Address]bool{
 		common.HexToAddress("0x9999"): true,
 	},
@@ -25,8 +28,7 @@ var testVerifyingPaymasterConfig = VerifyingPaymasterConfig{
 		common.HexToAddress("0x1111"): true,
 		common.HexToAddress("0x2222"): true,
 	},
-	maxGasCostBig:    big.NewInt(100000000000000000),
-	SignatureTimeout: time.Minute * 5,
+	maxGasCostBig: big.NewInt(100000000000000000),
 }
 
 func assertNewTestVerifyingPaymaster(t *testing.T) *VerifyingPaymaster {
