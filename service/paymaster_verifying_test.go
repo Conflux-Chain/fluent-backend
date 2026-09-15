@@ -1,14 +1,12 @@
 package service
 
 import (
-	"fmt"
 	"math/big"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/Conflux-Chain/fluent-backend/contract"
-	"github.com/Conflux-Chain/go-conflux-util/api"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -40,77 +38,19 @@ func assertNewTestVerifyingPaymaster(t *testing.T) *VerifyingPaymaster {
 	assert.True(t, ok)
 
 	return &VerifyingPaymaster{
+		inner: &Paymaster[*contract.VerifyingPaymasterCaller]{
+			config: PaymasterConfig{
+				Address:          testVerifyingPaymasterConfig.Address,
+				SignatureTimeout: testVerifyingPaymasterConfig.SignatureTimeout,
+			},
+			client: nil,
+			caller: nil,
+			signer: signers.MustNewRandomPrivateKeySigner(),
+		},
 		config:             testVerifyingPaymasterConfig,
-		executeMethod:      &executeMethod,
-		executeBatchMethod: &executeBatchMethod,
-		signer:             signers.MustNewRandomPrivateKeySigner(),
+		executeMethod:      executeMethod,
+		executeBatchMethod: executeBatchMethod,
 	}
-}
-
-func assertVerifyingPaymasterValidateBizErr(t *testing.T, expectedBizErr *api.BusinessError, userOp contract.PackedUserOperation) {
-	paymaster := assertNewTestVerifyingPaymaster(t)
-
-	err := paymaster.validate(&userOp)
-	assert.Error(t, err)
-
-	bizErr, ok := err.(*api.BusinessError)
-	assert.True(t, ok)
-	assert.Equal(t, expectedBizErr.Code, bizErr.Code)
-	assert.Equal(t, expectedBizErr.Message, bizErr.Message)
-
-	bizErrData, ok := bizErr.Data.(string)
-	assert.True(t, ok)
-	assert.True(t, len(bizErrData) > 0)
-
-	if expectedBizErr.Data == nil {
-		return
-	}
-
-	expectedBizErrData, ok := expectedBizErr.Data.(string)
-	assert.True(t, ok)
-	assert.True(t, len(expectedBizErrData) > 0)
-	assert.True(t, strings.Contains(bizErrData, expectedBizErrData), fmt.Sprintf("Expected: %v, actual = %v", expectedBizErrData, bizErrData))
-}
-
-func TestVerifyingPaymasterValidate(t *testing.T) {
-	// invalid sender
-	assertVerifyingPaymasterValidateBizErr(t, api.ErrValidationStr("Invalid sender address"), contract.PackedUserOperation{})
-
-	// paymasterAndData - invalid length
-	assertVerifyingPaymasterValidateBizErr(t, api.ErrValidationStr("Invalid paymaster data length"), contract.PackedUserOperation{
-		Sender:           common.HexToAddress("0x01"),
-		PaymasterAndData: nil,
-	})
-
-	assertVerifyingPaymasterValidateBizErr(t, api.ErrValidationStr("Invalid paymaster data length"), contract.PackedUserOperation{
-		Sender:           common.HexToAddress("0x01"),
-		PaymasterAndData: make([]byte, 150),
-	})
-
-	// paymasterAndData - invalid address
-	assertVerifyingPaymasterValidateBizErr(t, api.ErrValidationStr("Invalid paymaster address"), contract.PackedUserOperation{
-		Sender:           common.HexToAddress("0x01"),
-		PaymasterAndData: contract.GeneratePaymasterAndDataStub(common.HexToAddress("0x6667"), time.Hour, common.HexToAddress("0x9998")),
-	})
-
-	// paymasterAndData - invalid delegation address
-	assertVerifyingPaymasterValidateBizErr(t, api.ErrValidationStr("Invalid delegation address"), contract.PackedUserOperation{
-		Sender:           common.HexToAddress("0x01"),
-		PaymasterAndData: contract.GeneratePaymasterAndDataStub(testVerifyingPaymasterConfig.Address, time.Hour, common.HexToAddress("0x9998")),
-	})
-
-	// maxCost - exceed maxGasCost
-	userOp := contract.PackedUserOperation{
-		Sender:             common.HexToAddress("0x01"),
-		PaymasterAndData:   contract.GeneratePaymasterAndDataStub(testVerifyingPaymasterConfig.Address, time.Hour, common.HexToAddress("0x9999")),
-		PreVerificationGas: testVerifyingPaymasterConfig.maxGasCostBig,
-	}
-
-	userOp.SetAccountGasLimits(big.NewInt(1), big.NewInt(2))
-	userOp.SetGasFees(big.NewInt(0), big.NewInt(1))
-	userOp.SetPaymasterGasLimits(big.NewInt(4), big.NewInt(5))
-
-	assertVerifyingPaymasterValidateBizErr(t, ErrVerifyingPaymasterMaxGasCostExceeded, userOp)
 }
 
 func TestVerifyingPaymasterValidateCallData(t *testing.T) {

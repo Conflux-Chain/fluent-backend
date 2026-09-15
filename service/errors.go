@@ -12,7 +12,8 @@ var (
 	ErrAccountAbstractTxNotFound = api.NewBusinessError(1001, "Set code transaction not found")
 
 	// Gas tank
-	ErrGasTankInsufficientBalance = api.NewBusinessError(2001, "Insufficient token balance in gas tank")
+	ErrGasTankTokenNotAllowed     = api.NewBusinessError(2001, "Token is not allowed in gas tank")
+	ErrGasTankInsufficientBalance = api.NewBusinessError(2002, "Insufficient token balance in gas tank")
 
 	// token pay
 	ErrTokenPayPriceTooLow               = api.NewBusinessError(3001, "Gas price too low")

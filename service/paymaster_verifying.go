@@ -13,7 +13,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/openweb3/web3go"
-	"github.com/openweb3/web3go/interfaces"
 	"github.com/pkg/errors"
 )
 
@@ -63,12 +62,10 @@ func (config *VerifyingPaymasterConfig) validateAndNormalize() error {
 }
 
 type VerifyingPaymaster struct {
+	inner              *Paymaster[*contract.VerifyingPaymasterCaller]
 	config             VerifyingPaymasterConfig
-	client             *web3go.Client
-	caller             *contract.VerifyingPaymasterCaller
-	executeMethod      *abi.Method
-	executeBatchMethod *abi.Method
-	signer             interfaces.Signer
+	executeMethod      abi.Method
+	executeBatchMethod abi.Method
 	limiter            Limiter
 }
 
@@ -77,15 +74,9 @@ func NewVerifyingPaymaster(config VerifyingPaymasterConfig, client *web3go.Clien
 		return nil, errors.WithMessage(err, "Invalid VerifyingPaymaster config")
 	}
 
-	// get the default signer
-	sm, err := client.GetSignerManager()
+	paymaster, err := NewPaymaster(config.PaymasterConfig, client, contract.NewVerifyingPaymasterCaller)
 	if err != nil {
-		return nil, errors.WithMessage(err, "Failed to get signer manager from RPC client")
-	}
-
-	signers := sm.List()
-	if len(signers) == 0 {
-		return nil, errors.New("No signer found")
+		return nil, errors.WithMessage(err, "Failed to create VerifyingPaymaster")
 	}
 
 	// smart account execute ABI
@@ -104,33 +95,21 @@ func NewVerifyingPaymaster(config VerifyingPaymasterConfig, client *web3go.Clien
 		return nil, errors.New("Failed to get executeBatch method from SimpleSmartAccount7702 ABI")
 	}
 
-	// contract callers
-	caller, _ := client.ToClientForContract()
-
-	verifyingPaymasterCaller, err := contract.NewVerifyingPaymasterCaller(config.Address, caller)
-	if err != nil {
-		return nil, errors.WithMessage(err, "Failed to create VerifyingPaymaster contract caller")
-	}
-
 	// check if the signer is whitelisted by the paymaster
-	signerAddr := signers[0].Address()
-
-	signerAllowed, err := verifyingPaymasterCaller.IsSignerAllowed(nil, signerAddr)
+	signerAllowed, err := paymaster.caller.IsSignerAllowed(nil, paymaster.signer.Address())
 	if err != nil {
 		return nil, errors.WithMessage(err, "Failed to check if signer is allowed by VerifyingPaymaster")
 	}
 
 	if !signerAllowed {
-		return nil, fmt.Errorf("Signer is not allowed by VerifyingPaymaster: %v", signerAddr)
+		return nil, fmt.Errorf("Signer is not allowed by VerifyingPaymaster: %v", paymaster.signer.Address())
 	}
 
 	return &VerifyingPaymaster{
+		inner:              paymaster,
 		config:             config,
-		client:             client,
-		caller:             verifyingPaymasterCaller,
-		executeMethod:      &executeMethod,
-		executeBatchMethod: &executeBatchMethod,
-		signer:             signers[0],
+		executeMethod:      executeMethod,
+		executeBatchMethod: executeBatchMethod,
 		limiter:            NewLimiter(config.Limiter, store),
 	}, nil
 }
@@ -141,7 +120,7 @@ func (paymaster *VerifyingPaymaster) Stub(sender, delegation common.Address) ([]
 	if delegation == (common.Address{}) {
 		var err error
 
-		if delegation, err = GetDelegatedContract(paymaster.client, sender); err != nil {
+		if delegation, err = GetDelegatedContract(paymaster.inner.client, sender); err != nil {
 			return nil, err
 		}
 
@@ -155,7 +134,7 @@ func (paymaster *VerifyingPaymaster) Stub(sender, delegation common.Address) ([]
 		return nil, ErrVerifyingPaymasterInvalidSmartAccount.WithData(delegation)
 	}
 
-	return contract.GeneratePaymasterAndDataStub(paymaster.config.Address, paymaster.config.SignatureTimeout, delegation), nil
+	return paymaster.inner.generateStub(delegation), nil
 }
 
 // Sign validates the user operation and signs the user operation with the paymaster's private key.
@@ -174,22 +153,7 @@ func (paymaster *VerifyingPaymaster) Sign(userOp contract.PackedUserOperation) (
 		return nil, err
 	}
 
-	userOp.UpdatePaymasterPreSign(paymaster.config.SignatureTimeout)
-
-	// compute the paymaster signature
-	hash, err := paymaster.caller.GetPaymasterHash(nil, userOp)
-	if err != nil {
-		return nil, NewRPCError(err, "Failed to get paymaster hash")
-	}
-
-	signature, err := paymaster.signer.SignHash(hash)
-	if err != nil {
-		return nil, errors.WithMessage(err, "Failed to sign paymaster hash")
-	}
-
-	userOp.UpdatePaymasterSignature(signature)
-
-	return userOp.PaymasterAndData, nil
+	return paymaster.inner.sign(userOp)
 }
 
 func (paymaster *VerifyingPaymaster) validate(userOp *contract.PackedUserOperation) error {
@@ -198,18 +162,19 @@ func (paymaster *VerifyingPaymaster) validate(userOp *contract.PackedUserOperati
 		return api.ErrValidationStr("Invalid sender address")
 	}
 
-	// validate the paymasterAndData length at first, to avoid panic when accessing the slice
-	if len(userOp.PaymasterAndData) != contract.MinSignablePaymasterAndDataLen+common.AddressLength {
-		return api.ErrValidationStr("Invalid paymaster data length")
-	}
-
-	// check paymaster address
-	if userOp.Paymaster() != paymaster.config.Address {
-		return api.ErrValidationStrf("Invalid paymaster address: %s, expected %s", userOp.Paymaster(), paymaster.config.Address)
+	// validate the paymasterAndData field and extract the custom data.
+	customData, err := paymaster.inner.validatePaymasterAndData(userOp)
+	if err != nil {
+		return err
 	}
 
 	// check delegation address
-	delegation := common.BytesToAddress(userOp.PaymasterCustomData())
+	if len(customData) != common.AddressLength {
+		return api.ErrValidationStr("Invalid paymasterAndData length")
+	}
+
+	delegation := common.BytesToAddress(customData)
+
 	if !paymaster.config.smartAccountMap[delegation] {
 		return api.ErrValidationStrf("Invalid delegation address: %s", delegation)
 	}
@@ -231,7 +196,7 @@ func (paymaster *VerifyingPaymaster) validate(userOp *contract.PackedUserOperati
 	}
 
 	// check if paymaster contract paused
-	paused, err := paymaster.caller.Paused(nil)
+	paused, err := paymaster.inner.caller.Paused(nil)
 	if err != nil {
 		return NewRPCError(err, "Failed to check if paymaster contract is paused")
 	}
@@ -241,7 +206,7 @@ func (paymaster *VerifyingPaymaster) validate(userOp *contract.PackedUserOperati
 	}
 
 	// check paymaster deposit balance
-	balance, err := paymaster.caller.Balance(nil)
+	balance, err := paymaster.inner.caller.Balance(nil)
 	if err != nil {
 		return NewRPCError(err, "Failed to get paymaster deposit balance")
 	}
@@ -298,7 +263,7 @@ func (paymaster *VerifyingPaymaster) validateCallData(callData []byte) error {
 // validateInitCode checks if the init code is valid for the smart account delegation.
 func (paymaster *VerifyingPaymaster) validateInitCode(sender, delegation common.Address, initCode []byte) error {
 	// retrieve the current delegation for the sender
-	currentDelegation, err := GetDelegatedContract(paymaster.client, sender)
+	currentDelegation, err := GetDelegatedContract(paymaster.inner.client, sender)
 	if err != nil {
 		return err
 	}
