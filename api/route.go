@@ -65,8 +65,7 @@ func MustServe(config Config, services service.Services) {
 		// Gas tank
 		if services.GasTank != nil {
 			controller := NewGasTankController(services)
-			api.POST("/aa/gastank/stub/credit", middleware.Metrics("api.aa.gastank.stub.credit"), middleware.Wrap(controller.PrepareCredit))
-			api.POST("/aa/gastank/stub/refund", middleware.Metrics("api.aa.gastank.stub.refund"), middleware.Wrap(controller.PrepareRefund))
+			api.POST("/aa/gastank/stub", middleware.Metrics("api.aa.gastank.stub"), middleware.Wrap(controller.Stub))
 			api.POST("/aa/gastank/sign", rateLimiters.Middleware("signUserOp"), middleware.Metrics("api.aa.gastank.sign"), middleware.Wrap(controller.Sign))
 		}
 

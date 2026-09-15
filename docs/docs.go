@@ -145,7 +145,7 @@ const docTemplate = `{
         },
         "/aa/gastank/sign": {
             "post": {
-                "description": "Calculates maxTokenCost for the given UserOperation, adds paymaster signature, and returns reassembled paymasterData.\nEncoding format (130 bytes): mode(1) || token(20) || maxTokenCost(32) || validAfter(6) || validUntil(6) || signature(65). maxTokenCost is 0-based, big-endian uint256.\nCREDIT mode reminder: in input UserOperation.paymasterData, maxTokenCost is the token deposit amount and should be the amount to deposit.",
+                "description": "Calculates maxTokenCost for the given UserOperation, adds paymaster signature, and returns reassembled paymasterData.\nEncoding format (129 bytes): token(20) || maxTokenCost(32) || validAfter(6) || validUntil(6) || signature(65). maxTokenCost is hex encoded.",
                 "consumes": [
                     "application/json"
                 ],
@@ -170,7 +170,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Signed and reassembled paymasterData (0x-prefixed hex, 130 bytes)",
+                        "description": "Signed and reassembled paymasterData",
                         "schema": {
                             "allOf": [
                                 {
@@ -208,9 +208,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/aa/gastank/stub/credit": {
+        "/aa/gastank/stub": {
             "post": {
-                "description": "Returns paymasterData used to estimate UserOperation gas in CREDIT mode for token deposit flow.",
+                "description": "Returns paymasterData used for user operation gas estimation.",
                 "consumes": [
                     "application/json"
                 ],
@@ -220,81 +220,16 @@ const docTemplate = `{
                 "tags": [
                     "GasTank"
                 ],
-                "summary": "Prepare paymasterData for CREDIT mode deposit estimation",
-                "operationId": "aaGasTankPrepareCredit",
+                "summary": "Prepare paymasterData for gas estimation",
+                "operationId": "aaGasTankStub",
                 "parameters": [
                     {
-                        "description": "Paymaster data request",
+                        "description": "Paymaster data stub request",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/api.GasTankPrepareCreditRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Paymaster address and data (0x-prefixed hex)",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/api.BusinessError"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/api.PaymasterAndDataStub"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "600": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/api.BusinessError"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "string"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
-            }
-        },
-        "/aa/gastank/stub/refund": {
-            "post": {
-                "description": "Returns paymasterData used to estimate gas for a normal UserOperation in REFUND mode.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "GasTank"
-                ],
-                "summary": "Prepare paymasterData for REFUND mode estimation",
-                "operationId": "aaGasTankPrepareRefund",
-                "parameters": [
-                    {
-                        "description": "Paymaster data request",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/api.GasTankPrepareRefundRequest"
+                            "$ref": "#/definitions/api.GasTankStubRequest"
                         }
                     }
                 ],
@@ -710,25 +645,7 @@ const docTemplate = `{
                 }
             }
         },
-        "api.GasTankPrepareCreditRequest": {
-            "type": "object",
-            "required": [
-                "amount",
-                "token"
-            ],
-            "properties": {
-                "amount": {
-                    "description": "Amount of tokens to deposit for gas fee payment in hex format.",
-                    "type": "string",
-                    "maxLength": 64
-                },
-                "token": {
-                    "description": "ERC20 token address to deposit for gas fee payment.",
-                    "type": "string"
-                }
-            }
-        },
-        "api.GasTankPrepareRefundRequest": {
+        "api.GasTankStubRequest": {
             "type": "object",
             "required": [
                 "sender",

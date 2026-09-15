@@ -26,9 +26,8 @@ type Config struct {
 	}
 
 	VerifyingPaymaster VerifyingPaymasterConfig
-	GasTank            GasTankPaymasterConfig
-
-	TokenPay TokenPayConfig
+	GasTank            PaymasterConfig
+	TokenPay           TokenPayConfig
 }
 
 type Services struct {
@@ -97,7 +96,7 @@ func New(config Config, store *store.Store) (Services, error) {
 
 		// create gas tank paymaster service if the paymaster address is specified
 		if config.GasTank.Address != (common.Address{}) {
-			if services.GasTank, err = NewGasTankPaymaster(config.GasTank, services.PriceOracle, client); err != nil {
+			if services.GasTank, err = NewGasTankPaymaster(config.GasTank, client, services.PriceOracle); err != nil {
 				return Services{}, errors.WithMessage(err, "Failed to create gas tank paymaster service")
 			}
 		}

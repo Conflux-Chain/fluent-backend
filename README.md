@@ -6,7 +6,7 @@ REST backend service for browser-extension wallets on Conflux eSpace. It provide
 
 - **EIP-7702 Account Abstraction**: accepts a signed authorization, submits the type-4 set-code transaction with the service account as fee payer, and provides a status endpoint.
 - **Verifying Paymaster**: validates and signs UserOperation paymaster data subject to delegation, contract, account, gas-cost, and deposit policies. See the [Verifying Paymaster documentation](docs/features/verifying-paymaster.md).
-- **Gas Tank**: prepares and signs ERC20 paymaster data for `REFUND` and `CREDIT` modes. `CREDIT` mode is not suitable for production; see the [Gas Tank documentation](docs/features/gas-tank.md).
+- **Gas Tank**: prepares and signs ERC20 paymaster data using the `REFUND` mechanism. Users must deposit ERC20 tokens into the Gas Tank paymaster in advance, and the backend validates the available balance before signing. See the [Gas Tank documentation](docs/features/gas-tank.md).
 - **Token Pay**: sponsors native gas for a pair of user-signed transactions, one ERC20 payment and one business transaction. See the [Token Pay documentation](docs/features/token-pay.md).
 
 ## Configuration

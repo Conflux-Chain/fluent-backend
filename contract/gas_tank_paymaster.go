@@ -29,9 +29,22 @@ var (
 	_ = abi.ConvertType
 )
 
+// // PackedUserOperation is an auto generated low-level Go binding around an user-defined struct.
+// type PackedUserOperation struct {
+// 	Sender             common.Address
+// 	Nonce              *big.Int
+// 	InitCode           []byte
+// 	CallData           []byte
+// 	AccountGasLimits   [32]byte
+// 	PreVerificationGas *big.Int
+// 	GasFees            [32]byte
+// 	PaymasterAndData   []byte
+// 	Signature          []byte
+// }
+
 // GasTankPaymasterMetaData contains all meta data concerning the GasTankPaymaster contract.
 var GasTankPaymasterMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[],\"name\":\"ECDSAInvalidSignature\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"length\",\"type\":\"uint256\"}],\"name\":\"ECDSAInvalidSignatureLength\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"s\",\"type\":\"bytes32\"}],\"name\":\"ECDSAInvalidSignatureS\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"}],\"name\":\"OwnableInvalidOwner\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"OwnableUnauthorizedAccount\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"}],\"name\":\"SafeERC20FailedOperation\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"userOpHash\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"BadDebt\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"balance\",\"type\":\"uint256\"}],\"name\":\"Deduct\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"operator\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"balance\",\"type\":\"uint256\"}],\"name\":\"Deposit\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"userOpHash\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"enumIPaymaster.PostOpMode\",\"name\":\"mode\",\"type\":\"uint8\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"actualGasCost\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"actualUserOpFeePerGas\",\"type\":\"uint256\"}],\"name\":\"PostOp\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"userOpHash\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"actualGasCost\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"actualUserOpFeePerGas\",\"type\":\"uint256\"}],\"name\":\"PostOpReverted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"balance\",\"type\":\"uint256\"}],\"name\":\"Refund\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"signer\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"allowed\",\"type\":\"bool\"}],\"name\":\"SignerUpdated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"actualGasUsedBeforePostOp\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"actualGasPrice\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"postOpGas\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"priceMarkupBps\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"actualTokenCost\",\"type\":\"uint256\"}],\"name\":\"SponsorReceipt\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"allowed\",\"type\":\"bool\"}],\"name\":\"TokenUpdated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"uint8\",\"name\":\"sponsorMode\",\"type\":\"uint8\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"maxTokenCost\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"maxGasCost\",\"type\":\"uint256\"}],\"name\":\"Validate\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"balance\",\"type\":\"uint256\"}],\"name\":\"Withdraw\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"SPONSOR_MODE_CREDIT\",\"outputs\":[{\"internalType\":\"uint8\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"SPONSOR_MODE_REFUND\",\"outputs\":[{\"internalType\":\"uint8\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint32\",\"name\":\"unstakeDelaySec\",\"type\":\"uint32\"}],\"name\":\"addStake\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"balanceOf\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"deposit\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"depositToken\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"}],\"name\":\"depositTokenTo\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"entryPoint\",\"outputs\":[{\"internalType\":\"contractIEntryPoint\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getBalance\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"initCode\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"callData\",\"type\":\"bytes\"},{\"internalType\":\"bytes32\",\"name\":\"accountGasLimits\",\"type\":\"bytes32\"},{\"internalType\":\"uint256\",\"name\":\"preVerificationGas\",\"type\":\"uint256\"},{\"internalType\":\"bytes32\",\"name\":\"gasFees\",\"type\":\"bytes32\"},{\"internalType\":\"bytes\",\"name\":\"paymasterAndData\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"signature\",\"type\":\"bytes\"}],\"internalType\":\"structPackedUserOperation\",\"name\":\"userOp\",\"type\":\"tuple\"}],\"name\":\"getPaymasterHash\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"isSignerAllowed\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"isTokenAllowed\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"enumIPaymaster.PostOpMode\",\"name\":\"mode\",\"type\":\"uint8\"},{\"internalType\":\"bytes\",\"name\":\"context\",\"type\":\"bytes\"},{\"internalType\":\"uint256\",\"name\":\"actualGasCost\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"actualUserOpFeePerGas\",\"type\":\"uint256\"}],\"name\":\"postOp\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"postOpGasOverhead\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"priceMarkupBps\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newPostOpGasOverhead\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"newPriceMarkupBps\",\"type\":\"uint256\"}],\"name\":\"setConfig\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"signer\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"allowed\",\"type\":\"bool\"}],\"name\":\"setSigner\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"allowed\",\"type\":\"bool\"}],\"name\":\"setToken\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"unlockStake\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"initCode\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"callData\",\"type\":\"bytes\"},{\"internalType\":\"bytes32\",\"name\":\"accountGasLimits\",\"type\":\"bytes32\"},{\"internalType\":\"uint256\",\"name\":\"preVerificationGas\",\"type\":\"uint256\"},{\"internalType\":\"bytes32\",\"name\":\"gasFees\",\"type\":\"bytes32\"},{\"internalType\":\"bytes\",\"name\":\"paymasterAndData\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"signature\",\"type\":\"bytes\"}],\"internalType\":\"structPackedUserOperation\",\"name\":\"userOp\",\"type\":\"tuple\"},{\"internalType\":\"bytes32\",\"name\":\"userOpHash\",\"type\":\"bytes32\"},{\"internalType\":\"uint256\",\"name\":\"maxCost\",\"type\":\"uint256\"}],\"name\":\"validatePaymasterUserOp\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"context\",\"type\":\"bytes\"},{\"internalType\":\"uint256\",\"name\":\"validationData\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"addresspayable\",\"name\":\"withdrawAddress\",\"type\":\"address\"}],\"name\":\"withdrawStake\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"addresspayable\",\"name\":\"withdrawAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"withdrawAmount\",\"type\":\"uint256\"}],\"name\":\"withdrawTo\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"withdrawToken\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"}],\"name\":\"withdrawTokenTo\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"stateMutability\":\"payable\",\"type\":\"receive\"}]",
+	ABI: "[{\"inputs\":[],\"name\":\"EnforcedPause\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"ExpectedPause\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"InvalidShortString\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"}],\"name\":\"OwnableInvalidOwner\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"OwnableUnauthorizedAccount\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"}],\"name\":\"SafeERC20FailedOperation\",\"type\":\"error\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"str\",\"type\":\"string\"}],\"name\":\"StringTooLong\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"balance\",\"type\":\"uint256\"}],\"name\":\"Deduct\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"operator\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"balance\",\"type\":\"uint256\"}],\"name\":\"Deposit\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[],\"name\":\"EIP712DomainChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"Paused\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"oldPostOpGasOverhead\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"newPostOpGasOverhead\",\"type\":\"uint256\"}],\"name\":\"PostOpGasOverheadUpdated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"userOpHash\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"actualGasCost\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"actualUserOpFeePerGas\",\"type\":\"uint256\"}],\"name\":\"PostOpReverted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"balance\",\"type\":\"uint256\"}],\"name\":\"Refund\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"signer\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"allowed\",\"type\":\"bool\"}],\"name\":\"SignerUpdated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"userOpHash\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"maxTokenCost\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"maxGasCost\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"success\",\"type\":\"bool\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"actualGasCost\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"actualUserOpFeePerGas\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"postOpGas\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"actualTokenCost\",\"type\":\"uint256\"}],\"name\":\"Sponsored\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"bool\",\"name\":\"allowed\",\"type\":\"bool\"}],\"name\":\"TokenUpdated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"Unpaused\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"balance\",\"type\":\"uint256\"}],\"name\":\"Withdraw\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"operator\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"WithdrawPayment\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"}],\"name\":\"WithdrawalCancelled\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint48\",\"name\":\"oldDelay\",\"type\":\"uint48\"},{\"indexed\":false,\"internalType\":\"uint48\",\"name\":\"newDelay\",\"type\":\"uint48\"}],\"name\":\"WithdrawalDelayUpdated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint48\",\"name\":\"withdrawableAt\",\"type\":\"uint48\"}],\"name\":\"WithdrawalRequested\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"}],\"name\":\"accounts\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"balance\",\"type\":\"uint256\"},{\"internalType\":\"uint208\",\"name\":\"withdrawAmount\",\"type\":\"uint208\"},{\"internalType\":\"uint48\",\"name\":\"withdrawableAt\",\"type\":\"uint48\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint32\",\"name\":\"unstakeDelaySec\",\"type\":\"uint32\"}],\"name\":\"addStake\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"balance\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"}],\"name\":\"cancelWithdraw\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"deposit\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"depositToken\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"}],\"name\":\"depositTokenTo\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"eip712Domain\",\"outputs\":[{\"internalType\":\"bytes1\",\"name\":\"fields\",\"type\":\"bytes1\"},{\"internalType\":\"string\",\"name\":\"name\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"version\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"chainId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"verifyingContract\",\"type\":\"address\"},{\"internalType\":\"bytes32\",\"name\":\"salt\",\"type\":\"bytes32\"},{\"internalType\":\"uint256[]\",\"name\":\"extensions\",\"type\":\"uint256[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"entryPoint\",\"outputs\":[{\"internalType\":\"contractIEntryPoint\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"initCode\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"callData\",\"type\":\"bytes\"},{\"internalType\":\"bytes32\",\"name\":\"accountGasLimits\",\"type\":\"bytes32\"},{\"internalType\":\"uint256\",\"name\":\"preVerificationGas\",\"type\":\"uint256\"},{\"internalType\":\"bytes32\",\"name\":\"gasFees\",\"type\":\"bytes32\"},{\"internalType\":\"bytes\",\"name\":\"paymasterAndData\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"signature\",\"type\":\"bytes\"}],\"internalType\":\"structPackedUserOperation\",\"name\":\"userOp\",\"type\":\"tuple\"}],\"name\":\"getPaymasterHash\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"isSignerAllowed\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"}],\"name\":\"isTokenAllowed\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"pause\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"paused\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"}],\"name\":\"payment\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"enumIPaymaster.PostOpMode\",\"name\":\"mode\",\"type\":\"uint8\"},{\"internalType\":\"bytes\",\"name\":\"context\",\"type\":\"bytes\"},{\"internalType\":\"uint256\",\"name\":\"actualGasCost\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"actualUserOpFeePerGas\",\"type\":\"uint256\"}],\"name\":\"postOp\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"postOpGasOverhead\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"internalType\":\"uint208\",\"name\":\"amount\",\"type\":\"uint208\"}],\"name\":\"requestWithdraw\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"newPostOpGasOverhead\",\"type\":\"uint256\"}],\"name\":\"setPostOpGasOverhead\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"signer\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"allowed\",\"type\":\"bool\"}],\"name\":\"setSigner\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"allowed\",\"type\":\"bool\"}],\"name\":\"setToken\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint48\",\"name\":\"newDelay\",\"type\":\"uint48\"}],\"name\":\"setWithdrawalDelay\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"unlockStake\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"unpause\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"nonce\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"initCode\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"callData\",\"type\":\"bytes\"},{\"internalType\":\"bytes32\",\"name\":\"accountGasLimits\",\"type\":\"bytes32\"},{\"internalType\":\"uint256\",\"name\":\"preVerificationGas\",\"type\":\"uint256\"},{\"internalType\":\"bytes32\",\"name\":\"gasFees\",\"type\":\"bytes32\"},{\"internalType\":\"bytes\",\"name\":\"paymasterAndData\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"signature\",\"type\":\"bytes\"}],\"internalType\":\"structPackedUserOperation\",\"name\":\"userOp\",\"type\":\"tuple\"},{\"internalType\":\"bytes32\",\"name\":\"userOpHash\",\"type\":\"bytes32\"},{\"internalType\":\"uint256\",\"name\":\"maxCost\",\"type\":\"uint256\"}],\"name\":\"validatePaymasterUserOp\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"context\",\"type\":\"bytes\"},{\"internalType\":\"uint256\",\"name\":\"validationData\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"}],\"name\":\"withdrawPayment\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"addresspayable\",\"name\":\"withdrawAddress\",\"type\":\"address\"}],\"name\":\"withdrawStake\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"addresspayable\",\"name\":\"withdrawAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"withdrawAmount\",\"type\":\"uint256\"}],\"name\":\"withdrawTo\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"}],\"name\":\"withdrawToken\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"}],\"name\":\"withdrawTokenTo\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"withdrawalDelay\",\"outputs\":[{\"internalType\":\"uint48\",\"name\":\"\",\"type\":\"uint48\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"stateMutability\":\"payable\",\"type\":\"receive\"}]",
 }
 
 // GasTankPaymasterABI is the input ABI used to generate the binding from.
@@ -180,74 +193,62 @@ func (_GasTankPaymaster *GasTankPaymasterTransactorRaw) Transact(opts *bind.Tran
 	return _GasTankPaymaster.Contract.contract.Transact(opts, method, params...)
 }
 
-// SPONSORMODECREDIT is a free data retrieval call binding the contract method 0x21cf78ca.
+// Accounts is a free data retrieval call binding the contract method 0xad74b775.
 //
-// Solidity: function SPONSOR_MODE_CREDIT() view returns(uint8)
-func (_GasTankPaymaster *GasTankPaymasterCaller) SPONSORMODECREDIT(opts *bind.CallOpts) (uint8, error) {
+// Solidity: function accounts(address account, address token) view returns(uint256 balance, uint208 withdrawAmount, uint48 withdrawableAt)
+func (_GasTankPaymaster *GasTankPaymasterCaller) Accounts(opts *bind.CallOpts, account common.Address, token common.Address) (struct {
+	Balance        *big.Int
+	WithdrawAmount *big.Int
+	WithdrawableAt *big.Int
+}, error) {
 	var out []interface{}
-	err := _GasTankPaymaster.contract.Call(opts, &out, "SPONSOR_MODE_CREDIT")
+	err := _GasTankPaymaster.contract.Call(opts, &out, "accounts", account, token)
 
+	outstruct := new(struct {
+		Balance        *big.Int
+		WithdrawAmount *big.Int
+		WithdrawableAt *big.Int
+	})
 	if err != nil {
-		return *new(uint8), err
+		return *outstruct, err
 	}
 
-	out0 := *abi.ConvertType(out[0], new(uint8)).(*uint8)
+	outstruct.Balance = *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+	outstruct.WithdrawAmount = *abi.ConvertType(out[1], new(*big.Int)).(**big.Int)
+	outstruct.WithdrawableAt = *abi.ConvertType(out[2], new(*big.Int)).(**big.Int)
 
-	return out0, err
+	return *outstruct, err
 
 }
 
-// SPONSORMODECREDIT is a free data retrieval call binding the contract method 0x21cf78ca.
+// Accounts is a free data retrieval call binding the contract method 0xad74b775.
 //
-// Solidity: function SPONSOR_MODE_CREDIT() view returns(uint8)
-func (_GasTankPaymaster *GasTankPaymasterSession) SPONSORMODECREDIT() (uint8, error) {
-	return _GasTankPaymaster.Contract.SPONSORMODECREDIT(&_GasTankPaymaster.CallOpts)
+// Solidity: function accounts(address account, address token) view returns(uint256 balance, uint208 withdrawAmount, uint48 withdrawableAt)
+func (_GasTankPaymaster *GasTankPaymasterSession) Accounts(account common.Address, token common.Address) (struct {
+	Balance        *big.Int
+	WithdrawAmount *big.Int
+	WithdrawableAt *big.Int
+}, error) {
+	return _GasTankPaymaster.Contract.Accounts(&_GasTankPaymaster.CallOpts, account, token)
 }
 
-// SPONSORMODECREDIT is a free data retrieval call binding the contract method 0x21cf78ca.
+// Accounts is a free data retrieval call binding the contract method 0xad74b775.
 //
-// Solidity: function SPONSOR_MODE_CREDIT() view returns(uint8)
-func (_GasTankPaymaster *GasTankPaymasterCallerSession) SPONSORMODECREDIT() (uint8, error) {
-	return _GasTankPaymaster.Contract.SPONSORMODECREDIT(&_GasTankPaymaster.CallOpts)
+// Solidity: function accounts(address account, address token) view returns(uint256 balance, uint208 withdrawAmount, uint48 withdrawableAt)
+func (_GasTankPaymaster *GasTankPaymasterCallerSession) Accounts(account common.Address, token common.Address) (struct {
+	Balance        *big.Int
+	WithdrawAmount *big.Int
+	WithdrawableAt *big.Int
+}, error) {
+	return _GasTankPaymaster.Contract.Accounts(&_GasTankPaymaster.CallOpts, account, token)
 }
 
-// SPONSORMODEREFUND is a free data retrieval call binding the contract method 0x29ed1c50.
+// Balance is a free data retrieval call binding the contract method 0xb69ef8a8.
 //
-// Solidity: function SPONSOR_MODE_REFUND() view returns(uint8)
-func (_GasTankPaymaster *GasTankPaymasterCaller) SPONSORMODEREFUND(opts *bind.CallOpts) (uint8, error) {
+// Solidity: function balance() view returns(uint256)
+func (_GasTankPaymaster *GasTankPaymasterCaller) Balance(opts *bind.CallOpts) (*big.Int, error) {
 	var out []interface{}
-	err := _GasTankPaymaster.contract.Call(opts, &out, "SPONSOR_MODE_REFUND")
-
-	if err != nil {
-		return *new(uint8), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(uint8)).(*uint8)
-
-	return out0, err
-
-}
-
-// SPONSORMODEREFUND is a free data retrieval call binding the contract method 0x29ed1c50.
-//
-// Solidity: function SPONSOR_MODE_REFUND() view returns(uint8)
-func (_GasTankPaymaster *GasTankPaymasterSession) SPONSORMODEREFUND() (uint8, error) {
-	return _GasTankPaymaster.Contract.SPONSORMODEREFUND(&_GasTankPaymaster.CallOpts)
-}
-
-// SPONSORMODEREFUND is a free data retrieval call binding the contract method 0x29ed1c50.
-//
-// Solidity: function SPONSOR_MODE_REFUND() view returns(uint8)
-func (_GasTankPaymaster *GasTankPaymasterCallerSession) SPONSORMODEREFUND() (uint8, error) {
-	return _GasTankPaymaster.Contract.SPONSORMODEREFUND(&_GasTankPaymaster.CallOpts)
-}
-
-// BalanceOf is a free data retrieval call binding the contract method 0xf7888aec.
-//
-// Solidity: function balanceOf(address , address ) view returns(uint256)
-func (_GasTankPaymaster *GasTankPaymasterCaller) BalanceOf(opts *bind.CallOpts, arg0 common.Address, arg1 common.Address) (*big.Int, error) {
-	var out []interface{}
-	err := _GasTankPaymaster.contract.Call(opts, &out, "balanceOf", arg0, arg1)
+	err := _GasTankPaymaster.contract.Call(opts, &out, "balance")
 
 	if err != nil {
 		return *new(*big.Int), err
@@ -259,18 +260,88 @@ func (_GasTankPaymaster *GasTankPaymasterCaller) BalanceOf(opts *bind.CallOpts, 
 
 }
 
-// BalanceOf is a free data retrieval call binding the contract method 0xf7888aec.
+// Balance is a free data retrieval call binding the contract method 0xb69ef8a8.
 //
-// Solidity: function balanceOf(address , address ) view returns(uint256)
-func (_GasTankPaymaster *GasTankPaymasterSession) BalanceOf(arg0 common.Address, arg1 common.Address) (*big.Int, error) {
-	return _GasTankPaymaster.Contract.BalanceOf(&_GasTankPaymaster.CallOpts, arg0, arg1)
+// Solidity: function balance() view returns(uint256)
+func (_GasTankPaymaster *GasTankPaymasterSession) Balance() (*big.Int, error) {
+	return _GasTankPaymaster.Contract.Balance(&_GasTankPaymaster.CallOpts)
 }
 
-// BalanceOf is a free data retrieval call binding the contract method 0xf7888aec.
+// Balance is a free data retrieval call binding the contract method 0xb69ef8a8.
 //
-// Solidity: function balanceOf(address , address ) view returns(uint256)
-func (_GasTankPaymaster *GasTankPaymasterCallerSession) BalanceOf(arg0 common.Address, arg1 common.Address) (*big.Int, error) {
-	return _GasTankPaymaster.Contract.BalanceOf(&_GasTankPaymaster.CallOpts, arg0, arg1)
+// Solidity: function balance() view returns(uint256)
+func (_GasTankPaymaster *GasTankPaymasterCallerSession) Balance() (*big.Int, error) {
+	return _GasTankPaymaster.Contract.Balance(&_GasTankPaymaster.CallOpts)
+}
+
+// Eip712Domain is a free data retrieval call binding the contract method 0x84b0196e.
+//
+// Solidity: function eip712Domain() view returns(bytes1 fields, string name, string version, uint256 chainId, address verifyingContract, bytes32 salt, uint256[] extensions)
+func (_GasTankPaymaster *GasTankPaymasterCaller) Eip712Domain(opts *bind.CallOpts) (struct {
+	Fields            [1]byte
+	Name              string
+	Version           string
+	ChainId           *big.Int
+	VerifyingContract common.Address
+	Salt              [32]byte
+	Extensions        []*big.Int
+}, error) {
+	var out []interface{}
+	err := _GasTankPaymaster.contract.Call(opts, &out, "eip712Domain")
+
+	outstruct := new(struct {
+		Fields            [1]byte
+		Name              string
+		Version           string
+		ChainId           *big.Int
+		VerifyingContract common.Address
+		Salt              [32]byte
+		Extensions        []*big.Int
+	})
+	if err != nil {
+		return *outstruct, err
+	}
+
+	outstruct.Fields = *abi.ConvertType(out[0], new([1]byte)).(*[1]byte)
+	outstruct.Name = *abi.ConvertType(out[1], new(string)).(*string)
+	outstruct.Version = *abi.ConvertType(out[2], new(string)).(*string)
+	outstruct.ChainId = *abi.ConvertType(out[3], new(*big.Int)).(**big.Int)
+	outstruct.VerifyingContract = *abi.ConvertType(out[4], new(common.Address)).(*common.Address)
+	outstruct.Salt = *abi.ConvertType(out[5], new([32]byte)).(*[32]byte)
+	outstruct.Extensions = *abi.ConvertType(out[6], new([]*big.Int)).(*[]*big.Int)
+
+	return *outstruct, err
+
+}
+
+// Eip712Domain is a free data retrieval call binding the contract method 0x84b0196e.
+//
+// Solidity: function eip712Domain() view returns(bytes1 fields, string name, string version, uint256 chainId, address verifyingContract, bytes32 salt, uint256[] extensions)
+func (_GasTankPaymaster *GasTankPaymasterSession) Eip712Domain() (struct {
+	Fields            [1]byte
+	Name              string
+	Version           string
+	ChainId           *big.Int
+	VerifyingContract common.Address
+	Salt              [32]byte
+	Extensions        []*big.Int
+}, error) {
+	return _GasTankPaymaster.Contract.Eip712Domain(&_GasTankPaymaster.CallOpts)
+}
+
+// Eip712Domain is a free data retrieval call binding the contract method 0x84b0196e.
+//
+// Solidity: function eip712Domain() view returns(bytes1 fields, string name, string version, uint256 chainId, address verifyingContract, bytes32 salt, uint256[] extensions)
+func (_GasTankPaymaster *GasTankPaymasterCallerSession) Eip712Domain() (struct {
+	Fields            [1]byte
+	Name              string
+	Version           string
+	ChainId           *big.Int
+	VerifyingContract common.Address
+	Salt              [32]byte
+	Extensions        []*big.Int
+}, error) {
+	return _GasTankPaymaster.Contract.Eip712Domain(&_GasTankPaymaster.CallOpts)
 }
 
 // EntryPoint is a free data retrieval call binding the contract method 0xb0d691fe.
@@ -302,37 +373,6 @@ func (_GasTankPaymaster *GasTankPaymasterSession) EntryPoint() (common.Address, 
 // Solidity: function entryPoint() view returns(address)
 func (_GasTankPaymaster *GasTankPaymasterCallerSession) EntryPoint() (common.Address, error) {
 	return _GasTankPaymaster.Contract.EntryPoint(&_GasTankPaymaster.CallOpts)
-}
-
-// GetBalance is a free data retrieval call binding the contract method 0x12065fe0.
-//
-// Solidity: function getBalance() view returns(uint256)
-func (_GasTankPaymaster *GasTankPaymasterCaller) GetBalance(opts *bind.CallOpts) (*big.Int, error) {
-	var out []interface{}
-	err := _GasTankPaymaster.contract.Call(opts, &out, "getBalance")
-
-	if err != nil {
-		return *new(*big.Int), err
-	}
-
-	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
-
-	return out0, err
-
-}
-
-// GetBalance is a free data retrieval call binding the contract method 0x12065fe0.
-//
-// Solidity: function getBalance() view returns(uint256)
-func (_GasTankPaymaster *GasTankPaymasterSession) GetBalance() (*big.Int, error) {
-	return _GasTankPaymaster.Contract.GetBalance(&_GasTankPaymaster.CallOpts)
-}
-
-// GetBalance is a free data retrieval call binding the contract method 0x12065fe0.
-//
-// Solidity: function getBalance() view returns(uint256)
-func (_GasTankPaymaster *GasTankPaymasterCallerSession) GetBalance() (*big.Int, error) {
-	return _GasTankPaymaster.Contract.GetBalance(&_GasTankPaymaster.CallOpts)
 }
 
 // GetPaymasterHash is a free data retrieval call binding the contract method 0xf11a7bea.
@@ -399,10 +439,10 @@ func (_GasTankPaymaster *GasTankPaymasterCallerSession) IsSignerAllowed(arg0 com
 
 // IsTokenAllowed is a free data retrieval call binding the contract method 0xf9eaee0d.
 //
-// Solidity: function isTokenAllowed(address ) view returns(bool)
-func (_GasTankPaymaster *GasTankPaymasterCaller) IsTokenAllowed(opts *bind.CallOpts, arg0 common.Address) (bool, error) {
+// Solidity: function isTokenAllowed(address token) view returns(bool)
+func (_GasTankPaymaster *GasTankPaymasterCaller) IsTokenAllowed(opts *bind.CallOpts, token common.Address) (bool, error) {
 	var out []interface{}
-	err := _GasTankPaymaster.contract.Call(opts, &out, "isTokenAllowed", arg0)
+	err := _GasTankPaymaster.contract.Call(opts, &out, "isTokenAllowed", token)
 
 	if err != nil {
 		return *new(bool), err
@@ -416,16 +456,16 @@ func (_GasTankPaymaster *GasTankPaymasterCaller) IsTokenAllowed(opts *bind.CallO
 
 // IsTokenAllowed is a free data retrieval call binding the contract method 0xf9eaee0d.
 //
-// Solidity: function isTokenAllowed(address ) view returns(bool)
-func (_GasTankPaymaster *GasTankPaymasterSession) IsTokenAllowed(arg0 common.Address) (bool, error) {
-	return _GasTankPaymaster.Contract.IsTokenAllowed(&_GasTankPaymaster.CallOpts, arg0)
+// Solidity: function isTokenAllowed(address token) view returns(bool)
+func (_GasTankPaymaster *GasTankPaymasterSession) IsTokenAllowed(token common.Address) (bool, error) {
+	return _GasTankPaymaster.Contract.IsTokenAllowed(&_GasTankPaymaster.CallOpts, token)
 }
 
 // IsTokenAllowed is a free data retrieval call binding the contract method 0xf9eaee0d.
 //
-// Solidity: function isTokenAllowed(address ) view returns(bool)
-func (_GasTankPaymaster *GasTankPaymasterCallerSession) IsTokenAllowed(arg0 common.Address) (bool, error) {
-	return _GasTankPaymaster.Contract.IsTokenAllowed(&_GasTankPaymaster.CallOpts, arg0)
+// Solidity: function isTokenAllowed(address token) view returns(bool)
+func (_GasTankPaymaster *GasTankPaymasterCallerSession) IsTokenAllowed(token common.Address) (bool, error) {
+	return _GasTankPaymaster.Contract.IsTokenAllowed(&_GasTankPaymaster.CallOpts, token)
 }
 
 // Owner is a free data retrieval call binding the contract method 0x8da5cb5b.
@@ -459,6 +499,68 @@ func (_GasTankPaymaster *GasTankPaymasterCallerSession) Owner() (common.Address,
 	return _GasTankPaymaster.Contract.Owner(&_GasTankPaymaster.CallOpts)
 }
 
+// Paused is a free data retrieval call binding the contract method 0x5c975abb.
+//
+// Solidity: function paused() view returns(bool)
+func (_GasTankPaymaster *GasTankPaymasterCaller) Paused(opts *bind.CallOpts) (bool, error) {
+	var out []interface{}
+	err := _GasTankPaymaster.contract.Call(opts, &out, "paused")
+
+	if err != nil {
+		return *new(bool), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
+
+	return out0, err
+
+}
+
+// Paused is a free data retrieval call binding the contract method 0x5c975abb.
+//
+// Solidity: function paused() view returns(bool)
+func (_GasTankPaymaster *GasTankPaymasterSession) Paused() (bool, error) {
+	return _GasTankPaymaster.Contract.Paused(&_GasTankPaymaster.CallOpts)
+}
+
+// Paused is a free data retrieval call binding the contract method 0x5c975abb.
+//
+// Solidity: function paused() view returns(bool)
+func (_GasTankPaymaster *GasTankPaymasterCallerSession) Paused() (bool, error) {
+	return _GasTankPaymaster.Contract.Paused(&_GasTankPaymaster.CallOpts)
+}
+
+// Payment is a free data retrieval call binding the contract method 0x3b92f3df.
+//
+// Solidity: function payment(address token) view returns(uint256)
+func (_GasTankPaymaster *GasTankPaymasterCaller) Payment(opts *bind.CallOpts, token common.Address) (*big.Int, error) {
+	var out []interface{}
+	err := _GasTankPaymaster.contract.Call(opts, &out, "payment", token)
+
+	if err != nil {
+		return *new(*big.Int), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(*big.Int)).(**big.Int)
+
+	return out0, err
+
+}
+
+// Payment is a free data retrieval call binding the contract method 0x3b92f3df.
+//
+// Solidity: function payment(address token) view returns(uint256)
+func (_GasTankPaymaster *GasTankPaymasterSession) Payment(token common.Address) (*big.Int, error) {
+	return _GasTankPaymaster.Contract.Payment(&_GasTankPaymaster.CallOpts, token)
+}
+
+// Payment is a free data retrieval call binding the contract method 0x3b92f3df.
+//
+// Solidity: function payment(address token) view returns(uint256)
+func (_GasTankPaymaster *GasTankPaymasterCallerSession) Payment(token common.Address) (*big.Int, error) {
+	return _GasTankPaymaster.Contract.Payment(&_GasTankPaymaster.CallOpts, token)
+}
+
 // PostOpGasOverhead is a free data retrieval call binding the contract method 0x6ec5f681.
 //
 // Solidity: function postOpGasOverhead() view returns(uint256)
@@ -490,12 +592,12 @@ func (_GasTankPaymaster *GasTankPaymasterCallerSession) PostOpGasOverhead() (*bi
 	return _GasTankPaymaster.Contract.PostOpGasOverhead(&_GasTankPaymaster.CallOpts)
 }
 
-// PriceMarkupBps is a free data retrieval call binding the contract method 0x627b9b51.
+// WithdrawalDelay is a free data retrieval call binding the contract method 0xa7ab6961.
 //
-// Solidity: function priceMarkupBps() view returns(uint256)
-func (_GasTankPaymaster *GasTankPaymasterCaller) PriceMarkupBps(opts *bind.CallOpts) (*big.Int, error) {
+// Solidity: function withdrawalDelay() view returns(uint48)
+func (_GasTankPaymaster *GasTankPaymasterCaller) WithdrawalDelay(opts *bind.CallOpts) (*big.Int, error) {
 	var out []interface{}
-	err := _GasTankPaymaster.contract.Call(opts, &out, "priceMarkupBps")
+	err := _GasTankPaymaster.contract.Call(opts, &out, "withdrawalDelay")
 
 	if err != nil {
 		return *new(*big.Int), err
@@ -507,18 +609,18 @@ func (_GasTankPaymaster *GasTankPaymasterCaller) PriceMarkupBps(opts *bind.CallO
 
 }
 
-// PriceMarkupBps is a free data retrieval call binding the contract method 0x627b9b51.
+// WithdrawalDelay is a free data retrieval call binding the contract method 0xa7ab6961.
 //
-// Solidity: function priceMarkupBps() view returns(uint256)
-func (_GasTankPaymaster *GasTankPaymasterSession) PriceMarkupBps() (*big.Int, error) {
-	return _GasTankPaymaster.Contract.PriceMarkupBps(&_GasTankPaymaster.CallOpts)
+// Solidity: function withdrawalDelay() view returns(uint48)
+func (_GasTankPaymaster *GasTankPaymasterSession) WithdrawalDelay() (*big.Int, error) {
+	return _GasTankPaymaster.Contract.WithdrawalDelay(&_GasTankPaymaster.CallOpts)
 }
 
-// PriceMarkupBps is a free data retrieval call binding the contract method 0x627b9b51.
+// WithdrawalDelay is a free data retrieval call binding the contract method 0xa7ab6961.
 //
-// Solidity: function priceMarkupBps() view returns(uint256)
-func (_GasTankPaymaster *GasTankPaymasterCallerSession) PriceMarkupBps() (*big.Int, error) {
-	return _GasTankPaymaster.Contract.PriceMarkupBps(&_GasTankPaymaster.CallOpts)
+// Solidity: function withdrawalDelay() view returns(uint48)
+func (_GasTankPaymaster *GasTankPaymasterCallerSession) WithdrawalDelay() (*big.Int, error) {
+	return _GasTankPaymaster.Contract.WithdrawalDelay(&_GasTankPaymaster.CallOpts)
 }
 
 // AddStake is a paid mutator transaction binding the contract method 0x0396cb60.
@@ -540,6 +642,27 @@ func (_GasTankPaymaster *GasTankPaymasterSession) AddStake(unstakeDelaySec uint3
 // Solidity: function addStake(uint32 unstakeDelaySec) payable returns()
 func (_GasTankPaymaster *GasTankPaymasterTransactorSession) AddStake(unstakeDelaySec uint32) (*types.Transaction, error) {
 	return _GasTankPaymaster.Contract.AddStake(&_GasTankPaymaster.TransactOpts, unstakeDelaySec)
+}
+
+// CancelWithdraw is a paid mutator transaction binding the contract method 0xe9919629.
+//
+// Solidity: function cancelWithdraw(address token) returns()
+func (_GasTankPaymaster *GasTankPaymasterTransactor) CancelWithdraw(opts *bind.TransactOpts, token common.Address) (*types.Transaction, error) {
+	return _GasTankPaymaster.contract.Transact(opts, "cancelWithdraw", token)
+}
+
+// CancelWithdraw is a paid mutator transaction binding the contract method 0xe9919629.
+//
+// Solidity: function cancelWithdraw(address token) returns()
+func (_GasTankPaymaster *GasTankPaymasterSession) CancelWithdraw(token common.Address) (*types.Transaction, error) {
+	return _GasTankPaymaster.Contract.CancelWithdraw(&_GasTankPaymaster.TransactOpts, token)
+}
+
+// CancelWithdraw is a paid mutator transaction binding the contract method 0xe9919629.
+//
+// Solidity: function cancelWithdraw(address token) returns()
+func (_GasTankPaymaster *GasTankPaymasterTransactorSession) CancelWithdraw(token common.Address) (*types.Transaction, error) {
+	return _GasTankPaymaster.Contract.CancelWithdraw(&_GasTankPaymaster.TransactOpts, token)
 }
 
 // Deposit is a paid mutator transaction binding the contract method 0xd0e30db0.
@@ -605,6 +728,27 @@ func (_GasTankPaymaster *GasTankPaymasterTransactorSession) DepositTokenTo(token
 	return _GasTankPaymaster.Contract.DepositTokenTo(&_GasTankPaymaster.TransactOpts, token, amount, recipient)
 }
 
+// Pause is a paid mutator transaction binding the contract method 0x8456cb59.
+//
+// Solidity: function pause() returns()
+func (_GasTankPaymaster *GasTankPaymasterTransactor) Pause(opts *bind.TransactOpts) (*types.Transaction, error) {
+	return _GasTankPaymaster.contract.Transact(opts, "pause")
+}
+
+// Pause is a paid mutator transaction binding the contract method 0x8456cb59.
+//
+// Solidity: function pause() returns()
+func (_GasTankPaymaster *GasTankPaymasterSession) Pause() (*types.Transaction, error) {
+	return _GasTankPaymaster.Contract.Pause(&_GasTankPaymaster.TransactOpts)
+}
+
+// Pause is a paid mutator transaction binding the contract method 0x8456cb59.
+//
+// Solidity: function pause() returns()
+func (_GasTankPaymaster *GasTankPaymasterTransactorSession) Pause() (*types.Transaction, error) {
+	return _GasTankPaymaster.Contract.Pause(&_GasTankPaymaster.TransactOpts)
+}
+
 // PostOp is a paid mutator transaction binding the contract method 0x7c627b21.
 //
 // Solidity: function postOp(uint8 mode, bytes context, uint256 actualGasCost, uint256 actualUserOpFeePerGas) returns()
@@ -647,25 +791,46 @@ func (_GasTankPaymaster *GasTankPaymasterTransactorSession) RenounceOwnership() 
 	return _GasTankPaymaster.Contract.RenounceOwnership(&_GasTankPaymaster.TransactOpts)
 }
 
-// SetConfig is a paid mutator transaction binding the contract method 0x1e34c585.
+// RequestWithdraw is a paid mutator transaction binding the contract method 0x0d970d6f.
 //
-// Solidity: function setConfig(uint256 newPostOpGasOverhead, uint256 newPriceMarkupBps) returns()
-func (_GasTankPaymaster *GasTankPaymasterTransactor) SetConfig(opts *bind.TransactOpts, newPostOpGasOverhead *big.Int, newPriceMarkupBps *big.Int) (*types.Transaction, error) {
-	return _GasTankPaymaster.contract.Transact(opts, "setConfig", newPostOpGasOverhead, newPriceMarkupBps)
+// Solidity: function requestWithdraw(address token, uint208 amount) returns()
+func (_GasTankPaymaster *GasTankPaymasterTransactor) RequestWithdraw(opts *bind.TransactOpts, token common.Address, amount *big.Int) (*types.Transaction, error) {
+	return _GasTankPaymaster.contract.Transact(opts, "requestWithdraw", token, amount)
 }
 
-// SetConfig is a paid mutator transaction binding the contract method 0x1e34c585.
+// RequestWithdraw is a paid mutator transaction binding the contract method 0x0d970d6f.
 //
-// Solidity: function setConfig(uint256 newPostOpGasOverhead, uint256 newPriceMarkupBps) returns()
-func (_GasTankPaymaster *GasTankPaymasterSession) SetConfig(newPostOpGasOverhead *big.Int, newPriceMarkupBps *big.Int) (*types.Transaction, error) {
-	return _GasTankPaymaster.Contract.SetConfig(&_GasTankPaymaster.TransactOpts, newPostOpGasOverhead, newPriceMarkupBps)
+// Solidity: function requestWithdraw(address token, uint208 amount) returns()
+func (_GasTankPaymaster *GasTankPaymasterSession) RequestWithdraw(token common.Address, amount *big.Int) (*types.Transaction, error) {
+	return _GasTankPaymaster.Contract.RequestWithdraw(&_GasTankPaymaster.TransactOpts, token, amount)
 }
 
-// SetConfig is a paid mutator transaction binding the contract method 0x1e34c585.
+// RequestWithdraw is a paid mutator transaction binding the contract method 0x0d970d6f.
 //
-// Solidity: function setConfig(uint256 newPostOpGasOverhead, uint256 newPriceMarkupBps) returns()
-func (_GasTankPaymaster *GasTankPaymasterTransactorSession) SetConfig(newPostOpGasOverhead *big.Int, newPriceMarkupBps *big.Int) (*types.Transaction, error) {
-	return _GasTankPaymaster.Contract.SetConfig(&_GasTankPaymaster.TransactOpts, newPostOpGasOverhead, newPriceMarkupBps)
+// Solidity: function requestWithdraw(address token, uint208 amount) returns()
+func (_GasTankPaymaster *GasTankPaymasterTransactorSession) RequestWithdraw(token common.Address, amount *big.Int) (*types.Transaction, error) {
+	return _GasTankPaymaster.Contract.RequestWithdraw(&_GasTankPaymaster.TransactOpts, token, amount)
+}
+
+// SetPostOpGasOverhead is a paid mutator transaction binding the contract method 0xfb79777d.
+//
+// Solidity: function setPostOpGasOverhead(uint256 newPostOpGasOverhead) returns()
+func (_GasTankPaymaster *GasTankPaymasterTransactor) SetPostOpGasOverhead(opts *bind.TransactOpts, newPostOpGasOverhead *big.Int) (*types.Transaction, error) {
+	return _GasTankPaymaster.contract.Transact(opts, "setPostOpGasOverhead", newPostOpGasOverhead)
+}
+
+// SetPostOpGasOverhead is a paid mutator transaction binding the contract method 0xfb79777d.
+//
+// Solidity: function setPostOpGasOverhead(uint256 newPostOpGasOverhead) returns()
+func (_GasTankPaymaster *GasTankPaymasterSession) SetPostOpGasOverhead(newPostOpGasOverhead *big.Int) (*types.Transaction, error) {
+	return _GasTankPaymaster.Contract.SetPostOpGasOverhead(&_GasTankPaymaster.TransactOpts, newPostOpGasOverhead)
+}
+
+// SetPostOpGasOverhead is a paid mutator transaction binding the contract method 0xfb79777d.
+//
+// Solidity: function setPostOpGasOverhead(uint256 newPostOpGasOverhead) returns()
+func (_GasTankPaymaster *GasTankPaymasterTransactorSession) SetPostOpGasOverhead(newPostOpGasOverhead *big.Int) (*types.Transaction, error) {
+	return _GasTankPaymaster.Contract.SetPostOpGasOverhead(&_GasTankPaymaster.TransactOpts, newPostOpGasOverhead)
 }
 
 // SetSigner is a paid mutator transaction binding the contract method 0x31cb6105.
@@ -710,6 +875,27 @@ func (_GasTankPaymaster *GasTankPaymasterTransactorSession) SetToken(token commo
 	return _GasTankPaymaster.Contract.SetToken(&_GasTankPaymaster.TransactOpts, token, allowed)
 }
 
+// SetWithdrawalDelay is a paid mutator transaction binding the contract method 0x4baaee46.
+//
+// Solidity: function setWithdrawalDelay(uint48 newDelay) returns()
+func (_GasTankPaymaster *GasTankPaymasterTransactor) SetWithdrawalDelay(opts *bind.TransactOpts, newDelay *big.Int) (*types.Transaction, error) {
+	return _GasTankPaymaster.contract.Transact(opts, "setWithdrawalDelay", newDelay)
+}
+
+// SetWithdrawalDelay is a paid mutator transaction binding the contract method 0x4baaee46.
+//
+// Solidity: function setWithdrawalDelay(uint48 newDelay) returns()
+func (_GasTankPaymaster *GasTankPaymasterSession) SetWithdrawalDelay(newDelay *big.Int) (*types.Transaction, error) {
+	return _GasTankPaymaster.Contract.SetWithdrawalDelay(&_GasTankPaymaster.TransactOpts, newDelay)
+}
+
+// SetWithdrawalDelay is a paid mutator transaction binding the contract method 0x4baaee46.
+//
+// Solidity: function setWithdrawalDelay(uint48 newDelay) returns()
+func (_GasTankPaymaster *GasTankPaymasterTransactorSession) SetWithdrawalDelay(newDelay *big.Int) (*types.Transaction, error) {
+	return _GasTankPaymaster.Contract.SetWithdrawalDelay(&_GasTankPaymaster.TransactOpts, newDelay)
+}
+
 // TransferOwnership is a paid mutator transaction binding the contract method 0xf2fde38b.
 //
 // Solidity: function transferOwnership(address newOwner) returns()
@@ -752,6 +938,27 @@ func (_GasTankPaymaster *GasTankPaymasterTransactorSession) UnlockStake() (*type
 	return _GasTankPaymaster.Contract.UnlockStake(&_GasTankPaymaster.TransactOpts)
 }
 
+// Unpause is a paid mutator transaction binding the contract method 0x3f4ba83a.
+//
+// Solidity: function unpause() returns()
+func (_GasTankPaymaster *GasTankPaymasterTransactor) Unpause(opts *bind.TransactOpts) (*types.Transaction, error) {
+	return _GasTankPaymaster.contract.Transact(opts, "unpause")
+}
+
+// Unpause is a paid mutator transaction binding the contract method 0x3f4ba83a.
+//
+// Solidity: function unpause() returns()
+func (_GasTankPaymaster *GasTankPaymasterSession) Unpause() (*types.Transaction, error) {
+	return _GasTankPaymaster.Contract.Unpause(&_GasTankPaymaster.TransactOpts)
+}
+
+// Unpause is a paid mutator transaction binding the contract method 0x3f4ba83a.
+//
+// Solidity: function unpause() returns()
+func (_GasTankPaymaster *GasTankPaymasterTransactorSession) Unpause() (*types.Transaction, error) {
+	return _GasTankPaymaster.Contract.Unpause(&_GasTankPaymaster.TransactOpts)
+}
+
 // ValidatePaymasterUserOp is a paid mutator transaction binding the contract method 0x52b7512c.
 //
 // Solidity: function validatePaymasterUserOp((address,uint256,bytes,bytes,bytes32,uint256,bytes32,bytes,bytes) userOp, bytes32 userOpHash, uint256 maxCost) returns(bytes context, uint256 validationData)
@@ -771,6 +978,27 @@ func (_GasTankPaymaster *GasTankPaymasterSession) ValidatePaymasterUserOp(userOp
 // Solidity: function validatePaymasterUserOp((address,uint256,bytes,bytes,bytes32,uint256,bytes32,bytes,bytes) userOp, bytes32 userOpHash, uint256 maxCost) returns(bytes context, uint256 validationData)
 func (_GasTankPaymaster *GasTankPaymasterTransactorSession) ValidatePaymasterUserOp(userOp PackedUserOperation, userOpHash [32]byte, maxCost *big.Int) (*types.Transaction, error) {
 	return _GasTankPaymaster.Contract.ValidatePaymasterUserOp(&_GasTankPaymaster.TransactOpts, userOp, userOpHash, maxCost)
+}
+
+// WithdrawPayment is a paid mutator transaction binding the contract method 0xfa192d99.
+//
+// Solidity: function withdrawPayment(address token, uint256 amount, address recipient) returns()
+func (_GasTankPaymaster *GasTankPaymasterTransactor) WithdrawPayment(opts *bind.TransactOpts, token common.Address, amount *big.Int, recipient common.Address) (*types.Transaction, error) {
+	return _GasTankPaymaster.contract.Transact(opts, "withdrawPayment", token, amount, recipient)
+}
+
+// WithdrawPayment is a paid mutator transaction binding the contract method 0xfa192d99.
+//
+// Solidity: function withdrawPayment(address token, uint256 amount, address recipient) returns()
+func (_GasTankPaymaster *GasTankPaymasterSession) WithdrawPayment(token common.Address, amount *big.Int, recipient common.Address) (*types.Transaction, error) {
+	return _GasTankPaymaster.Contract.WithdrawPayment(&_GasTankPaymaster.TransactOpts, token, amount, recipient)
+}
+
+// WithdrawPayment is a paid mutator transaction binding the contract method 0xfa192d99.
+//
+// Solidity: function withdrawPayment(address token, uint256 amount, address recipient) returns()
+func (_GasTankPaymaster *GasTankPaymasterTransactorSession) WithdrawPayment(token common.Address, amount *big.Int, recipient common.Address) (*types.Transaction, error) {
+	return _GasTankPaymaster.Contract.WithdrawPayment(&_GasTankPaymaster.TransactOpts, token, amount, recipient)
 }
 
 // WithdrawStake is a paid mutator transaction binding the contract method 0xc23a5cea.
@@ -815,46 +1043,46 @@ func (_GasTankPaymaster *GasTankPaymasterTransactorSession) WithdrawTo(withdrawA
 	return _GasTankPaymaster.Contract.WithdrawTo(&_GasTankPaymaster.TransactOpts, withdrawAddress, withdrawAmount)
 }
 
-// WithdrawToken is a paid mutator transaction binding the contract method 0x9e281a98.
+// WithdrawToken is a paid mutator transaction binding the contract method 0x89476069.
 //
-// Solidity: function withdrawToken(address token, uint256 amount) returns()
-func (_GasTankPaymaster *GasTankPaymasterTransactor) WithdrawToken(opts *bind.TransactOpts, token common.Address, amount *big.Int) (*types.Transaction, error) {
-	return _GasTankPaymaster.contract.Transact(opts, "withdrawToken", token, amount)
+// Solidity: function withdrawToken(address token) returns()
+func (_GasTankPaymaster *GasTankPaymasterTransactor) WithdrawToken(opts *bind.TransactOpts, token common.Address) (*types.Transaction, error) {
+	return _GasTankPaymaster.contract.Transact(opts, "withdrawToken", token)
 }
 
-// WithdrawToken is a paid mutator transaction binding the contract method 0x9e281a98.
+// WithdrawToken is a paid mutator transaction binding the contract method 0x89476069.
 //
-// Solidity: function withdrawToken(address token, uint256 amount) returns()
-func (_GasTankPaymaster *GasTankPaymasterSession) WithdrawToken(token common.Address, amount *big.Int) (*types.Transaction, error) {
-	return _GasTankPaymaster.Contract.WithdrawToken(&_GasTankPaymaster.TransactOpts, token, amount)
+// Solidity: function withdrawToken(address token) returns()
+func (_GasTankPaymaster *GasTankPaymasterSession) WithdrawToken(token common.Address) (*types.Transaction, error) {
+	return _GasTankPaymaster.Contract.WithdrawToken(&_GasTankPaymaster.TransactOpts, token)
 }
 
-// WithdrawToken is a paid mutator transaction binding the contract method 0x9e281a98.
+// WithdrawToken is a paid mutator transaction binding the contract method 0x89476069.
 //
-// Solidity: function withdrawToken(address token, uint256 amount) returns()
-func (_GasTankPaymaster *GasTankPaymasterTransactorSession) WithdrawToken(token common.Address, amount *big.Int) (*types.Transaction, error) {
-	return _GasTankPaymaster.Contract.WithdrawToken(&_GasTankPaymaster.TransactOpts, token, amount)
+// Solidity: function withdrawToken(address token) returns()
+func (_GasTankPaymaster *GasTankPaymasterTransactorSession) WithdrawToken(token common.Address) (*types.Transaction, error) {
+	return _GasTankPaymaster.Contract.WithdrawToken(&_GasTankPaymaster.TransactOpts, token)
 }
 
-// WithdrawTokenTo is a paid mutator transaction binding the contract method 0x54ad4179.
+// WithdrawTokenTo is a paid mutator transaction binding the contract method 0xf19fe69b.
 //
-// Solidity: function withdrawTokenTo(address token, uint256 amount, address recipient) returns()
-func (_GasTankPaymaster *GasTankPaymasterTransactor) WithdrawTokenTo(opts *bind.TransactOpts, token common.Address, amount *big.Int, recipient common.Address) (*types.Transaction, error) {
-	return _GasTankPaymaster.contract.Transact(opts, "withdrawTokenTo", token, amount, recipient)
+// Solidity: function withdrawTokenTo(address token, address recipient) returns()
+func (_GasTankPaymaster *GasTankPaymasterTransactor) WithdrawTokenTo(opts *bind.TransactOpts, token common.Address, recipient common.Address) (*types.Transaction, error) {
+	return _GasTankPaymaster.contract.Transact(opts, "withdrawTokenTo", token, recipient)
 }
 
-// WithdrawTokenTo is a paid mutator transaction binding the contract method 0x54ad4179.
+// WithdrawTokenTo is a paid mutator transaction binding the contract method 0xf19fe69b.
 //
-// Solidity: function withdrawTokenTo(address token, uint256 amount, address recipient) returns()
-func (_GasTankPaymaster *GasTankPaymasterSession) WithdrawTokenTo(token common.Address, amount *big.Int, recipient common.Address) (*types.Transaction, error) {
-	return _GasTankPaymaster.Contract.WithdrawTokenTo(&_GasTankPaymaster.TransactOpts, token, amount, recipient)
+// Solidity: function withdrawTokenTo(address token, address recipient) returns()
+func (_GasTankPaymaster *GasTankPaymasterSession) WithdrawTokenTo(token common.Address, recipient common.Address) (*types.Transaction, error) {
+	return _GasTankPaymaster.Contract.WithdrawTokenTo(&_GasTankPaymaster.TransactOpts, token, recipient)
 }
 
-// WithdrawTokenTo is a paid mutator transaction binding the contract method 0x54ad4179.
+// WithdrawTokenTo is a paid mutator transaction binding the contract method 0xf19fe69b.
 //
-// Solidity: function withdrawTokenTo(address token, uint256 amount, address recipient) returns()
-func (_GasTankPaymaster *GasTankPaymasterTransactorSession) WithdrawTokenTo(token common.Address, amount *big.Int, recipient common.Address) (*types.Transaction, error) {
-	return _GasTankPaymaster.Contract.WithdrawTokenTo(&_GasTankPaymaster.TransactOpts, token, amount, recipient)
+// Solidity: function withdrawTokenTo(address token, address recipient) returns()
+func (_GasTankPaymaster *GasTankPaymasterTransactorSession) WithdrawTokenTo(token common.Address, recipient common.Address) (*types.Transaction, error) {
+	return _GasTankPaymaster.Contract.WithdrawTokenTo(&_GasTankPaymaster.TransactOpts, token, recipient)
 }
 
 // Receive is a paid mutator transaction binding the contract receive function.
@@ -876,169 +1104,6 @@ func (_GasTankPaymaster *GasTankPaymasterSession) Receive() (*types.Transaction,
 // Solidity: receive() payable returns()
 func (_GasTankPaymaster *GasTankPaymasterTransactorSession) Receive() (*types.Transaction, error) {
 	return _GasTankPaymaster.Contract.Receive(&_GasTankPaymaster.TransactOpts)
-}
-
-// GasTankPaymasterBadDebtIterator is returned from FilterBadDebt and is used to iterate over the raw logs and unpacked data for BadDebt events raised by the GasTankPaymaster contract.
-type GasTankPaymasterBadDebtIterator struct {
-	Event *GasTankPaymasterBadDebt // Event containing the contract specifics and raw log
-
-	contract *bind.BoundContract // Generic contract to use for unpacking event data
-	event    string              // Event name to use for unpacking event data
-
-	logs chan types.Log        // Log channel receiving the found contract events
-	sub  ethereum.Subscription // Subscription for errors, completion and termination
-	done bool                  // Whether the subscription completed delivering logs
-	fail error                 // Occurred error to stop iteration
-}
-
-// Next advances the iterator to the subsequent event, returning whether there
-// are any more events found. In case of a retrieval or parsing error, false is
-// returned and Error() can be queried for the exact failure.
-func (it *GasTankPaymasterBadDebtIterator) Next() bool {
-	// If the iterator failed, stop iterating
-	if it.fail != nil {
-		return false
-	}
-	// If the iterator completed, deliver directly whatever's available
-	if it.done {
-		select {
-		case log := <-it.logs:
-			it.Event = new(GasTankPaymasterBadDebt)
-			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-				it.fail = err
-				return false
-			}
-			it.Event.Raw = log
-			return true
-
-		default:
-			return false
-		}
-	}
-	// Iterator still in progress, wait for either a data or an error event
-	select {
-	case log := <-it.logs:
-		it.Event = new(GasTankPaymasterBadDebt)
-		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
-			it.fail = err
-			return false
-		}
-		it.Event.Raw = log
-		return true
-
-	case err := <-it.sub.Err():
-		it.done = true
-		it.fail = err
-		return it.Next()
-	}
-}
-
-// Error returns any retrieval or parsing error occurred during filtering.
-func (it *GasTankPaymasterBadDebtIterator) Error() error {
-	return it.fail
-}
-
-// Close terminates the iteration process, releasing any pending underlying
-// resources.
-func (it *GasTankPaymasterBadDebtIterator) Close() error {
-	it.sub.Unsubscribe()
-	return nil
-}
-
-// GasTankPaymasterBadDebt represents a BadDebt event raised by the GasTankPaymaster contract.
-type GasTankPaymasterBadDebt struct {
-	UserOpHash [32]byte
-	Sender     common.Address
-	Token      common.Address
-	Amount     *big.Int
-	Raw        types.Log // Blockchain specific contextual infos
-}
-
-// FilterBadDebt is a free log retrieval operation binding the contract event 0x6ce6649cba7d6b40ab14e94a265681110ba823079f09819a9f0e9e07aafc7a35.
-//
-// Solidity: event BadDebt(bytes32 indexed userOpHash, address indexed sender, address indexed token, uint256 amount)
-func (_GasTankPaymaster *GasTankPaymasterFilterer) FilterBadDebt(opts *bind.FilterOpts, userOpHash [][32]byte, sender []common.Address, token []common.Address) (*GasTankPaymasterBadDebtIterator, error) {
-
-	var userOpHashRule []interface{}
-	for _, userOpHashItem := range userOpHash {
-		userOpHashRule = append(userOpHashRule, userOpHashItem)
-	}
-	var senderRule []interface{}
-	for _, senderItem := range sender {
-		senderRule = append(senderRule, senderItem)
-	}
-	var tokenRule []interface{}
-	for _, tokenItem := range token {
-		tokenRule = append(tokenRule, tokenItem)
-	}
-
-	logs, sub, err := _GasTankPaymaster.contract.FilterLogs(opts, "BadDebt", userOpHashRule, senderRule, tokenRule)
-	if err != nil {
-		return nil, err
-	}
-	return &GasTankPaymasterBadDebtIterator{contract: _GasTankPaymaster.contract, event: "BadDebt", logs: logs, sub: sub}, nil
-}
-
-// WatchBadDebt is a free log subscription operation binding the contract event 0x6ce6649cba7d6b40ab14e94a265681110ba823079f09819a9f0e9e07aafc7a35.
-//
-// Solidity: event BadDebt(bytes32 indexed userOpHash, address indexed sender, address indexed token, uint256 amount)
-func (_GasTankPaymaster *GasTankPaymasterFilterer) WatchBadDebt(opts *bind.WatchOpts, sink chan<- *GasTankPaymasterBadDebt, userOpHash [][32]byte, sender []common.Address, token []common.Address) (event.Subscription, error) {
-
-	var userOpHashRule []interface{}
-	for _, userOpHashItem := range userOpHash {
-		userOpHashRule = append(userOpHashRule, userOpHashItem)
-	}
-	var senderRule []interface{}
-	for _, senderItem := range sender {
-		senderRule = append(senderRule, senderItem)
-	}
-	var tokenRule []interface{}
-	for _, tokenItem := range token {
-		tokenRule = append(tokenRule, tokenItem)
-	}
-
-	logs, sub, err := _GasTankPaymaster.contract.WatchLogs(opts, "BadDebt", userOpHashRule, senderRule, tokenRule)
-	if err != nil {
-		return nil, err
-	}
-	return event.NewSubscription(func(quit <-chan struct{}) error {
-		defer sub.Unsubscribe()
-		for {
-			select {
-			case log := <-logs:
-				// New log arrived, parse the event and forward to the user
-				event := new(GasTankPaymasterBadDebt)
-				if err := _GasTankPaymaster.contract.UnpackLog(event, "BadDebt", log); err != nil {
-					return err
-				}
-				event.Raw = log
-
-				select {
-				case sink <- event:
-				case err := <-sub.Err():
-					return err
-				case <-quit:
-					return nil
-				}
-			case err := <-sub.Err():
-				return err
-			case <-quit:
-				return nil
-			}
-		}
-	}), nil
-}
-
-// ParseBadDebt is a log parse operation binding the contract event 0x6ce6649cba7d6b40ab14e94a265681110ba823079f09819a9f0e9e07aafc7a35.
-//
-// Solidity: event BadDebt(bytes32 indexed userOpHash, address indexed sender, address indexed token, uint256 amount)
-func (_GasTankPaymaster *GasTankPaymasterFilterer) ParseBadDebt(log types.Log) (*GasTankPaymasterBadDebt, error) {
-	event := new(GasTankPaymasterBadDebt)
-	if err := _GasTankPaymaster.contract.UnpackLog(event, "BadDebt", log); err != nil {
-		return nil, err
-	}
-	event.Raw = log
-	return event, nil
 }
 
 // GasTankPaymasterDeductIterator is returned from FilterDeduct and is used to iterate over the raw logs and unpacked data for Deduct events raised by the GasTankPaymaster contract.
@@ -1360,6 +1425,139 @@ func (_GasTankPaymaster *GasTankPaymasterFilterer) ParseDeposit(log types.Log) (
 	return event, nil
 }
 
+// GasTankPaymasterEIP712DomainChangedIterator is returned from FilterEIP712DomainChanged and is used to iterate over the raw logs and unpacked data for EIP712DomainChanged events raised by the GasTankPaymaster contract.
+type GasTankPaymasterEIP712DomainChangedIterator struct {
+	Event *GasTankPaymasterEIP712DomainChanged // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *GasTankPaymasterEIP712DomainChangedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(GasTankPaymasterEIP712DomainChanged)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(GasTankPaymasterEIP712DomainChanged)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *GasTankPaymasterEIP712DomainChangedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *GasTankPaymasterEIP712DomainChangedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// GasTankPaymasterEIP712DomainChanged represents a EIP712DomainChanged event raised by the GasTankPaymaster contract.
+type GasTankPaymasterEIP712DomainChanged struct {
+	Raw types.Log // Blockchain specific contextual infos
+}
+
+// FilterEIP712DomainChanged is a free log retrieval operation binding the contract event 0x0a6387c9ea3628b88a633bb4f3b151770f70085117a15f9bf3787cda53f13d31.
+//
+// Solidity: event EIP712DomainChanged()
+func (_GasTankPaymaster *GasTankPaymasterFilterer) FilterEIP712DomainChanged(opts *bind.FilterOpts) (*GasTankPaymasterEIP712DomainChangedIterator, error) {
+
+	logs, sub, err := _GasTankPaymaster.contract.FilterLogs(opts, "EIP712DomainChanged")
+	if err != nil {
+		return nil, err
+	}
+	return &GasTankPaymasterEIP712DomainChangedIterator{contract: _GasTankPaymaster.contract, event: "EIP712DomainChanged", logs: logs, sub: sub}, nil
+}
+
+// WatchEIP712DomainChanged is a free log subscription operation binding the contract event 0x0a6387c9ea3628b88a633bb4f3b151770f70085117a15f9bf3787cda53f13d31.
+//
+// Solidity: event EIP712DomainChanged()
+func (_GasTankPaymaster *GasTankPaymasterFilterer) WatchEIP712DomainChanged(opts *bind.WatchOpts, sink chan<- *GasTankPaymasterEIP712DomainChanged) (event.Subscription, error) {
+
+	logs, sub, err := _GasTankPaymaster.contract.WatchLogs(opts, "EIP712DomainChanged")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(GasTankPaymasterEIP712DomainChanged)
+				if err := _GasTankPaymaster.contract.UnpackLog(event, "EIP712DomainChanged", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseEIP712DomainChanged is a log parse operation binding the contract event 0x0a6387c9ea3628b88a633bb4f3b151770f70085117a15f9bf3787cda53f13d31.
+//
+// Solidity: event EIP712DomainChanged()
+func (_GasTankPaymaster *GasTankPaymasterFilterer) ParseEIP712DomainChanged(log types.Log) (*GasTankPaymasterEIP712DomainChanged, error) {
+	event := new(GasTankPaymasterEIP712DomainChanged)
+	if err := _GasTankPaymaster.contract.UnpackLog(event, "EIP712DomainChanged", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
 // GasTankPaymasterOwnershipTransferredIterator is returned from FilterOwnershipTransferred and is used to iterate over the raw logs and unpacked data for OwnershipTransferred events raised by the GasTankPaymaster contract.
 type GasTankPaymasterOwnershipTransferredIterator struct {
 	Event *GasTankPaymasterOwnershipTransferred // Event containing the contract specifics and raw log
@@ -1513,9 +1711,9 @@ func (_GasTankPaymaster *GasTankPaymasterFilterer) ParseOwnershipTransferred(log
 	return event, nil
 }
 
-// GasTankPaymasterPostOpIterator is returned from FilterPostOp and is used to iterate over the raw logs and unpacked data for PostOp events raised by the GasTankPaymaster contract.
-type GasTankPaymasterPostOpIterator struct {
-	Event *GasTankPaymasterPostOp // Event containing the contract specifics and raw log
+// GasTankPaymasterPausedIterator is returned from FilterPaused and is used to iterate over the raw logs and unpacked data for Paused events raised by the GasTankPaymaster contract.
+type GasTankPaymasterPausedIterator struct {
+	Event *GasTankPaymasterPaused // Event containing the contract specifics and raw log
 
 	contract *bind.BoundContract // Generic contract to use for unpacking event data
 	event    string              // Event name to use for unpacking event data
@@ -1529,7 +1727,7 @@ type GasTankPaymasterPostOpIterator struct {
 // Next advances the iterator to the subsequent event, returning whether there
 // are any more events found. In case of a retrieval or parsing error, false is
 // returned and Error() can be queried for the exact failure.
-func (it *GasTankPaymasterPostOpIterator) Next() bool {
+func (it *GasTankPaymasterPausedIterator) Next() bool {
 	// If the iterator failed, stop iterating
 	if it.fail != nil {
 		return false
@@ -1538,7 +1736,7 @@ func (it *GasTankPaymasterPostOpIterator) Next() bool {
 	if it.done {
 		select {
 		case log := <-it.logs:
-			it.Event = new(GasTankPaymasterPostOp)
+			it.Event = new(GasTankPaymasterPaused)
 			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 				it.fail = err
 				return false
@@ -1553,7 +1751,7 @@ func (it *GasTankPaymasterPostOpIterator) Next() bool {
 	// Iterator still in progress, wait for either a data or an error event
 	select {
 	case log := <-it.logs:
-		it.Event = new(GasTankPaymasterPostOp)
+		it.Event = new(GasTankPaymasterPaused)
 		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 			it.fail = err
 			return false
@@ -1569,63 +1767,41 @@ func (it *GasTankPaymasterPostOpIterator) Next() bool {
 }
 
 // Error returns any retrieval or parsing error occurred during filtering.
-func (it *GasTankPaymasterPostOpIterator) Error() error {
+func (it *GasTankPaymasterPausedIterator) Error() error {
 	return it.fail
 }
 
 // Close terminates the iteration process, releasing any pending underlying
 // resources.
-func (it *GasTankPaymasterPostOpIterator) Close() error {
+func (it *GasTankPaymasterPausedIterator) Close() error {
 	it.sub.Unsubscribe()
 	return nil
 }
 
-// GasTankPaymasterPostOp represents a PostOp event raised by the GasTankPaymaster contract.
-type GasTankPaymasterPostOp struct {
-	UserOpHash            [32]byte
-	Sender                common.Address
-	Mode                  uint8
-	ActualGasCost         *big.Int
-	ActualUserOpFeePerGas *big.Int
-	Raw                   types.Log // Blockchain specific contextual infos
+// GasTankPaymasterPaused represents a Paused event raised by the GasTankPaymaster contract.
+type GasTankPaymasterPaused struct {
+	Account common.Address
+	Raw     types.Log // Blockchain specific contextual infos
 }
 
-// FilterPostOp is a free log retrieval operation binding the contract event 0x0f337296fc63a313242c3bf5647e81d9eca3511978e568c5543d8ce00226c595.
+// FilterPaused is a free log retrieval operation binding the contract event 0x62e78cea01bee320cd4e420270b5ea74000d11b0c9f74754ebdbfc544b05a258.
 //
-// Solidity: event PostOp(bytes32 indexed userOpHash, address indexed sender, uint8 mode, uint256 actualGasCost, uint256 actualUserOpFeePerGas)
-func (_GasTankPaymaster *GasTankPaymasterFilterer) FilterPostOp(opts *bind.FilterOpts, userOpHash [][32]byte, sender []common.Address) (*GasTankPaymasterPostOpIterator, error) {
+// Solidity: event Paused(address account)
+func (_GasTankPaymaster *GasTankPaymasterFilterer) FilterPaused(opts *bind.FilterOpts) (*GasTankPaymasterPausedIterator, error) {
 
-	var userOpHashRule []interface{}
-	for _, userOpHashItem := range userOpHash {
-		userOpHashRule = append(userOpHashRule, userOpHashItem)
-	}
-	var senderRule []interface{}
-	for _, senderItem := range sender {
-		senderRule = append(senderRule, senderItem)
-	}
-
-	logs, sub, err := _GasTankPaymaster.contract.FilterLogs(opts, "PostOp", userOpHashRule, senderRule)
+	logs, sub, err := _GasTankPaymaster.contract.FilterLogs(opts, "Paused")
 	if err != nil {
 		return nil, err
 	}
-	return &GasTankPaymasterPostOpIterator{contract: _GasTankPaymaster.contract, event: "PostOp", logs: logs, sub: sub}, nil
+	return &GasTankPaymasterPausedIterator{contract: _GasTankPaymaster.contract, event: "Paused", logs: logs, sub: sub}, nil
 }
 
-// WatchPostOp is a free log subscription operation binding the contract event 0x0f337296fc63a313242c3bf5647e81d9eca3511978e568c5543d8ce00226c595.
+// WatchPaused is a free log subscription operation binding the contract event 0x62e78cea01bee320cd4e420270b5ea74000d11b0c9f74754ebdbfc544b05a258.
 //
-// Solidity: event PostOp(bytes32 indexed userOpHash, address indexed sender, uint8 mode, uint256 actualGasCost, uint256 actualUserOpFeePerGas)
-func (_GasTankPaymaster *GasTankPaymasterFilterer) WatchPostOp(opts *bind.WatchOpts, sink chan<- *GasTankPaymasterPostOp, userOpHash [][32]byte, sender []common.Address) (event.Subscription, error) {
+// Solidity: event Paused(address account)
+func (_GasTankPaymaster *GasTankPaymasterFilterer) WatchPaused(opts *bind.WatchOpts, sink chan<- *GasTankPaymasterPaused) (event.Subscription, error) {
 
-	var userOpHashRule []interface{}
-	for _, userOpHashItem := range userOpHash {
-		userOpHashRule = append(userOpHashRule, userOpHashItem)
-	}
-	var senderRule []interface{}
-	for _, senderItem := range sender {
-		senderRule = append(senderRule, senderItem)
-	}
-
-	logs, sub, err := _GasTankPaymaster.contract.WatchLogs(opts, "PostOp", userOpHashRule, senderRule)
+	logs, sub, err := _GasTankPaymaster.contract.WatchLogs(opts, "Paused")
 	if err != nil {
 		return nil, err
 	}
@@ -1635,8 +1811,8 @@ func (_GasTankPaymaster *GasTankPaymasterFilterer) WatchPostOp(opts *bind.WatchO
 			select {
 			case log := <-logs:
 				// New log arrived, parse the event and forward to the user
-				event := new(GasTankPaymasterPostOp)
-				if err := _GasTankPaymaster.contract.UnpackLog(event, "PostOp", log); err != nil {
+				event := new(GasTankPaymasterPaused)
+				if err := _GasTankPaymaster.contract.UnpackLog(event, "Paused", log); err != nil {
 					return err
 				}
 				event.Raw = log
@@ -1657,12 +1833,147 @@ func (_GasTankPaymaster *GasTankPaymasterFilterer) WatchPostOp(opts *bind.WatchO
 	}), nil
 }
 
-// ParsePostOp is a log parse operation binding the contract event 0x0f337296fc63a313242c3bf5647e81d9eca3511978e568c5543d8ce00226c595.
+// ParsePaused is a log parse operation binding the contract event 0x62e78cea01bee320cd4e420270b5ea74000d11b0c9f74754ebdbfc544b05a258.
 //
-// Solidity: event PostOp(bytes32 indexed userOpHash, address indexed sender, uint8 mode, uint256 actualGasCost, uint256 actualUserOpFeePerGas)
-func (_GasTankPaymaster *GasTankPaymasterFilterer) ParsePostOp(log types.Log) (*GasTankPaymasterPostOp, error) {
-	event := new(GasTankPaymasterPostOp)
-	if err := _GasTankPaymaster.contract.UnpackLog(event, "PostOp", log); err != nil {
+// Solidity: event Paused(address account)
+func (_GasTankPaymaster *GasTankPaymasterFilterer) ParsePaused(log types.Log) (*GasTankPaymasterPaused, error) {
+	event := new(GasTankPaymasterPaused)
+	if err := _GasTankPaymaster.contract.UnpackLog(event, "Paused", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// GasTankPaymasterPostOpGasOverheadUpdatedIterator is returned from FilterPostOpGasOverheadUpdated and is used to iterate over the raw logs and unpacked data for PostOpGasOverheadUpdated events raised by the GasTankPaymaster contract.
+type GasTankPaymasterPostOpGasOverheadUpdatedIterator struct {
+	Event *GasTankPaymasterPostOpGasOverheadUpdated // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *GasTankPaymasterPostOpGasOverheadUpdatedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(GasTankPaymasterPostOpGasOverheadUpdated)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(GasTankPaymasterPostOpGasOverheadUpdated)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *GasTankPaymasterPostOpGasOverheadUpdatedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *GasTankPaymasterPostOpGasOverheadUpdatedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// GasTankPaymasterPostOpGasOverheadUpdated represents a PostOpGasOverheadUpdated event raised by the GasTankPaymaster contract.
+type GasTankPaymasterPostOpGasOverheadUpdated struct {
+	OldPostOpGasOverhead *big.Int
+	NewPostOpGasOverhead *big.Int
+	Raw                  types.Log // Blockchain specific contextual infos
+}
+
+// FilterPostOpGasOverheadUpdated is a free log retrieval operation binding the contract event 0x4864bffd33a5e428131277b247b43e552b814f2eee7eba6b68a3ebcc45a23fbd.
+//
+// Solidity: event PostOpGasOverheadUpdated(uint256 oldPostOpGasOverhead, uint256 newPostOpGasOverhead)
+func (_GasTankPaymaster *GasTankPaymasterFilterer) FilterPostOpGasOverheadUpdated(opts *bind.FilterOpts) (*GasTankPaymasterPostOpGasOverheadUpdatedIterator, error) {
+
+	logs, sub, err := _GasTankPaymaster.contract.FilterLogs(opts, "PostOpGasOverheadUpdated")
+	if err != nil {
+		return nil, err
+	}
+	return &GasTankPaymasterPostOpGasOverheadUpdatedIterator{contract: _GasTankPaymaster.contract, event: "PostOpGasOverheadUpdated", logs: logs, sub: sub}, nil
+}
+
+// WatchPostOpGasOverheadUpdated is a free log subscription operation binding the contract event 0x4864bffd33a5e428131277b247b43e552b814f2eee7eba6b68a3ebcc45a23fbd.
+//
+// Solidity: event PostOpGasOverheadUpdated(uint256 oldPostOpGasOverhead, uint256 newPostOpGasOverhead)
+func (_GasTankPaymaster *GasTankPaymasterFilterer) WatchPostOpGasOverheadUpdated(opts *bind.WatchOpts, sink chan<- *GasTankPaymasterPostOpGasOverheadUpdated) (event.Subscription, error) {
+
+	logs, sub, err := _GasTankPaymaster.contract.WatchLogs(opts, "PostOpGasOverheadUpdated")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(GasTankPaymasterPostOpGasOverheadUpdated)
+				if err := _GasTankPaymaster.contract.UnpackLog(event, "PostOpGasOverheadUpdated", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParsePostOpGasOverheadUpdated is a log parse operation binding the contract event 0x4864bffd33a5e428131277b247b43e552b814f2eee7eba6b68a3ebcc45a23fbd.
+//
+// Solidity: event PostOpGasOverheadUpdated(uint256 oldPostOpGasOverhead, uint256 newPostOpGasOverhead)
+func (_GasTankPaymaster *GasTankPaymasterFilterer) ParsePostOpGasOverheadUpdated(log types.Log) (*GasTankPaymasterPostOpGasOverheadUpdated, error) {
+	event := new(GasTankPaymasterPostOpGasOverheadUpdated)
+	if err := _GasTankPaymaster.contract.UnpackLog(event, "PostOpGasOverheadUpdated", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
@@ -1739,48 +2050,39 @@ func (it *GasTankPaymasterPostOpRevertedIterator) Close() error {
 // GasTankPaymasterPostOpReverted represents a PostOpReverted event raised by the GasTankPaymaster contract.
 type GasTankPaymasterPostOpReverted struct {
 	UserOpHash            [32]byte
-	Sender                common.Address
 	ActualGasCost         *big.Int
 	ActualUserOpFeePerGas *big.Int
 	Raw                   types.Log // Blockchain specific contextual infos
 }
 
-// FilterPostOpReverted is a free log retrieval operation binding the contract event 0x305c3003dbdd1d2ddb85afedcc7c9414a770cff42aa07a4017540ba2c58718e4.
+// FilterPostOpReverted is a free log retrieval operation binding the contract event 0xcedbbce311228041ee21adf55ebf281e4f143971bde7070bcc1311c0fcac7af3.
 //
-// Solidity: event PostOpReverted(bytes32 indexed userOpHash, address indexed sender, uint256 actualGasCost, uint256 actualUserOpFeePerGas)
-func (_GasTankPaymaster *GasTankPaymasterFilterer) FilterPostOpReverted(opts *bind.FilterOpts, userOpHash [][32]byte, sender []common.Address) (*GasTankPaymasterPostOpRevertedIterator, error) {
+// Solidity: event PostOpReverted(bytes32 indexed userOpHash, uint256 actualGasCost, uint256 actualUserOpFeePerGas)
+func (_GasTankPaymaster *GasTankPaymasterFilterer) FilterPostOpReverted(opts *bind.FilterOpts, userOpHash [][32]byte) (*GasTankPaymasterPostOpRevertedIterator, error) {
 
 	var userOpHashRule []interface{}
 	for _, userOpHashItem := range userOpHash {
 		userOpHashRule = append(userOpHashRule, userOpHashItem)
 	}
-	var senderRule []interface{}
-	for _, senderItem := range sender {
-		senderRule = append(senderRule, senderItem)
-	}
 
-	logs, sub, err := _GasTankPaymaster.contract.FilterLogs(opts, "PostOpReverted", userOpHashRule, senderRule)
+	logs, sub, err := _GasTankPaymaster.contract.FilterLogs(opts, "PostOpReverted", userOpHashRule)
 	if err != nil {
 		return nil, err
 	}
 	return &GasTankPaymasterPostOpRevertedIterator{contract: _GasTankPaymaster.contract, event: "PostOpReverted", logs: logs, sub: sub}, nil
 }
 
-// WatchPostOpReverted is a free log subscription operation binding the contract event 0x305c3003dbdd1d2ddb85afedcc7c9414a770cff42aa07a4017540ba2c58718e4.
+// WatchPostOpReverted is a free log subscription operation binding the contract event 0xcedbbce311228041ee21adf55ebf281e4f143971bde7070bcc1311c0fcac7af3.
 //
-// Solidity: event PostOpReverted(bytes32 indexed userOpHash, address indexed sender, uint256 actualGasCost, uint256 actualUserOpFeePerGas)
-func (_GasTankPaymaster *GasTankPaymasterFilterer) WatchPostOpReverted(opts *bind.WatchOpts, sink chan<- *GasTankPaymasterPostOpReverted, userOpHash [][32]byte, sender []common.Address) (event.Subscription, error) {
+// Solidity: event PostOpReverted(bytes32 indexed userOpHash, uint256 actualGasCost, uint256 actualUserOpFeePerGas)
+func (_GasTankPaymaster *GasTankPaymasterFilterer) WatchPostOpReverted(opts *bind.WatchOpts, sink chan<- *GasTankPaymasterPostOpReverted, userOpHash [][32]byte) (event.Subscription, error) {
 
 	var userOpHashRule []interface{}
 	for _, userOpHashItem := range userOpHash {
 		userOpHashRule = append(userOpHashRule, userOpHashItem)
 	}
-	var senderRule []interface{}
-	for _, senderItem := range sender {
-		senderRule = append(senderRule, senderItem)
-	}
 
-	logs, sub, err := _GasTankPaymaster.contract.WatchLogs(opts, "PostOpReverted", userOpHashRule, senderRule)
+	logs, sub, err := _GasTankPaymaster.contract.WatchLogs(opts, "PostOpReverted", userOpHashRule)
 	if err != nil {
 		return nil, err
 	}
@@ -1812,9 +2114,9 @@ func (_GasTankPaymaster *GasTankPaymasterFilterer) WatchPostOpReverted(opts *bin
 	}), nil
 }
 
-// ParsePostOpReverted is a log parse operation binding the contract event 0x305c3003dbdd1d2ddb85afedcc7c9414a770cff42aa07a4017540ba2c58718e4.
+// ParsePostOpReverted is a log parse operation binding the contract event 0xcedbbce311228041ee21adf55ebf281e4f143971bde7070bcc1311c0fcac7af3.
 //
-// Solidity: event PostOpReverted(bytes32 indexed userOpHash, address indexed sender, uint256 actualGasCost, uint256 actualUserOpFeePerGas)
+// Solidity: event PostOpReverted(bytes32 indexed userOpHash, uint256 actualGasCost, uint256 actualUserOpFeePerGas)
 func (_GasTankPaymaster *GasTankPaymasterFilterer) ParsePostOpReverted(log types.Log) (*GasTankPaymasterPostOpReverted, error) {
 	event := new(GasTankPaymasterPostOpReverted)
 	if err := _GasTankPaymaster.contract.UnpackLog(event, "PostOpReverted", log); err != nil {
@@ -2124,9 +2426,9 @@ func (_GasTankPaymaster *GasTankPaymasterFilterer) ParseSignerUpdated(log types.
 	return event, nil
 }
 
-// GasTankPaymasterSponsorReceiptIterator is returned from FilterSponsorReceipt and is used to iterate over the raw logs and unpacked data for SponsorReceipt events raised by the GasTankPaymaster contract.
-type GasTankPaymasterSponsorReceiptIterator struct {
-	Event *GasTankPaymasterSponsorReceipt // Event containing the contract specifics and raw log
+// GasTankPaymasterSponsoredIterator is returned from FilterSponsored and is used to iterate over the raw logs and unpacked data for Sponsored events raised by the GasTankPaymaster contract.
+type GasTankPaymasterSponsoredIterator struct {
+	Event *GasTankPaymasterSponsored // Event containing the contract specifics and raw log
 
 	contract *bind.BoundContract // Generic contract to use for unpacking event data
 	event    string              // Event name to use for unpacking event data
@@ -2140,7 +2442,7 @@ type GasTankPaymasterSponsorReceiptIterator struct {
 // Next advances the iterator to the subsequent event, returning whether there
 // are any more events found. In case of a retrieval or parsing error, false is
 // returned and Error() can be queried for the exact failure.
-func (it *GasTankPaymasterSponsorReceiptIterator) Next() bool {
+func (it *GasTankPaymasterSponsoredIterator) Next() bool {
 	// If the iterator failed, stop iterating
 	if it.fail != nil {
 		return false
@@ -2149,7 +2451,7 @@ func (it *GasTankPaymasterSponsorReceiptIterator) Next() bool {
 	if it.done {
 		select {
 		case log := <-it.logs:
-			it.Event = new(GasTankPaymasterSponsorReceipt)
+			it.Event = new(GasTankPaymasterSponsored)
 			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 				it.fail = err
 				return false
@@ -2164,7 +2466,7 @@ func (it *GasTankPaymasterSponsorReceiptIterator) Next() bool {
 	// Iterator still in progress, wait for either a data or an error event
 	select {
 	case log := <-it.logs:
-		it.Event = new(GasTankPaymasterSponsorReceipt)
+		it.Event = new(GasTankPaymasterSponsored)
 		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 			it.fail = err
 			return false
@@ -2180,45 +2482,76 @@ func (it *GasTankPaymasterSponsorReceiptIterator) Next() bool {
 }
 
 // Error returns any retrieval or parsing error occurred during filtering.
-func (it *GasTankPaymasterSponsorReceiptIterator) Error() error {
+func (it *GasTankPaymasterSponsoredIterator) Error() error {
 	return it.fail
 }
 
 // Close terminates the iteration process, releasing any pending underlying
 // resources.
-func (it *GasTankPaymasterSponsorReceiptIterator) Close() error {
+func (it *GasTankPaymasterSponsoredIterator) Close() error {
 	it.sub.Unsubscribe()
 	return nil
 }
 
-// GasTankPaymasterSponsorReceipt represents a SponsorReceipt event raised by the GasTankPaymaster contract.
-type GasTankPaymasterSponsorReceipt struct {
-	ActualGasUsedBeforePostOp *big.Int
-	ActualGasPrice            *big.Int
-	PostOpGas                 *big.Int
-	PriceMarkupBps            *big.Int
-	ActualTokenCost           *big.Int
-	Raw                       types.Log // Blockchain specific contextual infos
+// GasTankPaymasterSponsored represents a Sponsored event raised by the GasTankPaymaster contract.
+type GasTankPaymasterSponsored struct {
+	UserOpHash            [32]byte
+	Sender                common.Address
+	Token                 common.Address
+	MaxTokenCost          *big.Int
+	MaxGasCost            *big.Int
+	Success               bool
+	ActualGasCost         *big.Int
+	ActualUserOpFeePerGas *big.Int
+	PostOpGas             *big.Int
+	ActualTokenCost       *big.Int
+	Raw                   types.Log // Blockchain specific contextual infos
 }
 
-// FilterSponsorReceipt is a free log retrieval operation binding the contract event 0x3c59d84d6a99ce741141de0a99b6fd31a9e55a2c8ee45f3a4435e19e9b04d0a4.
+// FilterSponsored is a free log retrieval operation binding the contract event 0xf97799dc487e2f824bc4b8f06c9e6e3218224d69a4a15befa111babc208ebe6e.
 //
-// Solidity: event SponsorReceipt(uint256 actualGasUsedBeforePostOp, uint256 actualGasPrice, uint256 postOpGas, uint256 priceMarkupBps, uint256 actualTokenCost)
-func (_GasTankPaymaster *GasTankPaymasterFilterer) FilterSponsorReceipt(opts *bind.FilterOpts) (*GasTankPaymasterSponsorReceiptIterator, error) {
+// Solidity: event Sponsored(bytes32 indexed userOpHash, address indexed sender, address indexed token, uint256 maxTokenCost, uint256 maxGasCost, bool success, uint256 actualGasCost, uint256 actualUserOpFeePerGas, uint256 postOpGas, uint256 actualTokenCost)
+func (_GasTankPaymaster *GasTankPaymasterFilterer) FilterSponsored(opts *bind.FilterOpts, userOpHash [][32]byte, sender []common.Address, token []common.Address) (*GasTankPaymasterSponsoredIterator, error) {
 
-	logs, sub, err := _GasTankPaymaster.contract.FilterLogs(opts, "SponsorReceipt")
+	var userOpHashRule []interface{}
+	for _, userOpHashItem := range userOpHash {
+		userOpHashRule = append(userOpHashRule, userOpHashItem)
+	}
+	var senderRule []interface{}
+	for _, senderItem := range sender {
+		senderRule = append(senderRule, senderItem)
+	}
+	var tokenRule []interface{}
+	for _, tokenItem := range token {
+		tokenRule = append(tokenRule, tokenItem)
+	}
+
+	logs, sub, err := _GasTankPaymaster.contract.FilterLogs(opts, "Sponsored", userOpHashRule, senderRule, tokenRule)
 	if err != nil {
 		return nil, err
 	}
-	return &GasTankPaymasterSponsorReceiptIterator{contract: _GasTankPaymaster.contract, event: "SponsorReceipt", logs: logs, sub: sub}, nil
+	return &GasTankPaymasterSponsoredIterator{contract: _GasTankPaymaster.contract, event: "Sponsored", logs: logs, sub: sub}, nil
 }
 
-// WatchSponsorReceipt is a free log subscription operation binding the contract event 0x3c59d84d6a99ce741141de0a99b6fd31a9e55a2c8ee45f3a4435e19e9b04d0a4.
+// WatchSponsored is a free log subscription operation binding the contract event 0xf97799dc487e2f824bc4b8f06c9e6e3218224d69a4a15befa111babc208ebe6e.
 //
-// Solidity: event SponsorReceipt(uint256 actualGasUsedBeforePostOp, uint256 actualGasPrice, uint256 postOpGas, uint256 priceMarkupBps, uint256 actualTokenCost)
-func (_GasTankPaymaster *GasTankPaymasterFilterer) WatchSponsorReceipt(opts *bind.WatchOpts, sink chan<- *GasTankPaymasterSponsorReceipt) (event.Subscription, error) {
+// Solidity: event Sponsored(bytes32 indexed userOpHash, address indexed sender, address indexed token, uint256 maxTokenCost, uint256 maxGasCost, bool success, uint256 actualGasCost, uint256 actualUserOpFeePerGas, uint256 postOpGas, uint256 actualTokenCost)
+func (_GasTankPaymaster *GasTankPaymasterFilterer) WatchSponsored(opts *bind.WatchOpts, sink chan<- *GasTankPaymasterSponsored, userOpHash [][32]byte, sender []common.Address, token []common.Address) (event.Subscription, error) {
 
-	logs, sub, err := _GasTankPaymaster.contract.WatchLogs(opts, "SponsorReceipt")
+	var userOpHashRule []interface{}
+	for _, userOpHashItem := range userOpHash {
+		userOpHashRule = append(userOpHashRule, userOpHashItem)
+	}
+	var senderRule []interface{}
+	for _, senderItem := range sender {
+		senderRule = append(senderRule, senderItem)
+	}
+	var tokenRule []interface{}
+	for _, tokenItem := range token {
+		tokenRule = append(tokenRule, tokenItem)
+	}
+
+	logs, sub, err := _GasTankPaymaster.contract.WatchLogs(opts, "Sponsored", userOpHashRule, senderRule, tokenRule)
 	if err != nil {
 		return nil, err
 	}
@@ -2228,8 +2561,8 @@ func (_GasTankPaymaster *GasTankPaymasterFilterer) WatchSponsorReceipt(opts *bin
 			select {
 			case log := <-logs:
 				// New log arrived, parse the event and forward to the user
-				event := new(GasTankPaymasterSponsorReceipt)
-				if err := _GasTankPaymaster.contract.UnpackLog(event, "SponsorReceipt", log); err != nil {
+				event := new(GasTankPaymasterSponsored)
+				if err := _GasTankPaymaster.contract.UnpackLog(event, "Sponsored", log); err != nil {
 					return err
 				}
 				event.Raw = log
@@ -2250,12 +2583,12 @@ func (_GasTankPaymaster *GasTankPaymasterFilterer) WatchSponsorReceipt(opts *bin
 	}), nil
 }
 
-// ParseSponsorReceipt is a log parse operation binding the contract event 0x3c59d84d6a99ce741141de0a99b6fd31a9e55a2c8ee45f3a4435e19e9b04d0a4.
+// ParseSponsored is a log parse operation binding the contract event 0xf97799dc487e2f824bc4b8f06c9e6e3218224d69a4a15befa111babc208ebe6e.
 //
-// Solidity: event SponsorReceipt(uint256 actualGasUsedBeforePostOp, uint256 actualGasPrice, uint256 postOpGas, uint256 priceMarkupBps, uint256 actualTokenCost)
-func (_GasTankPaymaster *GasTankPaymasterFilterer) ParseSponsorReceipt(log types.Log) (*GasTankPaymasterSponsorReceipt, error) {
-	event := new(GasTankPaymasterSponsorReceipt)
-	if err := _GasTankPaymaster.contract.UnpackLog(event, "SponsorReceipt", log); err != nil {
+// Solidity: event Sponsored(bytes32 indexed userOpHash, address indexed sender, address indexed token, uint256 maxTokenCost, uint256 maxGasCost, bool success, uint256 actualGasCost, uint256 actualUserOpFeePerGas, uint256 postOpGas, uint256 actualTokenCost)
+func (_GasTankPaymaster *GasTankPaymasterFilterer) ParseSponsored(log types.Log) (*GasTankPaymasterSponsored, error) {
+	event := new(GasTankPaymasterSponsored)
+	if err := _GasTankPaymaster.contract.UnpackLog(event, "Sponsored", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
@@ -2407,9 +2740,9 @@ func (_GasTankPaymaster *GasTankPaymasterFilterer) ParseTokenUpdated(log types.L
 	return event, nil
 }
 
-// GasTankPaymasterValidateIterator is returned from FilterValidate and is used to iterate over the raw logs and unpacked data for Validate events raised by the GasTankPaymaster contract.
-type GasTankPaymasterValidateIterator struct {
-	Event *GasTankPaymasterValidate // Event containing the contract specifics and raw log
+// GasTankPaymasterUnpausedIterator is returned from FilterUnpaused and is used to iterate over the raw logs and unpacked data for Unpaused events raised by the GasTankPaymaster contract.
+type GasTankPaymasterUnpausedIterator struct {
+	Event *GasTankPaymasterUnpaused // Event containing the contract specifics and raw log
 
 	contract *bind.BoundContract // Generic contract to use for unpacking event data
 	event    string              // Event name to use for unpacking event data
@@ -2423,7 +2756,7 @@ type GasTankPaymasterValidateIterator struct {
 // Next advances the iterator to the subsequent event, returning whether there
 // are any more events found. In case of a retrieval or parsing error, false is
 // returned and Error() can be queried for the exact failure.
-func (it *GasTankPaymasterValidateIterator) Next() bool {
+func (it *GasTankPaymasterUnpausedIterator) Next() bool {
 	// If the iterator failed, stop iterating
 	if it.fail != nil {
 		return false
@@ -2432,7 +2765,7 @@ func (it *GasTankPaymasterValidateIterator) Next() bool {
 	if it.done {
 		select {
 		case log := <-it.logs:
-			it.Event = new(GasTankPaymasterValidate)
+			it.Event = new(GasTankPaymasterUnpaused)
 			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 				it.fail = err
 				return false
@@ -2447,7 +2780,7 @@ func (it *GasTankPaymasterValidateIterator) Next() bool {
 	// Iterator still in progress, wait for either a data or an error event
 	select {
 	case log := <-it.logs:
-		it.Event = new(GasTankPaymasterValidate)
+		it.Event = new(GasTankPaymasterUnpaused)
 		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
 			it.fail = err
 			return false
@@ -2463,62 +2796,41 @@ func (it *GasTankPaymasterValidateIterator) Next() bool {
 }
 
 // Error returns any retrieval or parsing error occurred during filtering.
-func (it *GasTankPaymasterValidateIterator) Error() error {
+func (it *GasTankPaymasterUnpausedIterator) Error() error {
 	return it.fail
 }
 
 // Close terminates the iteration process, releasing any pending underlying
 // resources.
-func (it *GasTankPaymasterValidateIterator) Close() error {
+func (it *GasTankPaymasterUnpausedIterator) Close() error {
 	it.sub.Unsubscribe()
 	return nil
 }
 
-// GasTankPaymasterValidate represents a Validate event raised by the GasTankPaymaster contract.
-type GasTankPaymasterValidate struct {
-	SponsorMode  uint8
-	Token        common.Address
-	MaxTokenCost *big.Int
-	MaxGasCost   *big.Int
-	Raw          types.Log // Blockchain specific contextual infos
+// GasTankPaymasterUnpaused represents a Unpaused event raised by the GasTankPaymaster contract.
+type GasTankPaymasterUnpaused struct {
+	Account common.Address
+	Raw     types.Log // Blockchain specific contextual infos
 }
 
-// FilterValidate is a free log retrieval operation binding the contract event 0x84498fb0f390f47c296ca89b9abfa7e3f50af93d45399e0c23c47af0c83019e0.
+// FilterUnpaused is a free log retrieval operation binding the contract event 0x5db9ee0a495bf2e6ff9c91a7834c1ba4fdd244a5e8aa4e537bd38aeae4b073aa.
 //
-// Solidity: event Validate(uint8 indexed sponsorMode, address indexed token, uint256 maxTokenCost, uint256 maxGasCost)
-func (_GasTankPaymaster *GasTankPaymasterFilterer) FilterValidate(opts *bind.FilterOpts, sponsorMode []uint8, token []common.Address) (*GasTankPaymasterValidateIterator, error) {
+// Solidity: event Unpaused(address account)
+func (_GasTankPaymaster *GasTankPaymasterFilterer) FilterUnpaused(opts *bind.FilterOpts) (*GasTankPaymasterUnpausedIterator, error) {
 
-	var sponsorModeRule []interface{}
-	for _, sponsorModeItem := range sponsorMode {
-		sponsorModeRule = append(sponsorModeRule, sponsorModeItem)
-	}
-	var tokenRule []interface{}
-	for _, tokenItem := range token {
-		tokenRule = append(tokenRule, tokenItem)
-	}
-
-	logs, sub, err := _GasTankPaymaster.contract.FilterLogs(opts, "Validate", sponsorModeRule, tokenRule)
+	logs, sub, err := _GasTankPaymaster.contract.FilterLogs(opts, "Unpaused")
 	if err != nil {
 		return nil, err
 	}
-	return &GasTankPaymasterValidateIterator{contract: _GasTankPaymaster.contract, event: "Validate", logs: logs, sub: sub}, nil
+	return &GasTankPaymasterUnpausedIterator{contract: _GasTankPaymaster.contract, event: "Unpaused", logs: logs, sub: sub}, nil
 }
 
-// WatchValidate is a free log subscription operation binding the contract event 0x84498fb0f390f47c296ca89b9abfa7e3f50af93d45399e0c23c47af0c83019e0.
+// WatchUnpaused is a free log subscription operation binding the contract event 0x5db9ee0a495bf2e6ff9c91a7834c1ba4fdd244a5e8aa4e537bd38aeae4b073aa.
 //
-// Solidity: event Validate(uint8 indexed sponsorMode, address indexed token, uint256 maxTokenCost, uint256 maxGasCost)
-func (_GasTankPaymaster *GasTankPaymasterFilterer) WatchValidate(opts *bind.WatchOpts, sink chan<- *GasTankPaymasterValidate, sponsorMode []uint8, token []common.Address) (event.Subscription, error) {
+// Solidity: event Unpaused(address account)
+func (_GasTankPaymaster *GasTankPaymasterFilterer) WatchUnpaused(opts *bind.WatchOpts, sink chan<- *GasTankPaymasterUnpaused) (event.Subscription, error) {
 
-	var sponsorModeRule []interface{}
-	for _, sponsorModeItem := range sponsorMode {
-		sponsorModeRule = append(sponsorModeRule, sponsorModeItem)
-	}
-	var tokenRule []interface{}
-	for _, tokenItem := range token {
-		tokenRule = append(tokenRule, tokenItem)
-	}
-
-	logs, sub, err := _GasTankPaymaster.contract.WatchLogs(opts, "Validate", sponsorModeRule, tokenRule)
+	logs, sub, err := _GasTankPaymaster.contract.WatchLogs(opts, "Unpaused")
 	if err != nil {
 		return nil, err
 	}
@@ -2528,8 +2840,8 @@ func (_GasTankPaymaster *GasTankPaymasterFilterer) WatchValidate(opts *bind.Watc
 			select {
 			case log := <-logs:
 				// New log arrived, parse the event and forward to the user
-				event := new(GasTankPaymasterValidate)
-				if err := _GasTankPaymaster.contract.UnpackLog(event, "Validate", log); err != nil {
+				event := new(GasTankPaymasterUnpaused)
+				if err := _GasTankPaymaster.contract.UnpackLog(event, "Unpaused", log); err != nil {
 					return err
 				}
 				event.Raw = log
@@ -2550,12 +2862,12 @@ func (_GasTankPaymaster *GasTankPaymasterFilterer) WatchValidate(opts *bind.Watc
 	}), nil
 }
 
-// ParseValidate is a log parse operation binding the contract event 0x84498fb0f390f47c296ca89b9abfa7e3f50af93d45399e0c23c47af0c83019e0.
+// ParseUnpaused is a log parse operation binding the contract event 0x5db9ee0a495bf2e6ff9c91a7834c1ba4fdd244a5e8aa4e537bd38aeae4b073aa.
 //
-// Solidity: event Validate(uint8 indexed sponsorMode, address indexed token, uint256 maxTokenCost, uint256 maxGasCost)
-func (_GasTankPaymaster *GasTankPaymasterFilterer) ParseValidate(log types.Log) (*GasTankPaymasterValidate, error) {
-	event := new(GasTankPaymasterValidate)
-	if err := _GasTankPaymaster.contract.UnpackLog(event, "Validate", log); err != nil {
+// Solidity: event Unpaused(address account)
+func (_GasTankPaymaster *GasTankPaymasterFilterer) ParseUnpaused(log types.Log) (*GasTankPaymasterUnpaused, error) {
+	event := new(GasTankPaymasterUnpaused)
+	if err := _GasTankPaymaster.contract.UnpackLog(event, "Unpaused", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log
@@ -2720,6 +3032,612 @@ func (_GasTankPaymaster *GasTankPaymasterFilterer) WatchWithdraw(opts *bind.Watc
 func (_GasTankPaymaster *GasTankPaymasterFilterer) ParseWithdraw(log types.Log) (*GasTankPaymasterWithdraw, error) {
 	event := new(GasTankPaymasterWithdraw)
 	if err := _GasTankPaymaster.contract.UnpackLog(event, "Withdraw", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// GasTankPaymasterWithdrawPaymentIterator is returned from FilterWithdrawPayment and is used to iterate over the raw logs and unpacked data for WithdrawPayment events raised by the GasTankPaymaster contract.
+type GasTankPaymasterWithdrawPaymentIterator struct {
+	Event *GasTankPaymasterWithdrawPayment // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *GasTankPaymasterWithdrawPaymentIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(GasTankPaymasterWithdrawPayment)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(GasTankPaymasterWithdrawPayment)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *GasTankPaymasterWithdrawPaymentIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *GasTankPaymasterWithdrawPaymentIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// GasTankPaymasterWithdrawPayment represents a WithdrawPayment event raised by the GasTankPaymaster contract.
+type GasTankPaymasterWithdrawPayment struct {
+	Operator  common.Address
+	Token     common.Address
+	Recipient common.Address
+	Amount    *big.Int
+	Raw       types.Log // Blockchain specific contextual infos
+}
+
+// FilterWithdrawPayment is a free log retrieval operation binding the contract event 0x7408a9dadbab0577dee7cc1b110ca1d07ce941651371ec7ccf9635e3cf758d4c.
+//
+// Solidity: event WithdrawPayment(address indexed operator, address indexed token, address indexed recipient, uint256 amount)
+func (_GasTankPaymaster *GasTankPaymasterFilterer) FilterWithdrawPayment(opts *bind.FilterOpts, operator []common.Address, token []common.Address, recipient []common.Address) (*GasTankPaymasterWithdrawPaymentIterator, error) {
+
+	var operatorRule []interface{}
+	for _, operatorItem := range operator {
+		operatorRule = append(operatorRule, operatorItem)
+	}
+	var tokenRule []interface{}
+	for _, tokenItem := range token {
+		tokenRule = append(tokenRule, tokenItem)
+	}
+	var recipientRule []interface{}
+	for _, recipientItem := range recipient {
+		recipientRule = append(recipientRule, recipientItem)
+	}
+
+	logs, sub, err := _GasTankPaymaster.contract.FilterLogs(opts, "WithdrawPayment", operatorRule, tokenRule, recipientRule)
+	if err != nil {
+		return nil, err
+	}
+	return &GasTankPaymasterWithdrawPaymentIterator{contract: _GasTankPaymaster.contract, event: "WithdrawPayment", logs: logs, sub: sub}, nil
+}
+
+// WatchWithdrawPayment is a free log subscription operation binding the contract event 0x7408a9dadbab0577dee7cc1b110ca1d07ce941651371ec7ccf9635e3cf758d4c.
+//
+// Solidity: event WithdrawPayment(address indexed operator, address indexed token, address indexed recipient, uint256 amount)
+func (_GasTankPaymaster *GasTankPaymasterFilterer) WatchWithdrawPayment(opts *bind.WatchOpts, sink chan<- *GasTankPaymasterWithdrawPayment, operator []common.Address, token []common.Address, recipient []common.Address) (event.Subscription, error) {
+
+	var operatorRule []interface{}
+	for _, operatorItem := range operator {
+		operatorRule = append(operatorRule, operatorItem)
+	}
+	var tokenRule []interface{}
+	for _, tokenItem := range token {
+		tokenRule = append(tokenRule, tokenItem)
+	}
+	var recipientRule []interface{}
+	for _, recipientItem := range recipient {
+		recipientRule = append(recipientRule, recipientItem)
+	}
+
+	logs, sub, err := _GasTankPaymaster.contract.WatchLogs(opts, "WithdrawPayment", operatorRule, tokenRule, recipientRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(GasTankPaymasterWithdrawPayment)
+				if err := _GasTankPaymaster.contract.UnpackLog(event, "WithdrawPayment", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseWithdrawPayment is a log parse operation binding the contract event 0x7408a9dadbab0577dee7cc1b110ca1d07ce941651371ec7ccf9635e3cf758d4c.
+//
+// Solidity: event WithdrawPayment(address indexed operator, address indexed token, address indexed recipient, uint256 amount)
+func (_GasTankPaymaster *GasTankPaymasterFilterer) ParseWithdrawPayment(log types.Log) (*GasTankPaymasterWithdrawPayment, error) {
+	event := new(GasTankPaymasterWithdrawPayment)
+	if err := _GasTankPaymaster.contract.UnpackLog(event, "WithdrawPayment", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// GasTankPaymasterWithdrawalCancelledIterator is returned from FilterWithdrawalCancelled and is used to iterate over the raw logs and unpacked data for WithdrawalCancelled events raised by the GasTankPaymaster contract.
+type GasTankPaymasterWithdrawalCancelledIterator struct {
+	Event *GasTankPaymasterWithdrawalCancelled // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *GasTankPaymasterWithdrawalCancelledIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(GasTankPaymasterWithdrawalCancelled)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(GasTankPaymasterWithdrawalCancelled)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *GasTankPaymasterWithdrawalCancelledIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *GasTankPaymasterWithdrawalCancelledIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// GasTankPaymasterWithdrawalCancelled represents a WithdrawalCancelled event raised by the GasTankPaymaster contract.
+type GasTankPaymasterWithdrawalCancelled struct {
+	Sender common.Address
+	Token  common.Address
+	Raw    types.Log // Blockchain specific contextual infos
+}
+
+// FilterWithdrawalCancelled is a free log retrieval operation binding the contract event 0x06788d6037cfde4c7d6701eaa3ddf0875dfe514ed5d6ea4ca14e36c24b107841.
+//
+// Solidity: event WithdrawalCancelled(address indexed sender, address indexed token)
+func (_GasTankPaymaster *GasTankPaymasterFilterer) FilterWithdrawalCancelled(opts *bind.FilterOpts, sender []common.Address, token []common.Address) (*GasTankPaymasterWithdrawalCancelledIterator, error) {
+
+	var senderRule []interface{}
+	for _, senderItem := range sender {
+		senderRule = append(senderRule, senderItem)
+	}
+	var tokenRule []interface{}
+	for _, tokenItem := range token {
+		tokenRule = append(tokenRule, tokenItem)
+	}
+
+	logs, sub, err := _GasTankPaymaster.contract.FilterLogs(opts, "WithdrawalCancelled", senderRule, tokenRule)
+	if err != nil {
+		return nil, err
+	}
+	return &GasTankPaymasterWithdrawalCancelledIterator{contract: _GasTankPaymaster.contract, event: "WithdrawalCancelled", logs: logs, sub: sub}, nil
+}
+
+// WatchWithdrawalCancelled is a free log subscription operation binding the contract event 0x06788d6037cfde4c7d6701eaa3ddf0875dfe514ed5d6ea4ca14e36c24b107841.
+//
+// Solidity: event WithdrawalCancelled(address indexed sender, address indexed token)
+func (_GasTankPaymaster *GasTankPaymasterFilterer) WatchWithdrawalCancelled(opts *bind.WatchOpts, sink chan<- *GasTankPaymasterWithdrawalCancelled, sender []common.Address, token []common.Address) (event.Subscription, error) {
+
+	var senderRule []interface{}
+	for _, senderItem := range sender {
+		senderRule = append(senderRule, senderItem)
+	}
+	var tokenRule []interface{}
+	for _, tokenItem := range token {
+		tokenRule = append(tokenRule, tokenItem)
+	}
+
+	logs, sub, err := _GasTankPaymaster.contract.WatchLogs(opts, "WithdrawalCancelled", senderRule, tokenRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(GasTankPaymasterWithdrawalCancelled)
+				if err := _GasTankPaymaster.contract.UnpackLog(event, "WithdrawalCancelled", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseWithdrawalCancelled is a log parse operation binding the contract event 0x06788d6037cfde4c7d6701eaa3ddf0875dfe514ed5d6ea4ca14e36c24b107841.
+//
+// Solidity: event WithdrawalCancelled(address indexed sender, address indexed token)
+func (_GasTankPaymaster *GasTankPaymasterFilterer) ParseWithdrawalCancelled(log types.Log) (*GasTankPaymasterWithdrawalCancelled, error) {
+	event := new(GasTankPaymasterWithdrawalCancelled)
+	if err := _GasTankPaymaster.contract.UnpackLog(event, "WithdrawalCancelled", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// GasTankPaymasterWithdrawalDelayUpdatedIterator is returned from FilterWithdrawalDelayUpdated and is used to iterate over the raw logs and unpacked data for WithdrawalDelayUpdated events raised by the GasTankPaymaster contract.
+type GasTankPaymasterWithdrawalDelayUpdatedIterator struct {
+	Event *GasTankPaymasterWithdrawalDelayUpdated // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *GasTankPaymasterWithdrawalDelayUpdatedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(GasTankPaymasterWithdrawalDelayUpdated)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(GasTankPaymasterWithdrawalDelayUpdated)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *GasTankPaymasterWithdrawalDelayUpdatedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *GasTankPaymasterWithdrawalDelayUpdatedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// GasTankPaymasterWithdrawalDelayUpdated represents a WithdrawalDelayUpdated event raised by the GasTankPaymaster contract.
+type GasTankPaymasterWithdrawalDelayUpdated struct {
+	OldDelay *big.Int
+	NewDelay *big.Int
+	Raw      types.Log // Blockchain specific contextual infos
+}
+
+// FilterWithdrawalDelayUpdated is a free log retrieval operation binding the contract event 0x14f1d1f27725572a5713cdc18afb00e27e109dbfafd3a9991dc1be64370c4e64.
+//
+// Solidity: event WithdrawalDelayUpdated(uint48 oldDelay, uint48 newDelay)
+func (_GasTankPaymaster *GasTankPaymasterFilterer) FilterWithdrawalDelayUpdated(opts *bind.FilterOpts) (*GasTankPaymasterWithdrawalDelayUpdatedIterator, error) {
+
+	logs, sub, err := _GasTankPaymaster.contract.FilterLogs(opts, "WithdrawalDelayUpdated")
+	if err != nil {
+		return nil, err
+	}
+	return &GasTankPaymasterWithdrawalDelayUpdatedIterator{contract: _GasTankPaymaster.contract, event: "WithdrawalDelayUpdated", logs: logs, sub: sub}, nil
+}
+
+// WatchWithdrawalDelayUpdated is a free log subscription operation binding the contract event 0x14f1d1f27725572a5713cdc18afb00e27e109dbfafd3a9991dc1be64370c4e64.
+//
+// Solidity: event WithdrawalDelayUpdated(uint48 oldDelay, uint48 newDelay)
+func (_GasTankPaymaster *GasTankPaymasterFilterer) WatchWithdrawalDelayUpdated(opts *bind.WatchOpts, sink chan<- *GasTankPaymasterWithdrawalDelayUpdated) (event.Subscription, error) {
+
+	logs, sub, err := _GasTankPaymaster.contract.WatchLogs(opts, "WithdrawalDelayUpdated")
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(GasTankPaymasterWithdrawalDelayUpdated)
+				if err := _GasTankPaymaster.contract.UnpackLog(event, "WithdrawalDelayUpdated", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseWithdrawalDelayUpdated is a log parse operation binding the contract event 0x14f1d1f27725572a5713cdc18afb00e27e109dbfafd3a9991dc1be64370c4e64.
+//
+// Solidity: event WithdrawalDelayUpdated(uint48 oldDelay, uint48 newDelay)
+func (_GasTankPaymaster *GasTankPaymasterFilterer) ParseWithdrawalDelayUpdated(log types.Log) (*GasTankPaymasterWithdrawalDelayUpdated, error) {
+	event := new(GasTankPaymasterWithdrawalDelayUpdated)
+	if err := _GasTankPaymaster.contract.UnpackLog(event, "WithdrawalDelayUpdated", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
+// GasTankPaymasterWithdrawalRequestedIterator is returned from FilterWithdrawalRequested and is used to iterate over the raw logs and unpacked data for WithdrawalRequested events raised by the GasTankPaymaster contract.
+type GasTankPaymasterWithdrawalRequestedIterator struct {
+	Event *GasTankPaymasterWithdrawalRequested // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *GasTankPaymasterWithdrawalRequestedIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(GasTankPaymasterWithdrawalRequested)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(GasTankPaymasterWithdrawalRequested)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *GasTankPaymasterWithdrawalRequestedIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *GasTankPaymasterWithdrawalRequestedIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// GasTankPaymasterWithdrawalRequested represents a WithdrawalRequested event raised by the GasTankPaymaster contract.
+type GasTankPaymasterWithdrawalRequested struct {
+	Sender         common.Address
+	Token          common.Address
+	Amount         *big.Int
+	WithdrawableAt *big.Int
+	Raw            types.Log // Blockchain specific contextual infos
+}
+
+// FilterWithdrawalRequested is a free log retrieval operation binding the contract event 0xa3b042426ba46a9e8338fb225f9c5812ff35cd03b5945b082789e9475311d1a1.
+//
+// Solidity: event WithdrawalRequested(address indexed sender, address indexed token, uint256 amount, uint48 withdrawableAt)
+func (_GasTankPaymaster *GasTankPaymasterFilterer) FilterWithdrawalRequested(opts *bind.FilterOpts, sender []common.Address, token []common.Address) (*GasTankPaymasterWithdrawalRequestedIterator, error) {
+
+	var senderRule []interface{}
+	for _, senderItem := range sender {
+		senderRule = append(senderRule, senderItem)
+	}
+	var tokenRule []interface{}
+	for _, tokenItem := range token {
+		tokenRule = append(tokenRule, tokenItem)
+	}
+
+	logs, sub, err := _GasTankPaymaster.contract.FilterLogs(opts, "WithdrawalRequested", senderRule, tokenRule)
+	if err != nil {
+		return nil, err
+	}
+	return &GasTankPaymasterWithdrawalRequestedIterator{contract: _GasTankPaymaster.contract, event: "WithdrawalRequested", logs: logs, sub: sub}, nil
+}
+
+// WatchWithdrawalRequested is a free log subscription operation binding the contract event 0xa3b042426ba46a9e8338fb225f9c5812ff35cd03b5945b082789e9475311d1a1.
+//
+// Solidity: event WithdrawalRequested(address indexed sender, address indexed token, uint256 amount, uint48 withdrawableAt)
+func (_GasTankPaymaster *GasTankPaymasterFilterer) WatchWithdrawalRequested(opts *bind.WatchOpts, sink chan<- *GasTankPaymasterWithdrawalRequested, sender []common.Address, token []common.Address) (event.Subscription, error) {
+
+	var senderRule []interface{}
+	for _, senderItem := range sender {
+		senderRule = append(senderRule, senderItem)
+	}
+	var tokenRule []interface{}
+	for _, tokenItem := range token {
+		tokenRule = append(tokenRule, tokenItem)
+	}
+
+	logs, sub, err := _GasTankPaymaster.contract.WatchLogs(opts, "WithdrawalRequested", senderRule, tokenRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(GasTankPaymasterWithdrawalRequested)
+				if err := _GasTankPaymaster.contract.UnpackLog(event, "WithdrawalRequested", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseWithdrawalRequested is a log parse operation binding the contract event 0xa3b042426ba46a9e8338fb225f9c5812ff35cd03b5945b082789e9475311d1a1.
+//
+// Solidity: event WithdrawalRequested(address indexed sender, address indexed token, uint256 amount, uint48 withdrawableAt)
+func (_GasTankPaymaster *GasTankPaymasterFilterer) ParseWithdrawalRequested(log types.Log) (*GasTankPaymasterWithdrawalRequested, error) {
+	event := new(GasTankPaymasterWithdrawalRequested)
+	if err := _GasTankPaymaster.contract.UnpackLog(event, "WithdrawalRequested", log); err != nil {
 		return nil, err
 	}
 	event.Raw = log

@@ -36,18 +36,18 @@ type Execution struct {
 	CallData []byte
 }
 
-// PackedUserOperation is an auto generated low-level Go binding around an user-defined struct.
-type PackedUserOperation struct {
-	Sender             common.Address
-	Nonce              *big.Int
-	InitCode           []byte
-	CallData           []byte
-	AccountGasLimits   [32]byte
-	PreVerificationGas *big.Int
-	GasFees            [32]byte
-	PaymasterAndData   []byte
-	Signature          []byte
-}
+// // PackedUserOperation is an auto generated low-level Go binding around an user-defined struct.
+// type PackedUserOperation struct {
+// 	Sender             common.Address
+// 	Nonce              *big.Int
+// 	InitCode           []byte
+// 	CallData           []byte
+// 	AccountGasLimits   [32]byte
+// 	PreVerificationGas *big.Int
+// 	GasFees            [32]byte
+// 	PaymasterAndData   []byte
+// 	Signature          []byte
+// }
 
 // SimpleSmartAccount7702MetaData contains all meta data concerning the SimpleSmartAccount7702 contract.
 var SimpleSmartAccount7702MetaData = &bind.MetaData{
