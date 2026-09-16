@@ -26,9 +26,11 @@ var (
 	ErrVerifyingPaymasterMaxGasCostExceeded     = api.NewBusinessError(4001, "Max gas cost exceeded")
 	ErrVerifyingPaymasterInvalidSmartAccount    = api.NewBusinessError(4002, "Smart account is not in whitelist")
 	ErrVerifyingPaymasterContractNotWhitelisted = api.NewBusinessError(4003, "Contract is not in whitelist")
-	ErrVerifyingPaymasterPaused                 = api.NewBusinessError(4004, "Verifying paymaster contract is paused")
-	ErrVerifyingPaymasterTooManyOps             = api.NewBusinessError(4005, "Too many user operations")
-	ErrVerifyingPaymasterInsufficientBalance    = api.NewBusinessError(4006, "Insufficient balance in verifying paymaster")
+	ErrVerifyingPaymasterTooManyOps             = api.NewBusinessError(4004, "Too many user operations")
+
+	// paymaster in common
+	ErrPaymasterPaused              = api.NewBusinessError(5001, "Paymaster contract is paused")
+	ErrPaymasterInsufficientBalance = api.NewBusinessError(5002, "Insufficient deposit balance in paymaster")
 )
 
 func NewRPCError(err error, message string, args ...any) *api.BusinessError {

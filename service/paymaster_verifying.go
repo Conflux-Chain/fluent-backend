@@ -64,6 +64,7 @@ func (config *VerifyingPaymasterConfig) validateAndNormalize() error {
 type VerifyingPaymaster struct {
 	inner              *Paymaster[*contract.VerifyingPaymasterCaller]
 	config             VerifyingPaymasterConfig
+	client             *web3go.Client
 	executeMethod      abi.Method
 	executeBatchMethod abi.Method
 	limiter            Limiter
@@ -108,6 +109,7 @@ func NewVerifyingPaymaster(config VerifyingPaymasterConfig, client *web3go.Clien
 	return &VerifyingPaymaster{
 		inner:              paymaster,
 		config:             config,
+		client:             client,
 		executeMethod:      executeMethod,
 		executeBatchMethod: executeBatchMethod,
 		limiter:            NewLimiter(config.Limiter, store),
@@ -120,7 +122,7 @@ func (paymaster *VerifyingPaymaster) Stub(sender, delegation common.Address) ([]
 	if delegation == (common.Address{}) {
 		var err error
 
-		if delegation, err = GetDelegatedContract(paymaster.inner.client, sender); err != nil {
+		if delegation, err = GetDelegatedContract(paymaster.client, sender); err != nil {
 			return nil, err
 		}
 
@@ -176,7 +178,7 @@ func (paymaster *VerifyingPaymaster) validate(userOp *contract.PackedUserOperati
 	delegation := common.BytesToAddress(customData)
 
 	if !paymaster.config.smartAccountMap[delegation] {
-		return api.ErrValidationStrf("Invalid delegation address: %s", delegation)
+		return ErrVerifyingPaymasterInvalidSmartAccount.WithData(delegation)
 	}
 
 	// check max cost
@@ -193,26 +195,6 @@ func (paymaster *VerifyingPaymaster) validate(userOp *contract.PackedUserOperati
 	// check init code based on the delegated contract
 	if err := paymaster.validateInitCode(userOp.Sender, delegation, userOp.InitCode); err != nil {
 		return err
-	}
-
-	// check if paymaster contract paused
-	paused, err := paymaster.inner.caller.Paused(nil)
-	if err != nil {
-		return NewRPCError(err, "Failed to check if paymaster contract is paused")
-	}
-
-	if paused {
-		return ErrVerifyingPaymasterPaused
-	}
-
-	// check paymaster deposit balance
-	balance, err := paymaster.inner.caller.Balance(nil)
-	if err != nil {
-		return NewRPCError(err, "Failed to get paymaster deposit balance")
-	}
-
-	if balance.Cmp(maxCost) < 0 {
-		return ErrVerifyingPaymasterInsufficientBalance.WithData(fmt.Sprintf("balance = %v, required = %v", balance, maxCost))
 	}
 
 	return nil
@@ -263,7 +245,7 @@ func (paymaster *VerifyingPaymaster) validateCallData(callData []byte) error {
 // validateInitCode checks if the init code is valid for the smart account delegation.
 func (paymaster *VerifyingPaymaster) validateInitCode(sender, delegation common.Address, initCode []byte) error {
 	// retrieve the current delegation for the sender
-	currentDelegation, err := GetDelegatedContract(paymaster.inner.client, sender)
+	currentDelegation, err := GetDelegatedContract(paymaster.client, sender)
 	if err != nil {
 		return err
 	}

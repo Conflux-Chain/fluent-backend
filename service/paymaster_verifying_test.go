@@ -43,7 +43,6 @@ func assertNewTestVerifyingPaymaster(t *testing.T) *VerifyingPaymaster {
 				Address:          testVerifyingPaymasterConfig.Address,
 				SignatureTimeout: testVerifyingPaymasterConfig.SignatureTimeout,
 			},
-			client: nil,
 			caller: nil,
 			signer: signers.MustNewRandomPrivateKeySigner(),
 		},
