@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"math/big"
 	"slices"
 	"time"
@@ -23,6 +24,8 @@ var dummySignature = slices.Repeat([]byte{0x1b}, 65)
 
 // PaymasterContractCaller defines the interface that a paymaster contract caller must implement.
 type PaymasterContractCaller interface {
+	Paused(opts *bind.CallOpts) (bool, error)
+	Balance(opts *bind.CallOpts) (*big.Int, error)
 	GetPaymasterHash(opts *bind.CallOpts, userOp contract.PackedUserOperation) ([32]byte, error)
 }
 
@@ -36,7 +39,6 @@ type PaymasterConfig struct {
 // It provides methods to generate stub paymasterAndData for gas estimation and to sign user operations.
 type Paymaster[T PaymasterContractCaller] struct {
 	config PaymasterConfig
-	client *web3go.Client
 	caller T
 	signer interfaces.Signer
 }
@@ -73,7 +75,6 @@ func NewPaymaster[T PaymasterContractCaller](config PaymasterConfig, client *web
 
 	return &Paymaster[T]{
 		config: config,
-		client: client,
 		caller: contractCaller,
 		signer: signers[0],
 	}, nil
@@ -114,9 +115,30 @@ func (paymaster *Paymaster[T]) validatePaymasterAndData(userOp *contract.PackedU
 	return userOp.PaymasterAndData[52 : size-77], nil
 }
 
-// sign updates the paymasterAndData field of the given user operation with the specified custom data if specified,
+// sign updates the paymasterAndData field of the given user operation with the specified custom data if provided,
 // and signs it using the paymaster's signer. It returns the updated paymasterAndData.
+// Before signing, it will check if the paymaster contract is paused and if the deposit balance is sufficient.
 func (paymaster *Paymaster[T]) sign(userOp contract.PackedUserOperation, customData ...interface{ Bytes() []byte }) ([]byte, error) {
+	// check if paymaster contract paused
+	paused, err := paymaster.caller.Paused(nil)
+	if err != nil {
+		return nil, NewRPCError(err, "Failed to check if paymaster contract is paused")
+	}
+
+	if paused {
+		return nil, ErrPaymasterPaused
+	}
+
+	// check paymaster deposit balance
+	balance, err := paymaster.caller.Balance(nil)
+	if err != nil {
+		return nil, NewRPCError(err, "Failed to get paymaster deposit balance")
+	}
+
+	if maxCost := userOp.MaxGasCost(); maxCost.Cmp(balance) > 0 {
+		return nil, ErrPaymasterInsufficientBalance.WithData(fmt.Sprintf("balance = %v, required = %v", balance, maxCost))
+	}
+
 	// update the custom data if provided
 	if len(customData) > 0 {
 		dataBytes := customData[0].Bytes()
