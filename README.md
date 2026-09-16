@@ -49,6 +49,13 @@ Run `swag init` after changing API annotations. The generated files should not b
 
 When `SwaggerEnabled` is enabled in the API configuration, the interactive Swagger UI is available at `/swagger/index.html`.
 
+## Project Documentation
+
+- [Architecture](docs/architecture.md)
+- [Gas Tank](docs/features/gas-tank.md)
+- [Token Pay](docs/features/token-pay.md)
+- [Verifying Paymaster](docs/features/verifying-paymaster.md)
+
 ## Business Errors
 
 Business errors are defined in [service/errors.go](service/errors.go).

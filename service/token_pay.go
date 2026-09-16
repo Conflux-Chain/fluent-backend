@@ -2,9 +2,9 @@ package service
 
 // TokenPay Implementation Notes
 //
-// IMPORTANT: For security design considerations and known risks, see TOKEN_PAY_DESIGN.md in this directory.
+// IMPORTANT: For security design considerations and known risks, see docs/features/token-pay.md.
 // This file implements a token pay mechanism that allows users to pay gas fees with ERC20 tokens.
-// The implementation accepts certain security risks by design - refer to TOKEN_PAY_DESIGN.md for detailed explanation.
+// The implementation accepts certain security risks by design; refer to that document for details.
 
 import (
 	"fmt"
