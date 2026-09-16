@@ -24,6 +24,7 @@ var dummySignature = slices.Repeat([]byte{0x1b}, 65)
 
 // PaymasterContractCaller defines the interface that a paymaster contract caller must implement.
 type PaymasterContractCaller interface {
+	IsSignerAllowed(opts *bind.CallOpts, signer common.Address) (bool, error)
 	Paused(opts *bind.CallOpts) (bool, error)
 	Balance(opts *bind.CallOpts) (*big.Int, error)
 	GetPaymasterHash(opts *bind.CallOpts, userOp contract.PackedUserOperation) ([32]byte, error)
@@ -71,6 +72,27 @@ func NewPaymaster[T PaymasterContractCaller](config PaymasterConfig, client *web
 	contractCaller, err := callerFactory(config.Address, caller)
 	if err != nil {
 		return nil, errors.WithMessage(err, "Failed to create paymaster contract caller")
+	}
+
+	// check if the signer is whitelisted by the paymaster
+	signerAddr := signers[0].Address()
+	signerAllowed, err := contractCaller.IsSignerAllowed(nil, signerAddr)
+	if err != nil {
+		return nil, errors.WithMessage(err, "Failed to check if signer is allowed in paymaster contract")
+	}
+
+	if !signerAllowed {
+		return nil, fmt.Errorf("Signer is not allowed in paymaster contract: %v", signerAddr)
+	}
+
+	// check the paymaster contract balance
+	balance, err := contractCaller.Balance(nil)
+	if err != nil {
+		return nil, errors.WithMessage(err, "Failed to get paymaster contract balance")
+	}
+
+	if balance.Cmp(big.NewInt(0)) <= 0 {
+		return nil, errors.New("Paymaster contract has insufficient balance")
 	}
 
 	return &Paymaster[T]{
