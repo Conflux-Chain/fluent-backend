@@ -1,6 +1,6 @@
 # Fluent Backend Service - Agent Guide
 
-This file is the shared project guidance for AI coding agents, keep project-wide rules here and put detailed business behavior in the relevant document under `docs/`.
+This file is the shared project guidance for AI coding agents. Keep project-wide rules here and put detailed business behavior in the relevant document under `docs/`.
 
 ## Project Overview
 

@@ -42,7 +42,7 @@ Optional features are configuration-driven:
 
 | Component | Enablement requirement |
 | --- | --- |
-| Account Abstract | Delegated contract address |
+| Account Abstraction | Delegated contract address |
 | Verifying Paymaster | Paymaster address and both smart-account and contract whitelists |
 | Price Oracle | At least one USDT-family token |
 | Gas Tank | Price Oracle and Gas Tank paymaster address |
