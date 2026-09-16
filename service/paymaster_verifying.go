@@ -96,16 +96,6 @@ func NewVerifyingPaymaster(config VerifyingPaymasterConfig, client *web3go.Clien
 		return nil, errors.New("Failed to get executeBatch method from SimpleSmartAccount7702 ABI")
 	}
 
-	// check if the signer is whitelisted by the paymaster
-	signerAllowed, err := paymaster.caller.IsSignerAllowed(nil, paymaster.signer.Address())
-	if err != nil {
-		return nil, errors.WithMessage(err, "Failed to check if signer is allowed by VerifyingPaymaster")
-	}
-
-	if !signerAllowed {
-		return nil, fmt.Errorf("Signer is not allowed by VerifyingPaymaster: %v", paymaster.signer.Address())
-	}
-
 	return &VerifyingPaymaster{
 		inner:              paymaster,
 		config:             config,
