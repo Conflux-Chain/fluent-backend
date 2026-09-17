@@ -18,7 +18,7 @@ type GasTankPaymaster struct {
 }
 
 func NewGasTankPaymaster(config PaymasterConfig, client *web3go.Client, priceOracle *PriceOracle) (*GasTankPaymaster, error) {
-	paymaster, err := NewPaymaster(config, client, contract.NewGasTankPaymasterCaller)
+	paymaster, err := NewPaymaster(config, client, contract.NewGasTankPaymasterCaller, "GasTankPaymaster")
 	if err != nil {
 		return nil, errors.WithMessage(err, "Failed to create GasTankPaymaster")
 	}

@@ -12,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/mcuadros/go-defaults"
 	"github.com/openweb3/web3go"
 	"github.com/pkg/errors"
 )
@@ -32,6 +33,8 @@ type VerifyingPaymasterConfig struct {
 }
 
 func (config *VerifyingPaymasterConfig) validateAndNormalize() error {
+	defaults.SetDefaults(config)
+
 	// validate
 	if config.Address == (common.Address{}) {
 		return errors.New("Address is required")
@@ -75,11 +78,6 @@ func NewVerifyingPaymaster(config VerifyingPaymasterConfig, client *web3go.Clien
 		return nil, errors.WithMessage(err, "Invalid VerifyingPaymaster config")
 	}
 
-	paymaster, err := NewPaymaster(config.PaymasterConfig, client, contract.NewVerifyingPaymasterCaller)
-	if err != nil {
-		return nil, errors.WithMessage(err, "Failed to create VerifyingPaymaster")
-	}
-
 	// smart account execute ABI
 	smartAccountABI, err := abi.JSON(strings.NewReader(contract.SimpleSmartAccount7702MetaData.ABI))
 	if err != nil {
@@ -94,6 +92,11 @@ func NewVerifyingPaymaster(config VerifyingPaymasterConfig, client *web3go.Clien
 	executeBatchMethod, ok := smartAccountABI.Methods["executeBatch"]
 	if !ok {
 		return nil, errors.New("Failed to get executeBatch method from SimpleSmartAccount7702 ABI")
+	}
+
+	paymaster, err := NewPaymaster(config.PaymasterConfig, client, contract.NewVerifyingPaymasterCaller, "VerifyingPaymaster")
+	if err != nil {
+		return nil, errors.WithMessage(err, "Failed to create VerifyingPaymaster")
 	}
 
 	return &VerifyingPaymaster{

@@ -8,11 +8,15 @@ import (
 
 	"github.com/Conflux-Chain/fluent-backend/contract"
 	"github.com/Conflux-Chain/go-conflux-util/api"
+	"github.com/Conflux-Chain/go-conflux-util/health"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/mcuadros/go-defaults"
 	"github.com/openweb3/web3go"
 	"github.com/openweb3/web3go/interfaces"
 	"github.com/pkg/errors"
+	"github.com/shopspring/decimal"
+	"github.com/sirupsen/logrus"
 )
 
 // minPaymasterAndDataLen defines the minimum length of the paymasterAndData field, including the address, custom data, validity period, and signature.
@@ -34,6 +38,16 @@ type PaymasterContractCaller interface {
 type PaymasterConfig struct {
 	Address          common.Address
 	SignatureTimeout time.Duration `default:"5m"`
+
+	Monitor struct {
+		Interval      time.Duration `default:"1m"`
+		MinBalanceEth uint32        `default:"1"`
+		Remind        time.Duration `default:"1h"`
+		RPCHealth     struct {
+			Threshold uint64 `default:"5"`
+			Remind    uint64 `default:"60"`
+		}
+	}
 }
 
 // Paymaster represents a paymaster contract instance with its configuration, caller, and signer.
@@ -46,14 +60,12 @@ type Paymaster[T PaymasterContractCaller] struct {
 
 // NewPaymaster creates a new Paymaster instance with the specified configuration, RPC client, and caller factory.
 // It validates the configuration, retrieves the default signer, and initializes the paymaster contract caller.
-func NewPaymaster[T PaymasterContractCaller](config PaymasterConfig, client *web3go.Client, callerFactory func(common.Address, bind.ContractCaller) (T, error)) (*Paymaster[T], error) {
+func NewPaymaster[T PaymasterContractCaller](config PaymasterConfig, client *web3go.Client, callerFactory func(common.Address, bind.ContractCaller) (T, error), paymasterName string) (*Paymaster[T], error) {
+	defaults.SetDefaults(&config)
+
 	// validate config
 	if config.Address == (common.Address{}) {
 		return nil, errors.New("Invalid paymaster address")
-	}
-
-	if config.SignatureTimeout <= 0 {
-		return nil, errors.New("Invalid signature timeout")
 	}
 
 	// get the default signer
@@ -95,11 +107,16 @@ func NewPaymaster[T PaymasterContractCaller](config PaymasterConfig, client *web
 		return nil, errors.New("Paymaster contract has insufficient balance")
 	}
 
-	return &Paymaster[T]{
+	paymaster := Paymaster[T]{
 		config: config,
 		caller: contractCaller,
 		signer: signers[0],
-	}, nil
+	}
+
+	// start monitoring the deposit balance of the paymaster in a separate goroutine
+	go paymaster.monitorDepositBalance(paymasterName)
+
+	return &paymaster, nil
 }
 
 // generateStub generates a stub paymasterAndData for gas estimation with the specified custom data.
@@ -197,4 +214,55 @@ func (paymaster *Paymaster[T]) sign(userOp contract.PackedUserOperation, customD
 	copy(userOp.PaymasterAndData[size-65:], signature)
 
 	return userOp.PaymasterAndData, nil
+}
+
+// monitorDepositBalance continuously monitors the paymaster's deposit balance and triggers alerts if it falls below the configured minimum balance.
+func (paymaster *Paymaster[T]) monitorDepositBalance(paymasterName string) {
+	minBalanceEth := decimal.NewFromInt(int64(paymaster.config.Monitor.MinBalanceEth))
+	taskName := fmt.Sprintf("Monitor deposit balance of %v", paymasterName)
+	rpcHealth := health.NewCounter(health.CounterConfig(paymaster.config.Monitor.RPCHealth))
+	balanceHealth := health.NewTimedCounter(health.TimedCounterConfig{
+		Threshold: 0,
+		Remind:    paymaster.config.Monitor.Remind,
+	})
+
+	ticker := time.NewTicker(paymaster.config.Monitor.Interval)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		// retrieve the current deposit balance of the paymaster
+		balance, err := paymaster.caller.Balance(nil)
+		rpcHealth.LogOnError(err, taskName)
+		if err != nil {
+			continue
+		}
+
+		balanceEth := decimal.NewFromBigInt(balance, -18)
+
+		// health check for the paymaster's deposit balance
+		if balanceEth.Cmp(minBalanceEth) >= 0 {
+			if recovered, elapsed := balanceHealth.OnSuccess(); recovered {
+				logrus.WithFields(logrus.Fields{
+					"paymaster": paymasterName,
+					"balance":   balanceEth,
+					"elapsed":   elapsed,
+				}).Warn("Paymaster deposit balance is enough now")
+			}
+		} else if unhealthy, unrecovered, elapsed := balanceHealth.OnFailure(); unhealthy {
+			logrus.WithFields(logrus.Fields{
+				"paymaster":     paymasterName,
+				"paymasterAddr": paymaster.config.Address,
+				"balance":       balanceEth,
+				"balanceMin":    minBalanceEth,
+			}).Warn("Paymaster deposit balance is too low")
+		} else if unrecovered {
+			logrus.WithFields(logrus.Fields{
+				"paymaster":     paymasterName,
+				"paymasterAddr": paymaster.config.Address,
+				"balance":       balanceEth,
+				"balanceMin":    minBalanceEth,
+				"elapsed":       elapsed,
+			}).Warn("Paymaster deposit balance is too low for a long time")
+		}
+	}
 }
