@@ -41,7 +41,7 @@ type PaymasterConfig struct {
 
 	Monitor struct {
 		Interval      time.Duration `default:"1m"`
-		MinBalanceEth uint64        `default:"1"`
+		MinBalanceEth uint32        `default:"1"`
 		Remind        time.Duration `default:"1h"`
 		RPCHealth     struct {
 			Threshold uint64 `default:"5"`
