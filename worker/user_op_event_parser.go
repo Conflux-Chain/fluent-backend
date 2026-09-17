@@ -6,6 +6,7 @@ import (
 
 	"github.com/Conflux-Chain/fluent-backend/contract"
 	"github.com/Conflux-Chain/fluent-backend/service"
+	"github.com/Conflux-Chain/go-conflux-util/blockchain/contract/account"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -27,7 +28,7 @@ var eventHashUserOperation = common.HexToHash("0x49628fd1471006c1482da88028e9ce4
 type Sponsorship struct {
 	Log            types.Log
 	SponsoredEvent *contract.VerifyingPaymasterSponsored
-	UserOpEvent    *contract.EntryPointUserOperationEvent
+	UserOpEvent    *account.EntryPointUserOperationEvent
 	UserOp         *contract.PackedUserOperation
 }
 
@@ -43,7 +44,7 @@ type UserOpEventParser struct {
 	paymasterFilterer *contract.VerifyingPaymasterFilterer
 
 	entryPointAddr     common.Address
-	entryPointFilterer *contract.EntryPointFilterer
+	entryPointFilterer *account.EntryPointFilterer
 	entryPointABI      abi.ABI
 }
 
@@ -64,12 +65,12 @@ func NewUserOpEventParser(client *web3go.Client, paymaster common.Address) (*Use
 		return nil, errors.WithMessage(err, "Failed to get entry point address from VerifyingPaymaster")
 	}
 
-	entryPointFilterer, err := contract.NewEntryPointFilterer(entryPointAddr, filterer)
+	entryPointFilterer, err := account.NewEntryPointFilterer(entryPointAddr, filterer)
 	if err != nil {
 		return nil, errors.WithMessage(err, "Failed to create EntryPoint filterer")
 	}
 
-	entryPointABI, err := abi.JSON(strings.NewReader(contract.EntryPointMetaData.ABI))
+	entryPointABI, err := abi.JSON(strings.NewReader(account.EntryPointMetaData.ABI))
 	if err != nil {
 		return nil, errors.WithMessage(err, "Failed to parse EntryPoint ABI")
 	}
@@ -121,7 +122,7 @@ func (parser *UserOpEventParser) Parse(log types.Log) (*Sponsorship, error) {
 	}, nil
 }
 
-func (parser *UserOpEventParser) findUserOperationEvent(sponsoredEvent *contract.VerifyingPaymasterSponsored) (*contract.EntryPointUserOperationEvent, error) {
+func (parser *UserOpEventParser) findUserOperationEvent(sponsoredEvent *contract.VerifyingPaymasterSponsored) (*account.EntryPointUserOperationEvent, error) {
 	receipt, err := parser.client.Eth.TransactionReceipt(sponsoredEvent.Raw.TxHash)
 	if err != nil {
 		return nil, errors.WithMessage(err, "Failed to get transaction receipt")
@@ -158,7 +159,7 @@ func (parser *UserOpEventParser) findUserOperationEvent(sponsoredEvent *contract
 	return nil, fmt.Errorf("UserOperation event not found for userOpHash %v", sponsoredEvent.UserOpHash)
 }
 
-func (parser *UserOpEventParser) unpackUserOp(userOpEvent *contract.EntryPointUserOperationEvent) (*contract.PackedUserOperation, error) {
+func (parser *UserOpEventParser) unpackUserOp(userOpEvent *account.EntryPointUserOperationEvent) (*contract.PackedUserOperation, error) {
 	// get the bundle transaction to parse input data
 	tx, err := parser.client.Eth.TransactionByHash(userOpEvent.Raw.TxHash)
 	if err != nil {
@@ -206,7 +207,7 @@ func (parser *UserOpEventParser) unpackUserOp(userOpEvent *contract.EntryPointUs
 		userOps = args.Ops
 	case entryPointMethodHandleAggregatedOps:
 		var args struct {
-			OpsPerAggregator []contract.IEntryPointUserOpsPerAggregator
+			OpsPerAggregator []account.IEntryPointUserOpsPerAggregator
 			Beneficiary      common.Address
 		}
 

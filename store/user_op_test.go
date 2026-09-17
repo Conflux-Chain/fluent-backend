@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/Conflux-Chain/fluent-backend/contract"
+	"github.com/Conflux-Chain/go-conflux-util/blockchain/contract/account"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 )
@@ -21,7 +22,7 @@ func assertCreateUserOp(t *testing.T, store *Store, hash string, sender string, 
 		PaymasterAndData:   paymasterAndData[:],
 	}
 
-	event := contract.EntryPointUserOperationEvent{
+	event := account.EntryPointUserOperationEvent{
 		UserOpHash:    common.BytesToHash([]byte(hash)),
 		Sender:        common.BytesToAddress([]byte(sender)),
 		Nonce:         big.NewInt(nonce),

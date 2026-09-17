@@ -3,7 +3,7 @@ module github.com/Conflux-Chain/fluent-backend
 go 1.23.0
 
 require (
-	github.com/Conflux-Chain/go-conflux-util v0.7.10
+	github.com/Conflux-Chain/go-conflux-util v0.7.11
 	github.com/ethereum/go-ethereum v1.15.11
 	github.com/gin-gonic/gin v1.9.0
 	github.com/go-playground/validator/v10 v10.11.2

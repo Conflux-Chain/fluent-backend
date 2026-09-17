@@ -4,6 +4,7 @@ import (
 	"math/big"
 
 	"github.com/Conflux-Chain/fluent-backend/contract"
+	"github.com/Conflux-Chain/go-conflux-util/blockchain/contract/account"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )
@@ -39,7 +40,7 @@ func convertPackedUserOp(userOp *contract.PackedUserOperation) PackedUserOperati
 		Signature:            userOp.Signature,
 	}
 
-	if len(userOp.PaymasterAndData) >= contract.MinPaymasterAndDataLen {
+	if len(userOp.PaymasterAndData) >= account.MinPaymasterAndDataLen {
 		result.Paymaster = userOp.Paymaster()
 		result.PaymasterVerificationGasLimit = userOp.PaymasterVerificationGasLimit()
 		result.PaymasterPostOpGasLimit = userOp.PaymasterPostOpGasLimit()

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/Conflux-Chain/fluent-backend/contract"
 	"github.com/Conflux-Chain/go-conflux-util/api"
+	"github.com/Conflux-Chain/go-conflux-util/blockchain/contract/token/erc20"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/go-resty/resty/v2"
 	"github.com/openweb3/web3go"
@@ -24,7 +24,7 @@ type PriceConfig struct {
 }
 
 type ERC20TokenStub struct {
-	caller     *contract.ERC20Caller
+	caller     *erc20.ContractCaller
 	decimalExp decimal.Decimal // 10^decimals
 }
 
@@ -53,7 +53,7 @@ func NewPriceOracle(config PriceConfig, client *web3go.Client) (*PriceOracle, er
 			return nil, errors.Errorf("Duplicated USDT token configured %v", v)
 		}
 
-		erc20Caller, err := contract.NewERC20Caller(v, caller)
+		erc20Caller, err := erc20.NewContractCaller(v, caller)
 		if err != nil {
 			return nil, errors.WithMessagef(err, "Failed to create ERC20 caller for token %v", v)
 		}
@@ -79,7 +79,7 @@ func NewPriceOracle(config PriceConfig, client *web3go.Client) (*PriceOracle, er
 			return nil, errors.Errorf("Token mis-configured as both USDT and CNH token %v", v)
 		}
 
-		erc20Caller, err := contract.NewERC20Caller(v, caller)
+		erc20Caller, err := erc20.NewContractCaller(v, caller)
 		if err != nil {
 			return nil, errors.WithMessagef(err, "Failed to create ERC20 caller for token %v", v)
 		}
