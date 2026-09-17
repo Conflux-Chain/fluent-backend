@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/Conflux-Chain/fluent-backend/api"
-	"github.com/Conflux-Chain/fluent-backend/contract"
 	"github.com/Conflux-Chain/fluent-backend/service"
+	"github.com/Conflux-Chain/go-conflux-util/blockchain/contract/token/erc20"
 	"github.com/Conflux-Chain/go-conflux-util/cmd"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/v2"
@@ -130,7 +130,7 @@ func (t *TokenPayTester) Faucet(client *web3go.Client, amount decimal.Decimal) e
 	myAddr := t.account.Address()
 
 	caller, signer := client.ToClientForContract()
-	erc20, err := contract.NewERC20(usdtAddr, caller)
+	erc20, err := erc20.NewContract(usdtAddr, caller)
 	if err != nil {
 		return errors.WithMessage(err, "Failed to create ERC20 transactor")
 	}
@@ -178,7 +178,7 @@ func (t *TokenPayTester) PrepareBusinessTx(client *web3go.Client, price *big.Int
 	maxTipPerGas.Div(maxTipPerGas, big.NewInt(100))
 
 	// data - approve(spender, amount)
-	abi, err := abi.JSON(strings.NewReader(contract.ERC20MetaData.ABI))
+	abi, err := abi.JSON(strings.NewReader(erc20.ContractMetaData.ABI))
 	if err != nil {
 		return nil, errors.WithMessage(err, "Failed to parse ERC20 ABI")
 	}
@@ -233,7 +233,7 @@ func (t *TokenPayTester) PrepareTransferTokenTx(client *web3go.Client, businessT
 	usdt := common.HexToAddress(t.config.Tokens[0])
 
 	// data - transfer(paymaster, cost)
-	abi, err := abi.JSON(strings.NewReader(contract.ERC20MetaData.ABI))
+	abi, err := abi.JSON(strings.NewReader(erc20.ContractMetaData.ABI))
 	if err != nil {
 		return nil, errors.WithMessage(err, "Failed to parse ERC20 ABI")
 	}

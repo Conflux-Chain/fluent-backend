@@ -8,6 +8,7 @@ import (
 
 	"github.com/Conflux-Chain/fluent-backend/contract"
 	"github.com/Conflux-Chain/go-conflux-util/api"
+	"github.com/Conflux-Chain/go-conflux-util/blockchain/contract/account"
 	"github.com/Conflux-Chain/go-conflux-util/health"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -21,7 +22,7 @@ import (
 
 // minPaymasterAndDataLen defines the minimum length of the paymasterAndData field, including the address, custom data, validity period, and signature.
 // Encoding format: paymasterAndGasLimits(52) || customData || validAfter(6) || validUntil(6) || signature(65).
-const minPaymasterAndDataLen = contract.MinPaymasterAndDataLen + 77
+const minPaymasterAndDataLen = account.MinPaymasterAndDataLen + 77
 
 // dummySignature is a placeholder signature used for gas estimation and initial user operation setup.
 var dummySignature = slices.Repeat([]byte{0x1b}, 65)
@@ -129,10 +130,10 @@ func (paymaster *Paymaster[T]) generateStub(customData interface{ Bytes() []byte
 
 	validUntil := time.Now().Add(paymaster.config.SignatureTimeout).Unix()
 
-	copy(buf[:20], paymaster.config.Address.Bytes())                        // address
-	copy(buf[52:52+dataLen], dataBytes)                                     // custom data
-	contract.SafeBigFillBytes(big.NewInt(validUntil), buf[size-71:size-65]) // validUntil
-	copy(buf[size-65:], dummySignature)                                     // dummy signature
+	copy(buf[:20], paymaster.config.Address.Bytes())                       // address
+	copy(buf[52:52+dataLen], dataBytes)                                    // custom data
+	account.SafeBigFillBytes(big.NewInt(validUntil), buf[size-71:size-65]) // validUntil
+	copy(buf[size-65:], dummySignature)                                    // dummy signature
 
 	return buf
 }
@@ -195,9 +196,9 @@ func (paymaster *Paymaster[T]) sign(userOp contract.PackedUserOperation, customD
 	size := len(userOp.PaymasterAndData)
 	validUntil := time.Now().Add(paymaster.config.SignatureTimeout).Unix()
 
-	contract.SafeBigFillBytes(big.NewInt(0), userOp.PaymasterAndData[size-77:size-71])          // validAfter
-	contract.SafeBigFillBytes(big.NewInt(validUntil), userOp.PaymasterAndData[size-71:size-65]) // validUntil
-	copy(userOp.PaymasterAndData[size-65:], dummySignature)                                     // dummy signature
+	account.SafeBigFillBytes(big.NewInt(0), userOp.PaymasterAndData[size-77:size-71])          // validAfter
+	account.SafeBigFillBytes(big.NewInt(validUntil), userOp.PaymasterAndData[size-71:size-65]) // validUntil
+	copy(userOp.PaymasterAndData[size-65:], dummySignature)                                    // dummy signature
 
 	// compute the paymaster signature
 	hash, err := paymaster.caller.GetPaymasterHash(nil, userOp)

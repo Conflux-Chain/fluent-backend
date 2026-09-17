@@ -6,6 +6,7 @@ import (
 
 	"github.com/Conflux-Chain/fluent-backend/contract"
 	"github.com/Conflux-Chain/go-conflux-util/api"
+	"github.com/Conflux-Chain/go-conflux-util/blockchain/contract/account"
 	"github.com/Conflux-Chain/go-conflux-util/store"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -40,7 +41,7 @@ func (store *UserOpStore) GetCountByBlockTimestamp(sender common.Address, since 
 	return store.getCount("sender = ? AND block_time >= ?", sender.Hex(), since)
 }
 
-func (store *UserOpStore) Create(userOp *contract.PackedUserOperation, event *contract.EntryPointUserOperationEvent, blockTime time.Time, tx ...*gorm.DB) error {
+func (store *UserOpStore) Create(userOp *contract.PackedUserOperation, event *account.EntryPointUserOperationEvent, blockTime time.Time, tx ...*gorm.DB) error {
 	db := store.inner.DB
 	if len(tx) > 0 {
 		db = tx[0]

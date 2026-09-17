@@ -6,6 +6,7 @@ import (
 
 	"github.com/Conflux-Chain/fluent-backend/contract"
 	"github.com/Conflux-Chain/go-conflux-util/api"
+	"github.com/Conflux-Chain/go-conflux-util/blockchain/contract/account"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/openweb3/web3go"
@@ -159,7 +160,7 @@ func (data GasTankData) Bytes() []byte {
 	var buf [52]byte
 
 	copy(buf[:20], data.Token.Bytes())
-	contract.SafeBigFillBytes(data.MaxTokenCost, buf[20:52])
+	account.SafeBigFillBytes(data.MaxTokenCost, buf[20:52])
 
 	return buf[:]
 }
