@@ -27,7 +27,7 @@ var testVerifyingPaymasterConfig = VerifyingPaymasterConfig{
 	maxGasCostBig: big.NewInt(100000000000000000),
 }
 
-func assertNewTestVerifyingPaymaster(t *testing.T) *VerifyingPaymaster {
+func newTestVerifyingPaymaster() *VerifyingPaymaster {
 	return &VerifyingPaymaster{
 		inner: &Paymaster[*contract.VerifyingPaymasterCaller]{
 			config: PaymasterConfig{
@@ -42,7 +42,7 @@ func assertNewTestVerifyingPaymaster(t *testing.T) *VerifyingPaymaster {
 }
 
 func TestVerifyingPaymasterValidateCallData(t *testing.T) {
-	paymaster := assertNewTestVerifyingPaymaster(t)
+	paymaster := newTestVerifyingPaymaster()
 
 	// nil calldata
 	assert.Error(t, paymaster.validateCallData(nil))
