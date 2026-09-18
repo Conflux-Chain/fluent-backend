@@ -3,14 +3,13 @@ package cmd
 import (
 	"fmt"
 	"math/big"
-	"strings"
 	"time"
 
 	"github.com/Conflux-Chain/fluent-backend/api"
+	"github.com/Conflux-Chain/fluent-backend/contract"
 	"github.com/Conflux-Chain/fluent-backend/service"
 	"github.com/Conflux-Chain/go-conflux-util/blockchain/contract/token/erc20"
 	"github.com/Conflux-Chain/go-conflux-util/cmd"
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/v2"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -178,13 +177,8 @@ func (t *TokenPayTester) PrepareBusinessTx(client *web3go.Client, price *big.Int
 	maxTipPerGas.Div(maxTipPerGas, big.NewInt(100))
 
 	// data - approve(spender, amount)
-	abi, err := abi.JSON(strings.NewReader(erc20.ContractMetaData.ABI))
-	if err != nil {
-		return nil, errors.WithMessage(err, "Failed to parse ERC20 ABI")
-	}
-
 	spender := signers.MustNewRandomPrivateKeySigner().Address()
-	data, err := abi.Pack("approve", spender, big.NewInt(666))
+	data, err := contract.ERC20ABI.Pack("approve", spender, big.NewInt(666))
 	if err != nil {
 		return nil, errors.WithMessage(err, "Failed to pack approve data")
 	}
@@ -233,12 +227,7 @@ func (t *TokenPayTester) PrepareTransferTokenTx(client *web3go.Client, businessT
 	usdt := common.HexToAddress(t.config.Tokens[0])
 
 	// data - transfer(paymaster, cost)
-	abi, err := abi.JSON(strings.NewReader(erc20.ContractMetaData.ABI))
-	if err != nil {
-		return nil, errors.WithMessage(err, "Failed to parse ERC20 ABI")
-	}
-
-	data, err := abi.Pack("transfer", common.HexToAddress(t.config.Recipient), big.NewInt(666))
+	data, err := contract.ERC20ABI.Pack("transfer", common.HexToAddress(t.config.Recipient), big.NewInt(666))
 	if err != nil {
 		return nil, errors.WithMessage(err, "Failed to pack transfer data")
 	}
@@ -264,7 +253,7 @@ func (t *TokenPayTester) PrepareTransferTokenTx(client *web3go.Client, businessT
 	totalTokenCost := new(big.Int).Mul(totalGasCost, price)
 	totalTokenCost.Div(totalTokenCost, new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil))
 
-	if data, err = abi.Pack("transfer", common.HexToAddress(t.config.Recipient), totalTokenCost); err != nil {
+	if data, err = contract.ERC20ABI.Pack("transfer", common.HexToAddress(t.config.Recipient), totalTokenCost); err != nil {
 		return nil, errors.WithMessage(err, "Failed to pack real transfer data")
 	}
 

@@ -2,12 +2,10 @@ package worker
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/Conflux-Chain/fluent-backend/contract"
 	"github.com/Conflux-Chain/fluent-backend/service"
 	"github.com/Conflux-Chain/go-conflux-util/blockchain/contract/account"
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/openweb3/web3go"
@@ -45,7 +43,6 @@ type UserOpEventParser struct {
 
 	entryPointAddr     common.Address
 	entryPointFilterer *account.EntryPointFilterer
-	entryPointABI      abi.ABI
 }
 
 func NewUserOpEventParser(client *web3go.Client, paymaster common.Address) (*UserOpEventParser, error) {
@@ -70,18 +67,12 @@ func NewUserOpEventParser(client *web3go.Client, paymaster common.Address) (*Use
 		return nil, errors.WithMessage(err, "Failed to create EntryPoint filterer")
 	}
 
-	entryPointABI, err := abi.JSON(strings.NewReader(account.EntryPointMetaData.ABI))
-	if err != nil {
-		return nil, errors.WithMessage(err, "Failed to parse EntryPoint ABI")
-	}
-
 	return &UserOpEventParser{
 		client:             client,
 		paymaster:          paymaster,
 		paymasterFilterer:  &verifyingPaymaster.VerifyingPaymasterFilterer,
 		entryPointAddr:     entryPointAddr,
 		entryPointFilterer: entryPointFilterer,
-		entryPointABI:      entryPointABI,
 	}, nil
 }
 
@@ -186,7 +177,7 @@ func (parser *UserOpEventParser) unpackUserOp(userOpEvent *account.EntryPointUse
 		return nil, fmt.Errorf("Transaction input data too short for tx hash %v", userOpEvent.Raw.TxHash)
 	}
 
-	method, err := parser.entryPointABI.MethodById(tx.Input[:4])
+	method, err := contract.EntryPointABI.MethodById(tx.Input[:4])
 	if err != nil {
 		return nil, errors.WithMessage(err, "Failed to get method by ID from transaction input")
 	}
@@ -250,7 +241,7 @@ func (parser *UserOpEventParser) unpackUserOp(userOpEvent *account.EntryPointUse
 }
 
 func (parser *UserOpEventParser) calculateUserOpHash(userOp contract.PackedUserOperation, delegation common.Address) (common.Hash, error) {
-	calldata, err := parser.entryPointABI.Pack("getUserOpHash", userOp)
+	calldata, err := contract.EntryPointABI.Pack("getUserOpHash", userOp)
 	if err != nil {
 		return common.Hash{}, errors.WithMessage(err, "Failed to pack calldata of getUserOpHash")
 	}

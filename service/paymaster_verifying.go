@@ -1,15 +1,12 @@
 package service
 
 import (
-	"bytes"
 	"fmt"
 	"math/big"
-	"strings"
 
 	"github.com/Conflux-Chain/fluent-backend/contract"
 	"github.com/Conflux-Chain/fluent-backend/store"
 	"github.com/Conflux-Chain/go-conflux-util/api"
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/mcuadros/go-defaults"
@@ -17,7 +14,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-const initCode7702Marker = "0x7702000000000000000000000000000000000000"
+const (
+	initCode7702Marker = "0x7702000000000000000000000000000000000000"
+
+	methodExecute      = "execute"
+	methodExecuteBatch = "executeBatch"
+)
 
 type VerifyingPaymasterConfig struct {
 	PaymasterConfig `mapstructure:",squash"`
@@ -65,33 +67,15 @@ func (config *VerifyingPaymasterConfig) validateAndNormalize() error {
 }
 
 type VerifyingPaymaster struct {
-	inner              *Paymaster[*contract.VerifyingPaymasterCaller]
-	config             VerifyingPaymasterConfig
-	client             *web3go.Client
-	executeMethod      abi.Method
-	executeBatchMethod abi.Method
-	limiter            Limiter
+	inner   *Paymaster[*contract.VerifyingPaymasterCaller]
+	config  VerifyingPaymasterConfig
+	client  *web3go.Client
+	limiter Limiter
 }
 
 func NewVerifyingPaymaster(config VerifyingPaymasterConfig, client *web3go.Client, store *store.Store) (*VerifyingPaymaster, error) {
 	if err := config.validateAndNormalize(); err != nil {
 		return nil, errors.WithMessage(err, "Invalid VerifyingPaymaster config")
-	}
-
-	// smart account execute ABI
-	smartAccountABI, err := abi.JSON(strings.NewReader(contract.SimpleSmartAccount7702MetaData.ABI))
-	if err != nil {
-		return nil, errors.WithMessage(err, "Failed to parse SimpleSmartAccount7702 ABI")
-	}
-
-	executeMethod, ok := smartAccountABI.Methods["execute"]
-	if !ok {
-		return nil, errors.New("Failed to get execute method from SimpleSmartAccount7702 ABI")
-	}
-
-	executeBatchMethod, ok := smartAccountABI.Methods["executeBatch"]
-	if !ok {
-		return nil, errors.New("Failed to get executeBatch method from SimpleSmartAccount7702 ABI")
 	}
 
 	paymaster, err := NewPaymaster(config.PaymasterConfig, client, contract.NewVerifyingPaymasterCaller, "VerifyingPaymaster")
@@ -100,12 +84,10 @@ func NewVerifyingPaymaster(config VerifyingPaymasterConfig, client *web3go.Clien
 	}
 
 	return &VerifyingPaymaster{
-		inner:              paymaster,
-		config:             config,
-		client:             client,
-		executeMethod:      executeMethod,
-		executeBatchMethod: executeBatchMethod,
-		limiter:            NewLimiter(config.Limiter, store),
+		inner:   paymaster,
+		config:  config,
+		client:  client,
+		limiter: NewLimiter(config.Limiter, store),
 	}, nil
 }
 
@@ -202,20 +184,28 @@ func (paymaster *VerifyingPaymaster) validateCallData(callData []byte) error {
 
 	selector, args := callData[:4], callData[4:]
 
-	if bytes.Equal(paymaster.executeMethod.ID, selector) {
+	method, err := contract.SmartAccountABI.MethodById(selector)
+	if err != nil {
+		return api.ErrValidation(errors.WithMessage(err, "Failed to get method by id from smart account ABI"))
+	}
+
+	switch method.RawName {
+	case methodExecute:
 		// single execute
 		var execution contract.Execution
-		if err := UnpackArguments(paymaster.executeMethod.Inputs, args, &execution); err != nil {
+
+		if err := UnpackArguments(method.Inputs, args, &execution); err != nil {
 			return api.ErrValidation(errors.WithMessage(err, "Failed to unpack callData for execute method"))
 		}
 
 		if !paymaster.config.contractMap[execution.Target] {
 			return ErrVerifyingPaymasterContractNotWhitelisted.WithData(execution.Target)
 		}
-	} else if bytes.Equal(paymaster.executeBatchMethod.ID, selector) {
+	case methodExecuteBatch:
 		// batch execute
 		var executions []contract.Execution
-		if err := UnpackArguments(paymaster.executeBatchMethod.Inputs, args, &executions); err != nil {
+
+		if err := UnpackArguments(method.Inputs, args, &executions); err != nil {
 			return api.ErrValidation(errors.WithMessage(err, "Failed to unpack callData for executeBatch method"))
 		}
 
@@ -228,8 +218,8 @@ func (paymaster *VerifyingPaymaster) validateCallData(callData []byte) error {
 				return ErrVerifyingPaymasterContractNotWhitelisted.WithData(execution.Target)
 			}
 		}
-	} else {
-		return api.ErrValidationStr("Invalid callData, unsupported function selector")
+	default:
+		return api.ErrValidationStrf("Invalid callData, unsupported function %v", method.RawName)
 	}
 
 	return nil
