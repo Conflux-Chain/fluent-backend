@@ -22,10 +22,42 @@ Before signing, the backend checks:
 
 - UserOperation structure, paymaster address, and EIP-7702 init-code rules;
 - maximum gas cost and configured finalized-UserOperation limits;
-- `execute` or `executeBatch` calldata and every target against the contract whitelist;
+- `execute` or `executeBatch` calldata and every execution against the configured execution policies;
 - the delegation in paymaster data against the paymaster's smart-account whitelist;
 - paymaster pause state; and
 - paymaster deposit balance.
+
+### Execution Policies
+
+Execution policies are evaluated as alternatives. An execution is eligible for sponsorship when at least one policy allows it:
+
+- The target-contract policy allows calls whose target is in `ContractWhitelist`.
+- Optional DeFi policies allow product-specific calls after validating their calldata and token rules.
+
+DeFi policies are configured under the `DeFi` section. The currently supported product is Uniswap V2. When its router is not configured, no Uniswap V2-specific validation or sponsorship rule is enabled.
+
+### Uniswap V2 Policy
+
+Set `DeFi.Uniswap.V2.Router` to enable the Uniswap V2 policy. The router is authorized by this product-specific configuration and must not also appear in `ContractWhitelist`; initialization fails if the address is duplicated. At startup, the backend reads and caches the router's WETH address. Initialization fails if that call fails.
+
+The policy supports these router methods:
+
+- `swapExactTokensForTokens`;
+- `swapTokensForExactTokens`;
+- `swapExactTokensForETH`;
+- `swapTokensForExactETH`;
+- `swapExactETHForTokens`; and
+- `swapETHForExactTokens`.
+
+Other router methods, malformed calldata, and paths containing fewer than two tokens are not eligible for sponsorship. Only the first and last tokens in the path are checked; intermediate tokens are not checked.
+
+The input and output rules are:
+
+- Token-to-token swaps require both path endpoints in `ContractWhitelist`. WETH is treated like any other ERC20 token in these methods and must be explicitly whitelisted when used as an endpoint.
+- Token-to-ETH swaps require the input token in `ContractWhitelist` and the final path token to equal the router's WETH address.
+- ETH-to-token swaps require the first path token to equal the router's WETH address and the output token in `ContractWhitelist`.
+
+Token-input methods require a zero `Execution.Value`. ETH-input methods require a positive `Execution.Value`. Any policy evaluation error is treated as a rejected execution. `executeBatch` applies the same policy evaluation independently to every execution in the batch.
 
 ## Paymaster Data
 
