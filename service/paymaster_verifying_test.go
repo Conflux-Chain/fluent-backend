@@ -38,6 +38,13 @@ func newTestVerifyingPaymaster() *VerifyingPaymaster {
 			signer: signers.MustNewRandomPrivateKeySigner(),
 		},
 		config: testVerifyingPaymasterConfig,
+		executionPolicy: CompositeExecutionPolicy{
+			TargetContractExecutionPolicy{},
+			&UniswapV2ExecutionPolicy{
+				router: common.HexToAddress("0x3333"),
+				weth:   common.HexToAddress("0x4444"),
+			},
+		},
 	}
 }
 
@@ -82,4 +89,46 @@ func TestVerifyingPaymasterValidateCallData(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	assert.NoError(t, paymaster.validateCallData(callData))
+}
+
+func TestVerifyingPaymasterUniswapV2Policy(t *testing.T) {
+	router := common.HexToAddress("0x3333")
+	weth := common.HexToAddress("0x4444")
+
+	paymaster := newTestVerifyingPaymaster()
+
+	// ETH to token - in whitelist
+	path := []common.Address{weth, common.HexToAddress("0x1111")}
+	swapCallData, err := contract.UniswapV2RouterABI.Pack("swapExactETHForTokens", big.NewInt(1), path, common.HexToAddress("0x0001"), big.NewInt(1))
+	assert.NoError(t, err)
+	executeCallData, err := contract.SmartAccountABI.Pack("execute", router, big.NewInt(1), swapCallData) // msg.value > 0
+	assert.NoError(t, err)
+	assert.NoError(t, paymaster.validateCallData(executeCallData))
+
+	// token to ETH - in whitelist
+	path = []common.Address{common.HexToAddress("0x1111"), weth}
+	swapCallData, err = contract.UniswapV2RouterABI.Pack("swapExactTokensForETH", big.NewInt(1), big.NewInt(1), path, common.HexToAddress("0x0001"), big.NewInt(1))
+	assert.NoError(t, err)
+	executeCallData, err = contract.SmartAccountABI.Pack("execute", router, big.NewInt(0), swapCallData)
+	assert.NoError(t, err)
+	assert.NoError(t, paymaster.validateCallData(executeCallData))
+
+	// token to token - in whitelist
+	path = []common.Address{common.HexToAddress("0x1111"), common.HexToAddress("0x2222")}
+	swapCallData, err = contract.UniswapV2RouterABI.Pack("swapExactTokensForTokens", big.NewInt(1), big.NewInt(1), path, common.HexToAddress("0x0001"), big.NewInt(1))
+	assert.NoError(t, err)
+	executeCallData, err = contract.SmartAccountABI.Pack("execute", router, big.NewInt(0), swapCallData)
+	assert.NoError(t, err)
+	assert.NoError(t, paymaster.validateCallData(executeCallData))
+
+	// token to token - not in whitelist
+	paymaster.config.contractMap = map[common.Address]bool{common.HexToAddress("0x1111"): true}
+	assert.Error(t, paymaster.validateCallData(executeCallData))
+
+	// unsupported function
+	unsupportedCallData, err := contract.UniswapV2RouterABI.Pack("getAmountsOut", big.NewInt(1), []common.Address{common.HexToAddress("0x1111"), common.HexToAddress("0x2222")})
+	assert.NoError(t, err)
+	executeCallData, err = contract.SmartAccountABI.Pack("execute", router, big.NewInt(0), unsupportedCallData)
+	assert.NoError(t, err)
+	assert.Error(t, paymaster.validateCallData(executeCallData))
 }

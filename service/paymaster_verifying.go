@@ -14,12 +14,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-const (
-	initCode7702Marker = "0x7702000000000000000000000000000000000000"
-
-	methodExecute      = "execute"
-	methodExecuteBatch = "executeBatch"
-)
+const initCode7702Marker = "0x7702000000000000000000000000000000000000"
 
 type VerifyingPaymasterConfig struct {
 	PaymasterConfig `mapstructure:",squash"`
@@ -30,6 +25,8 @@ type VerifyingPaymasterConfig struct {
 	contractMap           map[common.Address]bool
 	MaxGasCost            uint64 `default:"100000000000000000"` // 0.1 CFX by default, and could up to 1 CFX
 	maxGasCostBig         *big.Int
+
+	DeFi DeFiConfig
 
 	Limiter LimitConfig
 }
@@ -67,15 +64,21 @@ func (config *VerifyingPaymasterConfig) validateAndNormalize() error {
 }
 
 type VerifyingPaymaster struct {
-	inner   *Paymaster[*contract.VerifyingPaymasterCaller]
-	config  VerifyingPaymasterConfig
-	client  *web3go.Client
-	limiter Limiter
+	inner           *Paymaster[*contract.VerifyingPaymasterCaller]
+	config          VerifyingPaymasterConfig
+	client          *web3go.Client
+	limiter         Limiter
+	executionPolicy ExecutionPolicy
 }
 
 func NewVerifyingPaymaster(config VerifyingPaymasterConfig, client *web3go.Client, store *store.Store) (*VerifyingPaymaster, error) {
 	if err := config.validateAndNormalize(); err != nil {
 		return nil, errors.WithMessage(err, "Invalid VerifyingPaymaster config")
+	}
+
+	executionPolicy, err := NewExecutionPolicy(config.DeFi, client, config.contractMap)
+	if err != nil {
+		return nil, errors.WithMessage(err, "Failed to create execution policy")
 	}
 
 	paymaster, err := NewPaymaster(config.PaymasterConfig, client, contract.NewVerifyingPaymasterCaller, "VerifyingPaymaster")
@@ -84,10 +87,11 @@ func NewVerifyingPaymaster(config VerifyingPaymasterConfig, client *web3go.Clien
 	}
 
 	return &VerifyingPaymaster{
-		inner:   paymaster,
-		config:  config,
-		client:  client,
-		limiter: NewLimiter(config.Limiter, store),
+		inner:           paymaster,
+		config:          config,
+		client:          client,
+		limiter:         NewLimiter(config.Limiter, store),
+		executionPolicy: executionPolicy,
 	}, nil
 }
 
@@ -190,7 +194,7 @@ func (paymaster *VerifyingPaymaster) validateCallData(callData []byte) error {
 	}
 
 	switch method.RawName {
-	case methodExecute:
+	case "execute":
 		// single execute
 		var execution contract.Execution
 
@@ -198,10 +202,10 @@ func (paymaster *VerifyingPaymaster) validateCallData(callData []byte) error {
 			return api.ErrValidation(errors.WithMessage(err, "Failed to unpack callData for execute method"))
 		}
 
-		if !paymaster.config.contractMap[execution.Target] {
+		if !paymaster.executionPolicy.IsAllowed(execution, paymaster.config.contractMap) {
 			return ErrVerifyingPaymasterContractNotWhitelisted.WithData(execution.Target)
 		}
-	case methodExecuteBatch:
+	case "executeBatch":
 		// batch execute
 		var executions []contract.Execution
 
@@ -214,7 +218,7 @@ func (paymaster *VerifyingPaymaster) validateCallData(callData []byte) error {
 		}
 
 		for _, execution := range executions {
-			if !paymaster.config.contractMap[execution.Target] {
+			if !paymaster.executionPolicy.IsAllowed(execution, paymaster.config.contractMap) {
 				return ErrVerifyingPaymasterContractNotWhitelisted.WithData(execution.Target)
 			}
 		}
