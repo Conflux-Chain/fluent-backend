@@ -3,6 +3,7 @@ package contract
 import (
 	"github.com/Conflux-Chain/go-conflux-util/blockchain/contract/account"
 	uniswapv2 "github.com/Conflux-Chain/go-conflux-util/blockchain/contract/defi/uniswap/v2"
+	uniswapv3 "github.com/Conflux-Chain/go-conflux-util/blockchain/contract/defi/uniswap/v3"
 	"github.com/Conflux-Chain/go-conflux-util/blockchain/contract/token/erc20"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -15,6 +16,7 @@ var (
 	EntryPointABI      = mustGetABI(account.EntryPointMetaData)
 	SmartAccountABI    = mustGetABI(SimpleSmartAccount7702MetaData)
 	UniswapV2RouterABI = mustGetABI(uniswapv2.RouterMetaData)
+	UniswapV3RouterABI = mustGetABI(uniswapv3.SwapRouterMetaData)
 )
 
 // mustGetABI retrieves the ABI from the given metadata.

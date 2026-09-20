@@ -50,11 +50,19 @@ func (config *VerifyingPaymasterConfig) validateAndNormalize() error {
 	// normalize
 	config.smartAccountMap = make(map[common.Address]bool)
 	for _, addr := range config.SmartAccountWhitelist {
+		if addr == (common.Address{}) {
+			return errors.New("Smart account whitelist contains an empty address")
+		}
+
 		config.smartAccountMap[addr] = true
 	}
 
 	config.contractMap = make(map[common.Address]bool)
 	for _, addr := range config.ContractWhitelist {
+		if addr == (common.Address{}) {
+			return errors.New("Contract whitelist contains an empty address")
+		}
+
 		config.contractMap[addr] = true
 	}
 

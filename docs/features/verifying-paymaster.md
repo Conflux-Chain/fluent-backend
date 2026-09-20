@@ -34,7 +34,7 @@ Execution policies are evaluated as alternatives. An execution is eligible for s
 - The target-contract policy allows calls whose target is in `ContractWhitelist`.
 - Optional DeFi policies allow product-specific calls after validating their calldata and token rules.
 
-DeFi policies are configured under the `DeFi` section. The currently supported product is Uniswap V2. When its router is not configured, no Uniswap V2-specific validation or sponsorship rule is enabled.
+DeFi policies are configured under the `DeFi` section. The currently supported products are Uniswap V2 and Uniswap V3. When a router is not configured, no policy-specific validation or sponsorship rule is enabled.
 
 ### Uniswap V2 Policy
 
@@ -58,6 +58,14 @@ The input and output rules are:
 - ETH-to-token swaps require the first path token to equal the router's WETH address and the output token in `ContractWhitelist`.
 
 Token-input methods require a zero `Execution.Value`. ETH-input methods require a positive `Execution.Value`. Any policy evaluation error is treated as a rejected execution. `executeBatch` applies the same policy evaluation independently to every execution in the batch.
+
+### Uniswap V3 Policy
+
+Set `DeFi.Uniswap.V3.Router` to enable the Uniswap V3 policy. The router must not also appear in `ContractWhitelist`. The backend reads and caches WETH9 from the configured router at startup.
+
+The policy supports `exactInputSingle`, `exactInput`, `exactOutputSingle`, and `exactOutput`. Other router methods, including `multicall`, are rejected. For the single-token methods, the backend reads `TokenIn` and `TokenOut` from the decoded parameters. For the path methods, it requires Uniswap V3 packed path encoding with at least 43 bytes and a layout of a 20-byte token followed by one or more 3-byte fees and 20-byte tokens. For `exactInput`, the first and final 20-byte tokens in the encoded path are treated as the input and output endpoints. For `exactOutput`, the path is interpreted in reverse: the final token is the input endpoint and the first token is the output endpoint.
+
+Each endpoint must either be present in `ContractWhitelist` or equal the router's cached WETH9 address. The policy only validates the router method, calldata decoding, path shape, and token endpoints. It does not validate `Execution.Value`, so native-value requirements are not enforced by this V3 policy. `executeBatch` applies the same policy evaluation independently to every execution in the batch.
 
 ## Paymaster Data
 
