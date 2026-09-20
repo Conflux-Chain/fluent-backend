@@ -184,7 +184,7 @@ func TestUniswapV3ExecutionPolicy(t *testing.T) {
 
 	// exactOutput: token to non-whitelisted token
 	require.False(t, isAllowed(big.NewInt(0), "exactOutput", uniswapv3.ISwapRouterExactOutputParams{
-		Path:            newUniswapV3Path(common.HexToAddress("0x1111"), big.NewInt(1), common.HexToAddress("0x222222")),
+		Path:            newUniswapV3Path(common.HexToAddress("0x222222"), big.NewInt(1), common.HexToAddress("0x1111")),
 		Recipient:       common.HexToAddress("0x0001"),
 		Deadline:        big.NewInt(1),
 		AmountOut:       big.NewInt(1),
