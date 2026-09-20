@@ -5,6 +5,7 @@ import (
 
 	"github.com/Conflux-Chain/fluent-backend/contract"
 	uniswapv2 "github.com/Conflux-Chain/go-conflux-util/blockchain/contract/defi/uniswap/v2"
+	uniswapv3 "github.com/Conflux-Chain/go-conflux-util/blockchain/contract/defi/uniswap/v3"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/openweb3/web3go"
 	"github.com/pkg/errors"
@@ -19,6 +20,9 @@ import (
 type DeFiConfig struct {
 	Uniswap struct {
 		V2 struct {
+			Router common.Address
+		}
+		V3 struct {
 			Router common.Address
 		}
 	}
@@ -47,6 +51,20 @@ func NewExecutionPolicy(config DeFiConfig, client *web3go.Client, whitelist map[
 		policy, err := NewUniswapV2ExecutionPolicy(config.Uniswap.V2.Router, client)
 		if err != nil {
 			return nil, errors.WithMessage(err, "Failed to create Uniswap V2 execution policy")
+		}
+
+		composite = append(composite, policy)
+	}
+
+	// uniswap v3
+	if config.Uniswap.V3.Router != (common.Address{}) {
+		if whitelist[config.Uniswap.V3.Router] {
+			return nil, fmt.Errorf("Contract whitelist already contains the Uniswap V3 router %v", config.Uniswap.V3.Router)
+		}
+
+		policy, err := NewUniswapV3ExecutionPolicy(config.Uniswap.V3.Router, client)
+		if err != nil {
+			return nil, errors.WithMessage(err, "Failed to create Uniswap V3 execution policy")
 		}
 
 		composite = append(composite, policy)
@@ -172,4 +190,110 @@ func (policy *UniswapV2ExecutionPolicy) IsAllowed(execution contract.Execution, 
 	default:
 		return false
 	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// Uniswap v3 execution policy
+//
+////////////////////////////////////////////////////////////////////////////////
+
+type UniswapV3ExecutionPolicy struct {
+	router common.Address
+	weth   common.Address
+}
+
+func NewUniswapV3ExecutionPolicy(router common.Address, client *web3go.Client) (*UniswapV3ExecutionPolicy, error) {
+	caller, _ := client.ToClientForContract()
+
+	routerCaller, err := uniswapv3.NewSwapRouterCaller(router, caller)
+	if err != nil {
+		return nil, errors.WithMessage(err, "Failed to create Uniswap V3 router caller")
+	}
+
+	weth, err := routerCaller.WETH9(nil)
+	if err != nil {
+		return nil, errors.WithMessage(err, "Failed to get Uniswap V3 WETH")
+	}
+
+	return &UniswapV3ExecutionPolicy{
+		router: router,
+		weth:   weth,
+	}, nil
+}
+
+func (policy *UniswapV3ExecutionPolicy) IsAllowed(execution contract.Execution, whitelist map[common.Address]bool) bool {
+	if execution.Target != policy.router {
+		return false
+	}
+
+	if len(execution.CallData) < 4 {
+		return false
+	}
+
+	// check method whtelist and unpack input/output tokens
+	method, err := contract.UniswapV3RouterABI.MethodById(execution.CallData[:4])
+	if err != nil {
+		return false
+	}
+
+	var input, output common.Address
+	var inputOutputPath []byte
+
+	switch method.RawName {
+	case "exactInputSingle":
+		var args struct {
+			Params uniswapv3.ISwapRouterExactInputSingleParams
+		}
+
+		if err = UnpackArguments(method.Inputs, execution.CallData[4:], &args); err != nil {
+			return false
+		}
+
+		input, output = args.Params.TokenIn, args.Params.TokenOut
+	case "exactInput":
+		var args struct {
+			Params uniswapv3.ISwapRouterExactInputParams
+		}
+
+		if err = UnpackArguments(method.Inputs, execution.CallData[4:], &args); err != nil {
+			return false
+		}
+
+		inputOutputPath = args.Params.Path
+	case "exactOutputSingle":
+		var args struct {
+			Params uniswapv3.ISwapRouterExactOutputSingleParams
+		}
+
+		if err = UnpackArguments(method.Inputs, execution.CallData[4:], &args); err != nil {
+			return false
+		}
+
+		input, output = args.Params.TokenIn, args.Params.TokenOut
+	case "exactOutput":
+		var args struct {
+			Params uniswapv3.ISwapRouterExactOutputParams
+		}
+
+		if err = UnpackArguments(method.Inputs, execution.CallData[4:], &args); err != nil {
+			return false
+		}
+
+		inputOutputPath = args.Params.Path
+	default:
+		return false
+	}
+
+	// parse input/output tokens from the path if available
+	if pathLen := len(inputOutputPath); pathLen > 0 {
+		if pathLen < 43 || (pathLen-20)%23 != 0 {
+			return false
+		}
+
+		input = common.BytesToAddress(inputOutputPath[:20])
+		output = common.BytesToAddress(inputOutputPath[pathLen-20:])
+	}
+
+	return (whitelist[input] || input == policy.weth) && (whitelist[output] || output == policy.weth)
 }
