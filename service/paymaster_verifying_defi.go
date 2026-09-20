@@ -293,5 +293,9 @@ func (policy *UniswapV3ExecutionPolicy) IsAllowed(execution contract.Execution, 
 		return false
 	}
 
+	if input == (common.Address{}) || output == (common.Address{}) {
+		return false
+	}
+
 	return (whitelist[input] || input == policy.weth) && (whitelist[output] || output == policy.weth)
 }
