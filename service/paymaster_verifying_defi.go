@@ -231,14 +231,22 @@ func (policy *UniswapV3ExecutionPolicy) IsAllowed(execution contract.Execution, 
 		return false
 	}
 
-	// check method whtelist and unpack input/output tokens
+	// check method whitelist and unpack input/output tokens
 	method, err := contract.UniswapV3RouterABI.MethodById(execution.CallData[:4])
 	if err != nil {
 		return false
 	}
 
+	decodePath := func(path []byte) (first common.Address, last common.Address) {
+		pathLen := len(path)
+		if pathLen < 43 || (pathLen-20)%23 != 0 {
+			return common.Address{}, common.Address{}
+		}
+
+		return common.BytesToAddress(path[:20]), common.BytesToAddress(path[pathLen-20:])
+	}
+
 	var input, output common.Address
-	var inputOutputPath []byte
 
 	switch method.RawName {
 	case "exactInputSingle":
@@ -260,7 +268,7 @@ func (policy *UniswapV3ExecutionPolicy) IsAllowed(execution contract.Execution, 
 			return false
 		}
 
-		inputOutputPath = args.Params.Path
+		input, output = decodePath(args.Params.Path)
 	case "exactOutputSingle":
 		var args struct {
 			Params uniswapv3.ISwapRouterExactOutputSingleParams
@@ -280,19 +288,9 @@ func (policy *UniswapV3ExecutionPolicy) IsAllowed(execution contract.Execution, 
 			return false
 		}
 
-		inputOutputPath = args.Params.Path
+		output, input = decodePath(args.Params.Path)
 	default:
 		return false
-	}
-
-	// parse input/output tokens from the path if available
-	if pathLen := len(inputOutputPath); pathLen > 0 {
-		if pathLen < 43 || (pathLen-20)%23 != 0 {
-			return false
-		}
-
-		input = common.BytesToAddress(inputOutputPath[:20])
-		output = common.BytesToAddress(inputOutputPath[pathLen-20:])
 	}
 
 	return (whitelist[input] || input == policy.weth) && (whitelist[output] || output == policy.weth)
