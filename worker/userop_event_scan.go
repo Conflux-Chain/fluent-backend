@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/Conflux-Chain/fluent-backend/store"
+	"github.com/Conflux-Chain/go-conflux-util/health"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/openweb3/web3go"
 	"github.com/openweb3/web3go/types"
@@ -117,14 +118,17 @@ func (scanner *UserOpEventScanner) loadNextBlock() (uint64, error) {
 func (scanner *UserOpEventScanner) Work() {
 	logrus.WithField("next", scanner.config.nextBlock).Info("Begin to scan user op event")
 
+	// default threshold and reminder is enough
+	health := health.NewTimedCounter()
+
 	// Firstly, catch up to the latest finalized block.
 	//
 	// Note: there are only few event logs at early phase, so we can retrieve them in one request from Confura.
 	for {
 		ok, err := scanner.scan()
+		health.LogOnError(err, "Catch up user op Sponsored events")
 		if err != nil {
-			logrus.WithError(err).WithField("next", scanner.config.nextBlock).Warn("Failed to scan user op event logs in catch-up phase")
-			time.Sleep(scanner.config.Interval)
+			time.Sleep(3 * time.Second)
 		} else if !ok {
 			break
 		}
@@ -135,9 +139,8 @@ func (scanner *UserOpEventScanner) Work() {
 	defer ticker.Stop()
 
 	for range ticker.C {
-		if _, err := scanner.scan(); err != nil {
-			logrus.WithError(err).WithField("next", scanner.config.nextBlock).Warn("Failed to scan user op event logs periodically")
-		}
+		_, err := scanner.scan()
+		health.LogOnError(err, "Scan user op Sponsored events")
 	}
 }
 
