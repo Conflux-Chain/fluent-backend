@@ -17,10 +17,10 @@ definitions:
     properties:
       paymaster:
         description: Paymaster is the address of the gas tank paymaster contract.
-        items:
-          type: integer
-        type: array
+        type: string
       tokens:
+        description: Tokens is the list of ERC20 token contracts that could be used
+          for gas fee payment.
         items:
           type: string
         type: array

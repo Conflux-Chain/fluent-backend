@@ -237,8 +237,9 @@ func parseTokenList(config service.PriceConfig) []string {
 
 type GasTankConfig struct {
 	// Paymaster is the address of the gas tank paymaster contract.
-	Paymaster common.Address `json:"paymaster"`
-	Tokens    []string       `json:"tokens"`
+	Paymaster string `json:"paymaster"`
+	// Tokens is the list of ERC20 token contracts that could be used for gas fee payment.
+	Tokens []string `json:"tokens"`
 }
 
 type GasTankStubRequest struct {

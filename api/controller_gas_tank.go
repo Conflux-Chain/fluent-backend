@@ -30,7 +30,7 @@ func (controller *GasTankController) Config(c *gin.Context) (any, error) {
 	config := controller.services.Config()
 
 	return GasTankConfig{
-		Paymaster: config.GasTank.Address,
+		Paymaster: config.GasTank.Address.Hex(),
 		Tokens:    parseTokenList(config.Price),
 	}, nil
 }

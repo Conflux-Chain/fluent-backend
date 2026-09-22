@@ -704,12 +704,10 @@ const docTemplate = `{
             "properties": {
                 "paymaster": {
                     "description": "Paymaster is the address of the gas tank paymaster contract.",
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
+                    "type": "string"
                 },
                 "tokens": {
+                    "description": "Tokens is the list of ERC20 token contracts that could be used for gas fee payment.",
                     "type": "array",
                     "items": {
                         "type": "string"
