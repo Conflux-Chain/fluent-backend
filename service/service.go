@@ -116,15 +116,18 @@ func (s Services) Config() struct {
 	VerifyingPaymaster VerifyingPaymasterConfig
 	Price              PriceConfig
 	TokenPay           TokenPayConfig
+	GasTank            PaymasterConfig
 } {
 	return struct {
 		VerifyingPaymaster VerifyingPaymasterConfig
 		Price              PriceConfig
 		TokenPay           TokenPayConfig
+		GasTank            PaymasterConfig
 	}{
 		VerifyingPaymaster: s.config.VerifyingPaymaster,
 		Price:              s.config.Price,
 		TokenPay:           s.config.TokenPay,
+		GasTank:            s.config.GasTank,
 	}
 }
 

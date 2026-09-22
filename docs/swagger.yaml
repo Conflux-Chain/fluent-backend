@@ -13,6 +13,18 @@ definitions:
         description: Message error message associated with `Code`.
         type: string
     type: object
+  api.GasTankConfig:
+    properties:
+      paymaster:
+        description: Paymaster is the address of the gas tank paymaster contract.
+        items:
+          type: integer
+        type: array
+      tokens:
+        items:
+          type: string
+        type: array
+    type: object
   api.GasTankStubRequest:
     properties:
       sender:
@@ -292,6 +304,36 @@ paths:
       summary: Query EIP-7702 set-code result
       tags:
       - AccountAbstract
+  /aa/gastank/config:
+    get:
+      consumes:
+      - application/json
+      description: Returns the configuration of the gas tank paymaster.
+      operationId: aaGasTankConfig
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Gas tank paymaster configuration
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                data:
+                  $ref: '#/definitions/api.GasTankConfig'
+              type: object
+        "600":
+          description: Internal server error
+          schema:
+            allOf:
+            - $ref: '#/definitions/api.BusinessError'
+            - properties:
+                data:
+                  type: string
+              type: object
+      summary: Get gas tank paymaster configuration
+      tags:
+      - GasTank
   /aa/gastank/sign:
     post:
       consumes:

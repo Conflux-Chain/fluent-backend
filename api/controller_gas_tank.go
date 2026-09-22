@@ -15,6 +15,26 @@ func NewGasTankController(services service.Services) *GasTankController {
 	return &GasTankController{services}
 }
 
+// Config returns the gas tank paymaster configuration exposed to clients.
+//
+// @ID				aaGasTankConfig
+// @Summary			Get gas tank paymaster configuration
+// @Description		Returns the configuration of the gas tank paymaster.
+// @Tags			GasTank
+// @Accept			json
+// @Produce			json
+// @Success			200	{object}	api.BusinessError{data=GasTankConfig}	"Gas tank paymaster configuration"
+// @Failure			600	{object}	api.BusinessError{data=string}	"Internal server error"
+// @Router			/aa/gastank/config	[get]
+func (controller *GasTankController) Config(c *gin.Context) (any, error) {
+	config := controller.services.Config()
+
+	return GasTankConfig{
+		Paymaster: config.GasTank.Address,
+		Tokens:    parseTokenList(config.Price),
+	}, nil
+}
+
 // Stub builds paymasterData for UserOperation gas estimation.
 //
 // @ID				aaGasTankStub
