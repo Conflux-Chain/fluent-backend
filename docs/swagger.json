@@ -136,6 +136,60 @@
                 }
             }
         },
+        "/aa/gastank/config": {
+            "get": {
+                "description": "Returns the configuration of the gas tank paymaster.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GasTank"
+                ],
+                "summary": "Get gas tank paymaster configuration",
+                "operationId": "aaGasTankConfig",
+                "responses": {
+                    "200": {
+                        "description": "Gas tank paymaster configuration",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/api.GasTankConfig"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "600": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/api.BusinessError"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/aa/gastank/sign": {
             "post": {
                 "description": "Calculates maxTokenCost for the given UserOperation, adds paymaster signature, and returns reassembled paymasterData.\nEncoding format (129 bytes): token(20) || maxTokenCost(32) || validAfter(6) || validUntil(6) || signature(65). maxTokenCost is hex encoded.",
@@ -635,6 +689,22 @@
                 "message": {
                     "description": "Message error message associated with `Code`.",
                     "type": "string"
+                }
+            }
+        },
+        "api.GasTankConfig": {
+            "type": "object",
+            "properties": {
+                "paymaster": {
+                    "description": "Paymaster is the address of the gas tank paymaster contract.",
+                    "type": "string"
+                },
+                "tokens": {
+                    "description": "Tokens is the list of ERC20 token contracts that could be used for gas fee payment.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },

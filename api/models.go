@@ -13,6 +13,12 @@ import (
 	"github.com/holiman/uint256"
 )
 
+////////////////////////////////////////////////////////////////////////////////
+//
+// EIP-7702 smart account
+//
+////////////////////////////////////////////////////////////////////////////////
+
 type SetCodeAuth struct {
 	// ChainID is the chain ID the authorization is bound to. 0 means the auth is valid on any chain.
 	ChainId uint64 `json:"chainId"`
@@ -58,43 +64,11 @@ type SetCodeResult struct {
 	Error string `json:"error"`
 }
 
-type GasTankStubRequest struct {
-	// Smart account address in hex format with 0x prefix.
-	Sender string `json:"sender" binding:"required,hex,len=42"`
-	// ERC20 token address to pay gas fee.
-	Token string `json:"token" binding:"required,hex,len=42"`
-}
-
-type VerifyingPaymasterConfig struct {
-	SmartAccountWhitelist []string `json:"smartAccountWhitelist"`
-	ContractWhitelist     []string `json:"contractWhitelist"`
-	MaxGasCost            uint64   `json:"maxGasCost"`
-}
-
-func NewVerifyingPaymasterConfig(config service.VerifyingPaymasterConfig) VerifyingPaymasterConfig {
-	var smartAccountWhitelist []string
-	for _, v := range config.SmartAccountWhitelist {
-		smartAccountWhitelist = append(smartAccountWhitelist, v.Hex())
-	}
-
-	var contractWhitelist []string
-	for _, v := range config.ContractWhitelist {
-		contractWhitelist = append(contractWhitelist, v.Hex())
-	}
-
-	return VerifyingPaymasterConfig{
-		SmartAccountWhitelist: smartAccountWhitelist,
-		ContractWhitelist:     contractWhitelist,
-		MaxGasCost:            config.MaxGasCost,
-	}
-}
-
-type VerifyingPaymasterStubRequest struct {
-	// Smart account address in hex format with 0x prefix.
-	Sender string `json:"sender" form:"sender" binding:"required,hex,len=42"`
-	// Delegated contract address in hex format with 0x prefix. Set to non-zero value if user op carries a 7702 auth message.
-	Delegation string `json:"delegation" form:"delegation" binding:"required,hex,len=42"`
-}
+////////////////////////////////////////////////////////////////////////////////
+//
+// Paymaster in common
+//
+////////////////////////////////////////////////////////////////////////////////
 
 type PaymasterAndDataStub struct {
 	Address string `json:"address"`
@@ -198,6 +172,89 @@ func (userOp *UserOperation) ToPackedUserOperation() contract.PackedUserOperatio
 	return packed
 }
 
+////////////////////////////////////////////////////////////////////////////////
+//
+// Verifying paymaster
+//
+////////////////////////////////////////////////////////////////////////////////
+
+type VerifyingPaymasterConfig struct {
+	SmartAccountWhitelist []string `json:"smartAccountWhitelist"`
+	ContractWhitelist     []string `json:"contractWhitelist"`
+	MaxGasCost            uint64   `json:"maxGasCost"`
+}
+
+func NewVerifyingPaymasterConfig(config service.VerifyingPaymasterConfig) VerifyingPaymasterConfig {
+	var smartAccountWhitelist []string
+	for _, v := range config.SmartAccountWhitelist {
+		smartAccountWhitelist = append(smartAccountWhitelist, v.Hex())
+	}
+
+	var contractWhitelist []string
+	for _, v := range config.ContractWhitelist {
+		contractWhitelist = append(contractWhitelist, v.Hex())
+	}
+
+	return VerifyingPaymasterConfig{
+		SmartAccountWhitelist: smartAccountWhitelist,
+		ContractWhitelist:     contractWhitelist,
+		MaxGasCost:            config.MaxGasCost,
+	}
+}
+
+type VerifyingPaymasterStubRequest struct {
+	// Smart account address in hex format with 0x prefix.
+	Sender string `json:"sender" form:"sender" binding:"required,hex,len=42"`
+	// Delegated contract address in hex format with 0x prefix. Set to non-zero value if user op carries a 7702 auth message.
+	Delegation string `json:"delegation" form:"delegation" binding:"required,hex,len=42"`
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// Price oracle
+//
+////////////////////////////////////////////////////////////////////////////////
+
+func parseTokenList(config service.PriceConfig) []string {
+	var tokens []string
+
+	for _, v := range config.USDT {
+		tokens = append(tokens, v.Hex())
+	}
+
+	for _, v := range config.CNH {
+		tokens = append(tokens, v.Hex())
+	}
+
+	return tokens
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// Gas tank
+//
+////////////////////////////////////////////////////////////////////////////////
+
+type GasTankConfig struct {
+	// Paymaster is the address of the gas tank paymaster contract.
+	Paymaster string `json:"paymaster"`
+	// Tokens is the list of ERC20 token contracts that could be used for gas fee payment.
+	Tokens []string `json:"tokens"`
+}
+
+type GasTankStubRequest struct {
+	// Smart account address in hex format with 0x prefix.
+	Sender string `json:"sender" binding:"required,hex,len=42"`
+	// ERC20 token address to pay gas fee.
+	Token string `json:"token" binding:"required,hex,len=42"`
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// Token payment
+//
+////////////////////////////////////////////////////////////////////////////////
+
 type TokenPayConfig struct {
 	// Tokens is the list of ERC20 token contracts supported for token-pay. Note, the tokens[0] is the default USDT token used for quoting and payment.
 	Tokens []string `json:"tokens"`
@@ -213,28 +270,6 @@ type TokenPayConfig struct {
 	SuggestedGasPriceBumpRatio uint64 `json:"suggestedGasPriceBumpRatio"`
 	// SuggestedTokenPriceBumpRatio is the percentage by which to bump the suggested token price to increase the chance of timely inclusion in blocks when the price is volatile.
 	SuggestedTokenPriceBumpRatio uint64 `json:"suggestedTokenPriceBumpRatio"`
-}
-
-func NewTokenPayConfig(priceConfig service.PriceConfig, tokenPayConfig service.TokenPayConfig) TokenPayConfig {
-	var tokens []string
-
-	for _, v := range priceConfig.USDT {
-		tokens = append(tokens, v.Hex())
-	}
-
-	for _, v := range priceConfig.CNH {
-		tokens = append(tokens, v.Hex())
-	}
-
-	return TokenPayConfig{
-		Tokens:                       tokens,
-		Recipient:                    tokenPayConfig.Recipient.Hex(),
-		MinGasFeeRatio:               tokenPayConfig.MinGasFeeRatio,
-		MinGasTipRatio:               tokenPayConfig.MinGasTipRatio,
-		MaxGasCost:                   tokenPayConfig.MaxGasCost,
-		SuggestedGasPriceBumpRatio:   tokenPayConfig.SuggestedGasPriceBumpRatio,
-		SuggestedTokenPriceBumpRatio: tokenPayConfig.SuggestedTokenPriceBumpRatio,
-	}
 }
 
 type TokenPayPriceRequest struct {
