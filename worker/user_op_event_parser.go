@@ -7,10 +7,10 @@ import (
 	"github.com/Conflux-Chain/fluent-backend/service"
 	"github.com/Conflux-Chain/go-conflux-util/blockchain/contract/account"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/openweb3/web3go"
 	"github.com/openweb3/web3go/types"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -27,7 +27,7 @@ type Sponsorship struct {
 	Log            types.Log
 	SponsoredEvent *contract.VerifyingPaymasterSponsored
 	UserOpEvent    *account.EntryPointUserOperationEvent
-	UserOp         *contract.PackedUserOperation
+	UserOp         *contract.PackedUserOperation // Nil when indirect call input cannot be decoded.
 }
 
 // UserOpEventParser is responsible for parsing Sponsored event and relevant data from the blockchain log.
@@ -77,6 +77,7 @@ func NewUserOpEventParser(client *web3go.Client, paymaster common.Address) (*Use
 }
 
 // Parse parses a Sponsored event log and retrieves the associated user operation and its details.
+// Indirect calls retain their events for indexing even when the raw UserOperation is unavailable.
 func (parser *UserOpEventParser) Parse(log types.Log) (*Sponsorship, error) {
 	// validate the paymaster address and Sponsored event signature
 	if log.Address != parser.paymaster {
@@ -150,6 +151,7 @@ func (parser *UserOpEventParser) findUserOperationEvent(sponsoredEvent *contract
 	return nil, fmt.Errorf("UserOperation event not found for userOpHash %v", sponsoredEvent.UserOpHash)
 }
 
+// unpackUserOp returns (nil, nil) when the transaction calls EntryPoint indirectly.
 func (parser *UserOpEventParser) unpackUserOp(userOpEvent *account.EntryPointUserOperationEvent) (*contract.PackedUserOperation, error) {
 	// get the bundle transaction to parse input data
 	tx, err := parser.client.Eth.TransactionByHash(userOpEvent.Raw.TxHash)
@@ -161,15 +163,15 @@ func (parser *UserOpEventParser) unpackUserOp(userOpEvent *account.EntryPointUse
 		return nil, fmt.Errorf("Bundle transaction not found by hash %v", userOpEvent.Raw.TxHash)
 	}
 
-	// handle 7702 auth messages
-	delegates := make(map[common.Address]common.Address)
-	for _, auth := range tx.AuthorizationList {
-		sender, err := auth.Authority()
-		if err != nil {
-			return nil, errors.WithMessage(err, "Failed to get authority")
-		}
-
-		delegates[sender] = auth.Address
+	if tx.To == nil || *tx.To != parser.entryPointAddr {
+		// Internal EntryPoint calldata is not supported yet. Keep the event-based
+		// record for soft limits; raw UserOperation recovery can be added if needed.
+		logrus.WithFields(logrus.Fields{
+			"txHash":     userOpEvent.Raw.TxHash,
+			"to":         tx.To,
+			"entryPoint": parser.entryPointAddr,
+		}).Warn("Detected a contract calling EntryPoint; indexing event data without the raw UserOperation")
+		return nil, nil
 	}
 
 	// unpack the user operation from the bundle transaction input data
@@ -213,7 +215,8 @@ func (parser *UserOpEventParser) unpackUserOp(userOpEvent *account.EntryPointUse
 		return nil, fmt.Errorf("Unsupported method %v in transaction input for tx hash %v", method.Name, userOpEvent.Raw.TxHash)
 	}
 
-	// find the user operation by hash
+	// The bundler guarantees exactly one UserOperation matching the event's sender and
+	// nonce in a successful bundle, so the first match is sufficient.
 	for i := range userOps {
 		userOp := userOps[i]
 
@@ -222,56 +225,13 @@ func (parser *UserOpEventParser) unpackUserOp(userOpEvent *account.EntryPointUse
 			continue
 		}
 
-		// skip user operations not sponsored by the expected paymaster
+		// Check that the matched operation agrees with the EntryPoint event.
 		if userOp.Paymaster() != userOpEvent.Paymaster {
-			continue
+			return nil, fmt.Errorf("UserOperation paymaster mismatch for userOpHash %v", userOpEvent.UserOpHash)
 		}
 
-		userOpHash, err := parser.calculateUserOpHash(userOp, delegates[userOp.Sender])
-		if err != nil {
-			return nil, errors.WithMessage(err, "Failed to calculate user operation hash")
-		}
-
-		if userOpHash == userOpEvent.UserOpHash {
-			return &userOp, nil
-		}
+		return &userOp, nil
 	}
 
 	return nil, fmt.Errorf("UserOperation not found for userOpHash %v", userOpEvent.UserOpHash)
-}
-
-func (parser *UserOpEventParser) calculateUserOpHash(userOp contract.PackedUserOperation, delegation common.Address) (common.Hash, error) {
-	calldata, err := contract.EntryPointABI.Pack("getUserOpHash", userOp)
-	if err != nil {
-		return common.Hash{}, errors.WithMessage(err, "Failed to pack calldata of getUserOpHash")
-	}
-
-	request := types.CallRequest{
-		To:   &parser.entryPointAddr,
-		Data: calldata,
-	}
-
-	latestBlockNumber := types.BlockNumberOrHashWithNumber(types.LatestBlockNumber)
-
-	var overrides *types.StateOverride
-	if delegation != (common.Address{}) {
-		code := hexutil.Bytes(append(service.DelegatedCodePrefix, delegation.Bytes()...))
-
-		overrides = &types.StateOverride{
-			userOp.Sender: types.OverrideAccount{
-				Code: &code,
-			},
-		}
-	}
-
-	result, err := parser.client.Eth.Call(request, &latestBlockNumber, overrides, nil)
-	if err != nil {
-		return common.Hash{}, errors.WithMessage(err, "Failed to call getUserOpHash")
-	}
-
-	if len(result) != 32 {
-		return common.Hash{}, errors.New("Invalid result length from getUserOpHash")
-	}
-
-	return common.BytesToHash(result), nil
 }
