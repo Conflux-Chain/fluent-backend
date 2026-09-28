@@ -21,10 +21,6 @@ type Config struct {
 
 	Price PriceConfig
 
-	AccountAbstract struct {
-		DelegatedContract common.Address
-	}
-
 	VerifyingPaymaster VerifyingPaymasterConfig
 	GasTank            PaymasterConfig
 	TokenPay           TokenPayConfig
@@ -33,7 +29,6 @@ type Config struct {
 type Services struct {
 	config Config
 
-	AccountAbstract    *AccountAbstract // may be nil if the delegated contract address is not specified
 	PriceOracle        *PriceOracle
 	VerifyingPaymaster *VerifyingPaymaster
 	GasTank            *GasTankPaymaster // may be nil if the gas tank paymaster is not specified
@@ -64,26 +59,9 @@ func New(config Config, store *store.Store) (Services, error) {
 	}
 
 	// services
-	accountAbstractEnabled := config.AccountAbstract.DelegatedContract != (common.Address{})
-	priceOracleEnabled := len(config.Price.USDT) > 0
-	tokenPayEnabled := priceOracleEnabled && config.TokenPay.Recipient != (common.Address{})
-
-	// Only transaction-submitting features need a funded sender; share it to serialize nonces.
-	var txSender *TxSender
-	if accountAbstractEnabled || tokenPayEnabled {
-		if txSender, err = NewTxSender(client); err != nil {
-			return Services{}, errors.WithMessage(err, "Failed to create transaction sender")
-		}
-	}
-
 	services := Services{
 		config: config,
 		client: client,
-	}
-
-	// create AccountAbstract service if the delegated contract address is specified
-	if accountAbstractEnabled {
-		services.AccountAbstract = NewAccountAbstract(txSender, config.AccountAbstract.DelegatedContract)
 	}
 
 	// create VerifyingPaymaster service if paymaster address and whitelist are specified
@@ -96,7 +74,7 @@ func New(config Config, store *store.Store) (Services, error) {
 	}
 
 	// create price oracle service if at least one USDT configured
-	if priceOracleEnabled {
+	if len(config.Price.USDT) > 0 {
 		if services.PriceOracle, err = NewPriceOracle(config.Price, client); err != nil {
 			return Services{}, errors.WithMessage(err, "Failed to create price oracle service")
 		}
@@ -109,7 +87,12 @@ func New(config Config, store *store.Store) (Services, error) {
 		}
 
 		// create token pay service if the recipient is specified
-		if tokenPayEnabled {
+		if config.TokenPay.Recipient != (common.Address{}) {
+			txSender, err := NewTxSender(client)
+			if err != nil {
+				return Services{}, errors.WithMessage(err, "Failed to create transaction sender")
+			}
+
 			if services.TokenPay, err = NewTokenPay(config.TokenPay, txSender, services.PriceOracle); err != nil {
 				return Services{}, errors.WithMessage(err, "Failed to create token pay service")
 			}

@@ -6,9 +6,7 @@ require (
 	github.com/Conflux-Chain/go-conflux-util v0.7.11
 	github.com/ethereum/go-ethereum v1.15.11
 	github.com/gin-gonic/gin v1.9.0
-	github.com/go-playground/validator/v10 v10.11.2
 	github.com/go-resty/resty/v2 v2.17.2
-	github.com/holiman/uint256 v1.3.2
 	github.com/mcuadros/go-defaults v1.2.0
 	github.com/openweb3/go-rpc-provider v0.3.6
 	github.com/openweb3/web3go v0.3.4
@@ -61,6 +59,7 @@ require (
 	github.com/go-openapi/swag v0.19.15 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
+	github.com/go-playground/validator/v10 v10.11.2 // indirect
 	github.com/go-sql-driver/mysql v1.8.1 // indirect
 	github.com/go-telegram/bot v1.2.2 // indirect
 	github.com/goccy/go-json v0.10.5 // indirect
@@ -73,6 +72,7 @@ require (
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/holiman/bloomfilter/v2 v2.0.3 // indirect
+	github.com/holiman/uint256 v1.3.2 // indirect
 	github.com/huin/goupnp v1.3.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/influxdata/influxdb1-client v0.0.0-20220302092344-a9ab5670611c // indirect

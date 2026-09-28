@@ -42,7 +42,6 @@ Optional features are configuration-driven:
 
 | Component | Enablement requirement |
 | --- | --- |
-| Account Abstraction | Delegated contract address |
 | Verifying Paymaster | Paymaster address and both smart-account and contract whitelists |
 | Price Oracle | At least one USDT-family token |
 | Gas Tank | Price Oracle and Gas Tank paymaster address |
@@ -50,8 +49,6 @@ Optional features are configuration-driven:
 | UserOperation event worker | Verifying Paymaster service |
 
 A disabled optional service remains nil. Its routes and dependent workers must not be registered.
-
-`TxSender` is created only when Account Abstraction or Token Pay is enabled; both share the same sender when enabled together. Paymaster-only deployments require an authorized signer and funded paymaster deposit, but do not require a funded transaction-sending account or its balance monitor.
 
 ## Request and Background Flows
 

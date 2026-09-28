@@ -23,8 +23,6 @@ func MustServe(config Config, services service.Services) {
 	api.MustServe(config.Config, func(router *gin.Engine) {
 		// set default rate limit config if not configured
 		config.RateLimit.Add(middleware.RateLimitTierFree, "overall", 5, 20)
-		// EIP-7702 tx
-		config.RateLimit.Add(middleware.RateLimitTierFree, "setAuth", 1, 5)
 		// gas tank
 		config.RateLimit.Add(middleware.RateLimitTierFree, "signUserOp", 1, 5)
 		// token pay
@@ -46,13 +44,6 @@ func MustServe(config Config, services service.Services) {
 
 		// test client IP address
 		api.GET("/ip", middleware.Wrap(testClientIP))
-
-		// account abstract - auth
-		if services.AccountAbstract != nil {
-			controller := NewAccountAbstractController(services)
-			api.POST("/aa/auth", rateLimiters.Middleware("setAuth"), middleware.Metrics("api.aa.auth.send"), middleware.Wrap(controller.SendAuth))
-			api.GET("/aa/auth/:txHash", middleware.Metrics("api.aa.auth.status"), middleware.Wrap(controller.GetAuthStatus))
-		}
 
 		// verifying paymaster
 		if services.VerifyingPaymaster != nil {
