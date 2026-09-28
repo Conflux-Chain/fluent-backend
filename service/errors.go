@@ -8,9 +8,6 @@ import (
 var (
 	ErrRPCError = api.NewBusinessError(101, "RPC error, please try again later or check the detailed error message for more information")
 
-	// account abstract
-	ErrAccountAbstractTxNotFound = api.NewBusinessError(1001, "Set code transaction not found")
-
 	// Gas tank
 	ErrGasTankTokenNotAllowed     = api.NewBusinessError(2001, "Token is not allowed in gas tank")
 	ErrGasTankInsufficientBalance = api.NewBusinessError(2002, "Insufficient token balance in gas tank")

@@ -4,7 +4,7 @@ This file is the shared project guidance for AI coding agents. Keep project-wide
 
 ## Project Overview
 
-Fluent Backend is a Go REST service for browser-extension wallets on Conflux eSpace. Its main concerns are EIP-7702 account upgrades, EIP-4337 paymaster sponsorship, Gas Tank settlement, and ERC20-based gas payment.
+Fluent Backend is a Go REST service for browser-extension wallets on Conflux eSpace. Its main concerns are EIP-4337 paymaster sponsorship (including EOA upgrades using EIP-7702 delegation), Gas Tank settlement, and ERC20-based gas payment.
 
 - Language: Go 1.23
 - HTTP framework: Gin

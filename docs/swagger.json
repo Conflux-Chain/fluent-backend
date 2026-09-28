@@ -8,134 +8,6 @@
     },
     "basePath": "/api",
     "paths": {
-        "/aa/auth": {
-            "post": {
-                "description": "Validates the signed EIP-7702 authorization and broadcasts a set-code transaction.\nThe service will sponsor the set-code transaction gas fee, and user needs to poll GET /aa/auth/{txHash} for the result.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "AccountAbstract"
-                ],
-                "summary": "Submit EIP-7702 authorization",
-                "operationId": "aaAuthSend",
-                "parameters": [
-                    {
-                        "description": "Signed EIP-7702 authorization message",
-                        "name": "auth",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/api.SetCodeAuth"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Transaction hash (0x-prefixed hex)",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/api.BusinessError"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "string"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "600": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/api.BusinessError"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "string"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
-            }
-        },
-        "/aa/auth/{txHash}": {
-            "get": {
-                "description": "Returns the executed result of an EIP-7702 set-code transaction. Returns executed=false while the transaction is still pending.\nIf the transaction is not found (business error code 1001), re-submit via POST /aa/auth.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "AccountAbstract"
-                ],
-                "summary": "Query EIP-7702 set-code result",
-                "operationId": "aaAuthStatus",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "0x-prefixed 32-byte transaction hash (66 characters)",
-                        "name": "txHash",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Set-code result (check executed and success fields)",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/api.BusinessError"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/api.SetCodeResult"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "600": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/api.BusinessError"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "string"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
-            }
-        },
         "/aa/gastank/config": {
             "get": {
                 "description": "Returns the configuration of the gas tank paymaster.",
@@ -736,57 +608,6 @@
                 }
             }
         },
-        "api.SetCodeAuth": {
-            "type": "object",
-            "required": [
-                "contract",
-                "r",
-                "s"
-            ],
-            "properties": {
-                "chainId": {
-                    "description": "ChainID is the chain ID the authorization is bound to. 0 means the auth is valid on any chain.",
-                    "type": "integer"
-                },
-                "contract": {
-                    "description": "Contract is the 20-byte hex address (with 0x prefix) of the smart-contract to delegate the EOA to.\nSet to \"0x0000000000000000000000000000000000000000\" to revoke an existing delegation.",
-                    "type": "string"
-                },
-                "nonce": {
-                    "description": "Nonce is the current on-chain nonce of the signing authority (EOA). Must match exactly.",
-                    "type": "integer"
-                },
-                "r": {
-                    "description": "R is the R component of the EIP-7702 authorization signature, as a 0x-prefixed hex string.",
-                    "type": "string"
-                },
-                "s": {
-                    "description": "S is the S component of the EIP-7702 authorization signature, as a 0x-prefixed hex string.",
-                    "type": "string"
-                },
-                "v": {
-                    "description": "V is the recovery identifier of the EIP-7702 authorization signature (0 or 1).",
-                    "type": "integer"
-                }
-            }
-        },
-        "api.SetCodeResult": {
-            "type": "object",
-            "properties": {
-                "error": {
-                    "description": "Error contains the failure reason reported by the EVM when Success is false.",
-                    "type": "string"
-                },
-                "executed": {
-                    "description": "Executed indicates whether the transaction has been executed.",
-                    "type": "boolean"
-                },
-                "success": {
-                    "description": "Success indicates whether the set-code authorization succeeded. Only meaningful when Executed is true.",
-                    "type": "boolean"
-                }
-            }
-        },
         "api.TokenPayConfig": {
             "type": "object",
             "properties": {
@@ -954,10 +775,6 @@
         }
     },
     "tags": [
-        {
-            "description": "Provides account abstraction features, including free EOA to smart account upgrades and upgrade status queries.",
-            "name": "AccountAbstract"
-        },
         {
             "description": "Provides paymaster services for gas fee sponsorship.",
             "name": "Paymaster"

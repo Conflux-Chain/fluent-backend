@@ -7,9 +7,6 @@ import "github.com/Conflux-Chain/fluent-backend/cmd"
 // @description	Fluent Backend provides account abstraction, gas tank paymaster, and ERC20 token gas payment services.
 // @BasePath	/api
 //
-// @tag.name		AccountAbstract
-// @tag.description	Provides account abstraction features, including free EOA to smart account upgrades and upgrade status queries.
-//
 // @tag.name		Paymaster
 // @tag.description	Provides paymaster services for gas fee sponsorship.
 //
