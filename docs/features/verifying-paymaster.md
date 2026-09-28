@@ -109,6 +109,8 @@ temporary exposure ~= valid signatures issued during the validity window * MaxGa
 
 Monitor signing volume, worker lag, finalized sponsorships, and deposit depletion. Stricter off-chain controls can be added later without moving sponsorship policy into the contract.
 
+The worker supports bundle transactions that directly call EntryPoint's `handleOps` or `handleAggregatedOps`. Failed scans are retried without advancing the checkpoint. Persistent failures trigger alerts and periodic reminders for developer intervention; signing continues against the last indexed records, so soft-limit counts may lag until scanning recovers.
+
 ## Related API
 
 - `GET /api/aa/paymaster/config`
@@ -120,4 +122,4 @@ Monitor signing volume, worker lag, finalized sponsorships, and deposit depletio
 - Verifying Paymaster service: [`service/paymaster_verifying.go`](../../service/paymaster_verifying.go)
 - Verifying Paymaster API controller: [`api/controller_verifying_paymaster.go`](../../api/controller_verifying_paymaster.go)
 - Verifying Paymaster API routes: [`api/route.go`](../../api/route.go)
-- Verifying Paymaster contract ABI: [`contract/VerifyingPaymaster.abi.json`](../../contract/VerifyingPaymaster.abi.json)
+- Verifying Paymaster contract ABI: [`contract/verifying_paymaster.abi.json`](../../contract/verifying_paymaster.abi.json)

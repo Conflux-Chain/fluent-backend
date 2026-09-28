@@ -54,7 +54,7 @@ Do not manually edit generated output:
 - `docs/swagger.yaml`
 - Go contract bindings in `contract/` that begin with `Code generated - DO NOT EDIT.`
 
-Change the source annotation or ABI and regenerate instead. The repository does not currently document a canonical contract-binding generation command; determine and document the expected tool version and command before regenerating bindings. Handwritten helpers such as `contract/userop_extension.go` are valid editing surfaces.
+Change the source annotation or ABI and regenerate instead. The repository does not currently document a canonical contract-binding generation command; determine and document the expected tool version and command before regenerating bindings. Handwritten helpers such as `contract/types.go` are valid editing surfaces.
 
 ## Change Rules
 

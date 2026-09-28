@@ -61,6 +61,8 @@ route and middleware -> controller -> service -> RPC, contract binding, or store
 
 Controllers translate HTTP input and output. Services enforce business and security rules before signing, submitting, or returning chain-related data.
 
+In production, an internal IP allowlist restricts backend access to trusted nginx hosts. Operations must configure nginx to overwrite client-supplied `X-Real-IP` with the correct client address; IP rate limiting relies on this deployment boundary.
+
 The Verifying Paymaster background path is separate:
 
 ```text
