@@ -51,6 +51,8 @@ Optional features are configuration-driven:
 
 A disabled optional service remains nil. Its routes and dependent workers must not be registered.
 
+`TxSender` is created only when Account Abstraction or Token Pay is enabled; both share the same sender when enabled together. Paymaster-only deployments require an authorized signer and funded paymaster deposit, but do not require a funded transaction-sending account or its balance monitor.
+
 ## Request and Background Flows
 
 Synchronous requests follow this path:
@@ -60,6 +62,8 @@ route and middleware -> controller -> service -> RPC, contract binding, or store
 ```
 
 Controllers translate HTTP input and output. Services enforce business and security rules before signing, submitting, or returning chain-related data.
+
+In production, an internal IP allowlist restricts backend access to trusted nginx hosts. Operations must configure nginx to overwrite client-supplied `X-Real-IP` with the correct client address; IP rate limiting relies on this deployment boundary.
 
 The Verifying Paymaster background path is separate:
 
@@ -75,6 +79,8 @@ The worker processes finalized events rather than signing requests because a sig
 - Configured contracts define account, paymaster, and ERC20 behavior used through bindings in `contract/`.
 - Binance and OKX supply runtime market prices used by the Price Oracle.
 - The configured GORM database stores application state, UserOperation events, and worker checkpoints.
+
+The smart-account and paymaster Solidity sources are maintained in [conflux-aa-contracts](https://github.com/conflux-chain/conflux-aa-contracts). The ABIs and generated Go bindings in `contract/` are currently synchronized with the latest code in that repository. Refer to the contract source for signature hashing and validation rules, and keep the ABIs and bindings synchronized when updating contracts.
 
 Treat these boundaries as fallible. Keep network-dependent behavior out of unit tests unless a test is explicitly designed as an integration test.
 

@@ -3,11 +3,13 @@ package service
 import (
 	"fmt"
 	"math/big"
+	"time"
 
 	"github.com/Conflux-Chain/go-conflux-util/api"
 	"github.com/Conflux-Chain/go-conflux-util/blockchain/contract/token/erc20"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/go-resty/resty/v2"
+	"github.com/mcuadros/go-defaults"
 	"github.com/openweb3/web3go"
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
@@ -21,6 +23,8 @@ const (
 type PriceConfig struct {
 	USDT []common.Address // e.g. USDT0, USDT, USDC, at least one
 	CNH  []common.Address // e.g. AxCNH, AxCNH0
+
+	RequestTimeout time.Duration `default:"3s"` // Total timeout for each external price HTTP request.
 }
 
 type ERC20TokenStub struct {
@@ -36,12 +40,17 @@ type PriceOracle struct {
 }
 
 func NewPriceOracle(config PriceConfig, client *web3go.Client) (*PriceOracle, error) {
+	defaults.SetDefaults(&config)
+	if config.RequestTimeout < 0 {
+		return nil, errors.New("PriceConfig RequestTimeout must be greater than 0")
+	}
+
 	if len(config.USDT) == 0 {
 		return nil, errors.New("PriceConfig must have at least one USDT token")
 	}
 
 	oracle := PriceOracle{
-		client:     resty.New(),
+		client:     resty.New().SetTimeout(config.RequestTimeout),
 		usdtTokens: make(map[common.Address]ERC20TokenStub),
 		cnhTokens:  make(map[common.Address]ERC20TokenStub),
 	}
@@ -120,7 +129,12 @@ func (oracle *PriceOracle) GetETHPrice(quoteToken common.Address) (*big.Int, err
 			return nil, errors.WithMessage(err, "Failed to get binance CFX/USDT price")
 		}
 
-		return usdtPerCfx.Mul(stub.decimalExp).BigInt(), nil
+		price := usdtPerCfx.Mul(stub.decimalExp).BigInt()
+		if price.Sign() <= 0 {
+			return nil, ErrRPCError.WithData(fmt.Sprintf("Price in token smallest units must be greater than 0, token = %v", quoteToken))
+		}
+
+		return price, nil
 	}
 
 	// CNH
@@ -135,7 +149,12 @@ func (oracle *PriceOracle) GetETHPrice(quoteToken common.Address) (*big.Int, err
 			return nil, errors.WithMessage(err, "Failed to get OKX USDT/CNY price")
 		}
 
-		return cnyPerUsdt.Mul(usdtPerCfx).Mul(stub.decimalExp).BigInt(), nil
+		price := cnyPerUsdt.Mul(usdtPerCfx).Mul(stub.decimalExp).BigInt()
+		if price.Sign() <= 0 {
+			return nil, ErrRPCError.WithData(fmt.Sprintf("Price in token smallest units must be greater than 0, token = %v", quoteToken))
+		}
+
+		return price, nil
 	}
 
 	// Unsupported
@@ -160,6 +179,10 @@ func (oracle *PriceOracle) getBinancePrice(url string) (decimal.Decimal, error) 
 	price, err := decimal.NewFromString(result.Price)
 	if err != nil {
 		return decimal.Zero, errors.WithMessage(err, "Failed to parse binance price")
+	}
+
+	if price.Sign() <= 0 {
+		return decimal.Zero, ErrRPCError.WithData("Binance price must be greater than 0")
 	}
 
 	return price, nil
@@ -200,6 +223,10 @@ func (oracle *PriceOracle) getOkxPrice(url string) (decimal.Decimal, error) {
 	price, err := decimal.NewFromString(result.Data[0].Price)
 	if err != nil {
 		return decimal.Zero, errors.WithMessage(err, "Failed to parse OKX price")
+	}
+
+	if price.Sign() <= 0 {
+		return decimal.Zero, ErrRPCError.WithData("OKX price must be greater than 0")
 	}
 
 	return price, nil
