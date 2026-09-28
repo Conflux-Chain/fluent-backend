@@ -78,6 +78,8 @@ The worker processes finalized events rather than signing requests because a sig
 - Binance and OKX supply runtime market prices used by the Price Oracle.
 - The configured GORM database stores application state, UserOperation events, and worker checkpoints.
 
+The smart-account and paymaster Solidity sources are maintained in [conflux-aa-contracts](https://github.com/conflux-chain/conflux-aa-contracts). The ABIs and generated Go bindings in `contract/` are currently synchronized with the latest code in that repository. Refer to the contract source for signature hashing and validation rules, and keep the ABIs and bindings synchronized when updating contracts.
+
 Treat these boundaries as fallible. Keep network-dependent behavior out of unit tests unless a test is explicitly designed as an integration test.
 
 ## Related Documentation
