@@ -26,7 +26,7 @@ type UserOp struct {
 	ActualGasUsed uint64          `gorm:"not null"`
 	BlockTime     time.Time       `gorm:"not null;index:idx_sender_time;index:idx_block_time"`
 
-	RawUserOp string `gorm:"type:text;not null"`
+	RawUserOp string `gorm:"type:text;not null"` // Empty when raw input is unavailable for an indirect EntryPoint call.
 }
 
 type Config struct {

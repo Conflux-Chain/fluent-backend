@@ -109,7 +109,7 @@ temporary exposure ~= valid signatures issued during the validity window * MaxGa
 
 Monitor signing volume, worker lag, finalized sponsorships, and deposit depletion. Stricter off-chain controls can be added later without moving sponsorship policy into the contract.
 
-The worker supports bundle transactions that directly call EntryPoint's `handleOps` or `handleAggregatedOps`. Failed scans are retried without advancing the checkpoint. Persistent failures trigger alerts and periodic reminders for developer intervention; signing continues against the last indexed records, so soft-limit counts may lag until scanning recovers.
+The worker decodes bundle transactions that directly call EntryPoint's `handleOps` or `handleAggregatedOps`. It matches each event to the first UserOperation with the same sender and nonce, relying on the bundler to guarantee a unique match, and checks that the paymaster agrees. Indirect calls through another contract produce a warning and are indexed from event data with an empty raw UserOperation, so they still count toward finalized soft limits. Recovering their internal call input is not currently supported. Failed scans are retried without advancing the checkpoint. Persistent failures trigger alerts and periodic reminders for developer intervention; signing continues against the last indexed records, so soft-limit counts may lag until scanning recovers.
 
 ## Related API
 

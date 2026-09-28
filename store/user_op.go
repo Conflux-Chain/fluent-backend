@@ -41,21 +41,25 @@ func (store *UserOpStore) GetCountByBlockTimestamp(sender common.Address, since 
 	return store.getCount("sender = ? AND block_time >= ?", sender.Hex(), since)
 }
 
+// Create records the finalized event even if the raw UserOperation is unavailable.
 func (store *UserOpStore) Create(userOp *contract.PackedUserOperation, event *account.EntryPointUserOperationEvent, blockTime time.Time, tx ...*gorm.DB) error {
 	db := store.inner.DB
 	if len(tx) > 0 {
 		db = tx[0]
 	}
 
-	rawUserOp, err := json.Marshal(convertPackedUserOp(userOp))
-	if err != nil {
-		return errors.WithMessage(err, "Failed to JSON marshal user op")
+	var rawUserOp []byte
+	if userOp != nil {
+		var err error
+		if rawUserOp, err = json.Marshal(convertPackedUserOp(userOp)); err != nil {
+			return errors.WithMessage(err, "Failed to JSON marshal user op")
+		}
 	}
 
 	entity := UserOp{
 		Hash:    common.Hash(event.UserOpHash).Hex(),
-		Sender:  userOp.Sender.Hex(),
-		Nonce:   hexutil.EncodeBig(userOp.Nonce),
+		Sender:  event.Sender.Hex(),
+		Nonce:   hexutil.EncodeBig(event.Nonce),
 		Success: event.Success,
 
 		ActualGasCost: decimal.NewFromBigInt(event.ActualGasCost, 0),
