@@ -129,7 +129,12 @@ func (oracle *PriceOracle) GetETHPrice(quoteToken common.Address) (*big.Int, err
 			return nil, errors.WithMessage(err, "Failed to get binance CFX/USDT price")
 		}
 
-		return usdtPerCfx.Mul(stub.decimalExp).BigInt(), nil
+		price := usdtPerCfx.Mul(stub.decimalExp).BigInt()
+		if price.Sign() <= 0 {
+			return nil, ErrRPCError.WithData(fmt.Sprintf("Price in token smallest units must be greater than 0, token = %v", quoteToken))
+		}
+
+		return price, nil
 	}
 
 	// CNH
@@ -144,7 +149,12 @@ func (oracle *PriceOracle) GetETHPrice(quoteToken common.Address) (*big.Int, err
 			return nil, errors.WithMessage(err, "Failed to get OKX USDT/CNY price")
 		}
 
-		return cnyPerUsdt.Mul(usdtPerCfx).Mul(stub.decimalExp).BigInt(), nil
+		price := cnyPerUsdt.Mul(usdtPerCfx).Mul(stub.decimalExp).BigInt()
+		if price.Sign() <= 0 {
+			return nil, ErrRPCError.WithData(fmt.Sprintf("Price in token smallest units must be greater than 0, token = %v", quoteToken))
+		}
+
+		return price, nil
 	}
 
 	// Unsupported
@@ -169,6 +179,10 @@ func (oracle *PriceOracle) getBinancePrice(url string) (decimal.Decimal, error) 
 	price, err := decimal.NewFromString(result.Price)
 	if err != nil {
 		return decimal.Zero, errors.WithMessage(err, "Failed to parse binance price")
+	}
+
+	if price.Sign() <= 0 {
+		return decimal.Zero, ErrRPCError.WithData("Binance price must be greater than 0")
 	}
 
 	return price, nil
@@ -209,6 +223,10 @@ func (oracle *PriceOracle) getOkxPrice(url string) (decimal.Decimal, error) {
 	price, err := decimal.NewFromString(result.Data[0].Price)
 	if err != nil {
 		return decimal.Zero, errors.WithMessage(err, "Failed to parse OKX price")
+	}
+
+	if price.Sign() <= 0 {
+		return decimal.Zero, ErrRPCError.WithData("OKX price must be greater than 0")
 	}
 
 	return price, nil

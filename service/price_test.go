@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/go-resty/resty/v2"
 	"github.com/openweb3/web3go"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
@@ -45,6 +46,80 @@ func newTestPriceOracle(t *testing.T, timeout time.Duration) *PriceOracle {
 	}, client)
 	require.NoError(t, err)
 	return oracle
+}
+
+func TestGetETHPriceValidationAndConversion(t *testing.T) {
+	usdt := common.HexToAddress("0x1234")
+	cnh := common.HexToAddress("0x5678")
+	for _, tc := range []struct {
+		name    string
+		token   common.Address
+		binance string
+		okx     string
+		want    string
+		wantErr string
+	}{
+		{"USDT normal", usdt, "0.2512349", "7", "251234", ""},
+		{"CNH normal", cnh, "0.25", "7.1234567", "1780864", ""},
+		{"USDT zero", usdt, "0", "7", "", "Binance price must be greater than 0"},
+		{"USDT negative", usdt, "-0.25", "7", "", "Binance price must be greater than 0"},
+		{"USDT malformed", usdt, "invalid", "7", "", "Failed to parse binance price"},
+		{"CNH Binance zero", cnh, "0", "7", "", "Binance price must be greater than 0"},
+		{"CNH Binance negative", cnh, "-0.25", "7", "", "Binance price must be greater than 0"},
+		{"CNH Binance malformed", cnh, "invalid", "7", "", "Failed to parse binance price"},
+		{"CNH OKX zero", cnh, "0.25", "0", "", "OKX price must be greater than 0"},
+		{"CNH OKX negative", cnh, "0.25", "-7", "", "OKX price must be greater than 0"},
+		{"CNH OKX malformed", cnh, "0.25", "invalid", "", "Failed to parse OKX price"},
+		{"CNH both negative", cnh, "-0.25", "-7", "", "Binance price must be greater than 0"},
+		{"USDT truncates to zero", usdt, "0.0000009", "7", "", "Price in token smallest units must be greater than 0"},
+		{"CNH truncates to zero", cnh, "0.0000001", "7", "", "Price in token smallest units must be greater than 0"},
+		{"USDT smallest unit", usdt, "0.000001", "7", "1", ""},
+		{"CNH smallest unit", cnh, "0.0000002", "5", "1", ""},
+		{"CNH truncate after multiplication", cnh, "0.0000002", "7", "1", ""},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				switch r.URL.Path {
+				case "/binance":
+					fmt.Fprintf(w, `{"symbol":"CFXUSDT","price":%q}`, tc.binance)
+				case "/okx":
+					fmt.Fprintf(w, `{"code":0,"error_code":"0","data":[{"price":%q}]}`, tc.okx)
+				default:
+					http.NotFound(w, r)
+				}
+			}))
+			t.Cleanup(server.Close)
+
+			client := resty.New().SetTimeout(time.Second)
+			// Route both production URLs to local fixtures without external network access.
+			client.OnBeforeRequest(func(_ *resty.Client, request *resty.Request) error {
+				switch request.URL {
+				case binancePriceUrlCFXUSDT:
+					request.URL = server.URL + "/binance"
+				case okxPriceUrlUSDTCNY:
+					request.URL = server.URL + "/okx"
+				default:
+					return fmt.Errorf("unexpected price URL: %s", request.URL)
+				}
+				return nil
+			})
+			oracle := PriceOracle{
+				client:     client,
+				usdtTokens: map[common.Address]ERC20TokenStub{usdt: {decimalExp: decimal.New(1, 6)}},
+				cnhTokens:  map[common.Address]ERC20TokenStub{cnh: {decimalExp: decimal.New(1, 6)}},
+			}
+
+			price, err := oracle.GetETHPrice(tc.token)
+			if tc.wantErr != "" {
+				require.ErrorContains(t, err, tc.wantErr)
+				require.Nil(t, price)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tc.want, price.String())
+			}
+		})
+	}
 }
 
 func TestPriceOracleRequestTimeoutConfig(t *testing.T) {
