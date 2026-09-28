@@ -64,9 +64,16 @@ func New(config Config, store *store.Store) (Services, error) {
 	}
 
 	// services
-	txSender, err := NewTxSender(client)
-	if err != nil {
-		return Services{}, errors.WithMessage(err, "Failed to create transaction sender")
+	accountAbstractEnabled := config.AccountAbstract.DelegatedContract != (common.Address{})
+	priceOracleEnabled := len(config.Price.USDT) > 0
+	tokenPayEnabled := priceOracleEnabled && config.TokenPay.Recipient != (common.Address{})
+
+	// Only transaction-submitting features need a funded sender; share it to serialize nonces.
+	var txSender *TxSender
+	if accountAbstractEnabled || tokenPayEnabled {
+		if txSender, err = NewTxSender(client); err != nil {
+			return Services{}, errors.WithMessage(err, "Failed to create transaction sender")
+		}
 	}
 
 	services := Services{
@@ -75,7 +82,7 @@ func New(config Config, store *store.Store) (Services, error) {
 	}
 
 	// create AccountAbstract service if the delegated contract address is specified
-	if config.AccountAbstract.DelegatedContract != (common.Address{}) {
+	if accountAbstractEnabled {
 		services.AccountAbstract = NewAccountAbstract(txSender, config.AccountAbstract.DelegatedContract)
 	}
 
@@ -89,7 +96,7 @@ func New(config Config, store *store.Store) (Services, error) {
 	}
 
 	// create price oracle service if at least one USDT configured
-	if len(config.Price.USDT) > 0 {
+	if priceOracleEnabled {
 		if services.PriceOracle, err = NewPriceOracle(config.Price, client); err != nil {
 			return Services{}, errors.WithMessage(err, "Failed to create price oracle service")
 		}
@@ -102,7 +109,7 @@ func New(config Config, store *store.Store) (Services, error) {
 		}
 
 		// create token pay service if the recipient is specified
-		if config.TokenPay.Recipient != (common.Address{}) {
+		if tokenPayEnabled {
 			if services.TokenPay, err = NewTokenPay(config.TokenPay, txSender, services.PriceOracle); err != nil {
 				return Services{}, errors.WithMessage(err, "Failed to create token pay service")
 			}
