@@ -149,11 +149,12 @@ func (policy *UniswapV2ExecutionPolicy) IsAllowed(execution contract.Execution, 
 	}
 
 	switch method.RawName {
-	case "swapExactTokensForTokens", "swapTokensForExactTokens", "swapExactTokensForETH", "swapTokensForExactETH":
+	case "swapExactTokensForTokens", "swapTokensForExactTokens", "swapExactTokensForETH", "swapTokensForExactETH",
+		"swapExactTokensForTokensSupportingFeeOnTransferTokens", "swapExactTokensForETHSupportingFeeOnTransferTokens":
 		if execution.Value != nil && execution.Value.Sign() != 0 {
 			return false
 		}
-	case "swapExactETHForTokens", "swapETHForExactTokens":
+	case "swapExactETHForTokens", "swapETHForExactTokens", "swapExactETHForTokensSupportingFeeOnTransferTokens":
 		if execution.Value == nil || execution.Value.Sign() <= 0 {
 			return false
 		}
@@ -180,12 +181,12 @@ func (policy *UniswapV2ExecutionPolicy) IsAllowed(execution contract.Execution, 
 
 	// check against the whitelist & WETH
 	switch method.RawName {
-	case "swapExactTokensForTokens", "swapTokensForExactTokens":
+	case "swapExactTokensForTokens", "swapTokensForExactTokens", "swapExactTokensForTokensSupportingFeeOnTransferTokens":
 		// Note, WETH is not allowed if not configured in whitelist
 		return whitelist[input] && whitelist[output]
-	case "swapExactTokensForETH", "swapTokensForExactETH":
+	case "swapExactTokensForETH", "swapTokensForExactETH", "swapExactTokensForETHSupportingFeeOnTransferTokens":
 		return whitelist[input] && output == policy.weth
-	case "swapExactETHForTokens", "swapETHForExactTokens":
+	case "swapExactETHForTokens", "swapETHForExactTokens", "swapExactETHForTokensSupportingFeeOnTransferTokens":
 		return input == policy.weth && whitelist[output]
 	default:
 		return false

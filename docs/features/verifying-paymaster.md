@@ -46,8 +46,13 @@ The policy supports these router methods:
 - `swapTokensForExactTokens`;
 - `swapExactTokensForETH`;
 - `swapTokensForExactETH`;
-- `swapExactETHForTokens`; and
-- `swapETHForExactTokens`.
+- `swapExactETHForTokens`;
+- `swapETHForExactTokens`;
+- `swapExactTokensForTokensSupportingFeeOnTransferTokens`;
+- `swapExactTokensForETHSupportingFeeOnTransferTokens`; and
+- `swapExactETHForTokensSupportingFeeOnTransferTokens`.
+
+The `SupportingFeeOnTransferTokens` variants use the same value and token-endpoint rules as their corresponding standard swaps.
 
 Other router methods, malformed calldata, and paths containing fewer than two tokens are not eligible for sponsorship. Only the first and last tokens in the path are checked; intermediate tokens are not checked.
 
