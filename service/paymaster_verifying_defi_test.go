@@ -100,6 +100,68 @@ func TestUniswapV2ExecutionPolicy(t *testing.T) {
 		big.NewInt(1), big.NewInt(1), []common.Address{common.HexToAddress("0x1111"), common.HexToAddress("0x222222")}, common.HexToAddress("0x01"), big.NewInt(1)))
 }
 
+func TestUniswapV2ExecutionPolicySupportingFeeOnTransferTokens(t *testing.T) {
+	tokenIn := common.HexToAddress("0x1111")
+	tokenOut := common.HexToAddress("0x2222")
+	unknown := common.HexToAddress("0x5555")
+	whitelist := map[common.Address]bool{tokenIn: true, tokenOut: true}
+	policy := UniswapV2ExecutionPolicy{
+		router: common.HexToAddress("0x3333"),
+		weth:   common.HexToAddress("0x4444"),
+	}
+
+	for _, swap := range []struct {
+		method string
+		input  common.Address
+		output common.Address
+		eth    bool
+	}{
+		{"swapExactTokensForTokensSupportingFeeOnTransferTokens", tokenIn, tokenOut, false},
+		{"swapExactTokensForETHSupportingFeeOnTransferTokens", tokenIn, policy.weth, false},
+		{"swapExactETHForTokensSupportingFeeOnTransferTokens", policy.weth, tokenOut, true},
+	} {
+		t.Run(swap.method, func(t *testing.T) {
+			value := big.NewInt(0)
+			if swap.eth {
+				value = big.NewInt(1)
+			}
+			for _, test := range []struct {
+				name    string
+				path    []common.Address
+				value   *big.Int
+				allowed bool
+			}{
+				{"valid", []common.Address{swap.input, swap.output}, value, true},
+				{"intermediate token", []common.Address{swap.input, unknown, swap.output}, value, true},
+				{"invalid input", []common.Address{unknown, swap.output}, value, false},
+				{"invalid output", []common.Address{swap.input, unknown}, value, false},
+				{"wrong WETH input", []common.Address{tokenOut, swap.output}, value, !swap.eth},
+				{"wrong WETH output", []common.Address{swap.input, tokenIn}, value, swap.output != policy.weth},
+				{"WETH endpoints", []common.Address{policy.weth, policy.weth}, value, false},
+				{"empty path", nil, value, false},
+				{"short path", []common.Address{swap.input}, value, false},
+				{"nil value", []common.Address{swap.input, swap.output}, nil, !swap.eth},
+				{"zero value", []common.Address{swap.input, swap.output}, big.NewInt(0), !swap.eth},
+				{"positive value", []common.Address{swap.input, swap.output}, big.NewInt(1), swap.eth},
+				{"negative value", []common.Address{swap.input, swap.output}, big.NewInt(-1), false},
+			} {
+				t.Run(test.name, func(t *testing.T) {
+					args := []any{big.NewInt(1), test.path, common.HexToAddress("0x01"), big.NewInt(1)}
+					if !swap.eth {
+						args = append([]any{big.NewInt(1)}, args...)
+					}
+					callData, err := contract.UniswapV2RouterABI.Pack(swap.method, args...)
+					require.NoError(t, err)
+					execution := contract.Execution{Target: policy.router, Value: test.value, CallData: callData}
+					require.Equal(t, test.allowed, policy.IsAllowed(execution, whitelist))
+					execution.CallData = callData[:4]
+					require.False(t, policy.IsAllowed(execution, whitelist))
+				})
+			}
+		})
+	}
+}
+
 func TestUniswapV3ExecutionPolicy(t *testing.T) {
 	whitelist := map[common.Address]bool{
 		common.HexToAddress("0x1111"): true,
