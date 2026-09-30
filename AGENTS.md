@@ -4,7 +4,9 @@ This file is the shared project guidance for AI coding agents. Keep project-wide
 
 ## Project Overview
 
-Fluent Backend is a Go REST service for browser-extension wallets on Conflux eSpace. Its main concerns are EIP-4337 paymaster sponsorship (including EOA upgrades using EIP-7702 delegation), Gas Tank settlement, and ERC20-based gas payment.
+Fluent Backend is a Go REST service for browser-extension wallets on Conflux eSpace. Its production concerns are EIP-4337 paymaster sponsorship (including EOA upgrades using EIP-7702 delegation) and ERC20-based gas payment through Gas Tank settlement.
+
+Token Pay was an early interim solution and is no longer used in production. Its retained code and documentation describe a legacy, non-production flow. Production configurations must leave `TokenPay.Recipient` unset or zero so its service and routes remain disabled. Treat Token Pay-specific findings as legacy maintenance rather than active production blockers; shared components used by production features remain in scope.
 
 - Language: Go 1.23
 - HTTP framework: Gin
@@ -93,7 +95,7 @@ A change is complete when all applicable items are satisfied:
 - Project overview and setup: [`README.md`](README.md)
 - System architecture and module boundaries: [`docs/architecture.md`](docs/architecture.md)
 - Gas Tank behavior: [`docs/features/gas-tank.md`](docs/features/gas-tank.md)
-- Token Pay behavior and accepted risks: [`docs/features/token-pay.md`](docs/features/token-pay.md)
+- Legacy Token Pay status, behavior, and historical risks: [`docs/features/token-pay.md`](docs/features/token-pay.md)
 - Verifying Paymaster behavior: [`docs/features/verifying-paymaster.md`](docs/features/verifying-paymaster.md)
 - API schema: [`docs/swagger.yaml`](docs/swagger.yaml)
 
