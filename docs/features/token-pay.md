@@ -1,4 +1,14 @@
-# Token Pay
+# Token Pay (Legacy)
+
+## Production Status
+
+Token Pay was an early interim solution and is no longer used in production. The implementation, API, and CLI helpers are retained for legacy reference and non-production use. The flows, mitigations, and monitoring guidance below describe that historical design; they do not establish production readiness.
+
+Production configurations must leave `TokenPay.Recipient` unset or zero (`APP_SERVICE_TOKENPAY_RECIPIENT`). With no recipient configured, the service is nil and `/api/tokenpay/*` routes are not registered, even when the price oracle is enabled. The retained code can still enable the feature when a recipient is configured; this status is an operational constraint, not a new runtime guard.
+
+Production ERC20 gas payment uses Gas Tank; see [Gas Tank](gas-tank.md). Any future production re-enablement of Token Pay would need a new design and security review, including transaction recovery, idempotency, and sponsor-loss controls.
+
+## Historical Purpose
 
 Token Pay allows an EOA to submit a business transaction while paying the native-token gas fee with a supported ERC20 token. The backend sponsors the native gas and receives the ERC20 payment from the user.
 
@@ -40,7 +50,7 @@ After the backend funds the user's account but before the transfer-token transac
 
 The user may submit a competing transaction that changes nonce ordering or otherwise prevents the backend's transfer-token transaction from executing as intended. This can also leave the sponsor with an unrecovered gas cost.
 
-## Current Mitigations
+## Historical Mitigations
 
 - Validate both signed transactions before funding.
 - Apply per-IP rate limiting to the sponsor endpoint.
@@ -49,7 +59,7 @@ The user may submit a competing transaction that changes nonce ordering or other
 
 These controls reduce exposure but do not make the flow atomic and do not eliminate the underlying race conditions.
 
-## Operational Monitoring
+## Historical Operational Monitoring
 
 Monitor at least the following signals:
 

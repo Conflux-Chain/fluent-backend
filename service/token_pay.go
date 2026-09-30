@@ -2,6 +2,10 @@ package service
 
 // TokenPay Implementation Notes
 //
+// Token Pay was an early interim solution and is no longer used in production.
+// The retained implementation is for legacy reference and non-production use.
+// Production configurations must leave TokenPay.Recipient unset or zero.
+//
 // IMPORTANT: For security design considerations and known risks, see docs/features/token-pay.md.
 // This file implements a token pay mechanism that allows users to pay gas fees with ERC20 tokens.
 // The implementation accepts certain security risks by design; refer to that document for details.

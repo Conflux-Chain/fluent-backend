@@ -45,10 +45,12 @@ Optional features are configuration-driven:
 | Verifying Paymaster | Paymaster address and both smart-account and contract whitelists |
 | Price Oracle | At least one USDT-family token |
 | Gas Tank | Price Oracle and Gas Tank paymaster address |
-| Token Pay | Price Oracle and payment recipient |
+| Token Pay (legacy, non-production) | Price Oracle and payment recipient |
 | UserOperation event worker | Verifying Paymaster service |
 
 A disabled optional service remains nil. Its routes and dependent workers must not be registered.
+
+Token Pay was an early interim solution and is no longer used in production. Its initialization path is retained for legacy non-production use. Production configurations must leave `TokenPay.Recipient` unset or zero (`APP_SERVICE_TOKENPAY_RECIPIENT`) so its service and routes remain disabled. The enablement condition above describes retained code behavior, not a supported production deployment.
 
 ## Request and Background Flows
 
@@ -85,5 +87,5 @@ Treat these boundaries as fallible. Keep network-dependent behavior out of unit 
 
 - [Project setup](../README.md)
 - [Gas Tank](features/gas-tank.md)
-- [Token Pay](features/token-pay.md)
+- [Legacy Token Pay](features/token-pay.md)
 - [Verifying Paymaster](features/verifying-paymaster.md)

@@ -1,12 +1,15 @@
 # Fluent Backend
 
-REST backend service for browser-extension wallets on Conflux eSpace. It provides EIP-4337 paymaster services and ERC20-sponsored native-gas payment. Free EOA-to-smart-account upgrades use the EIP-4337 flow with EIP-7702 delegation.
+REST backend service for browser-extension wallets on Conflux eSpace. It provides EIP-4337 paymaster services and ERC20-based gas payment through Gas Tank. Free EOA-to-smart-account upgrades use the EIP-4337 flow with EIP-7702 delegation.
 
 ## Features
 
 - **Verifying Paymaster**: validates and signs UserOperation paymaster data subject to delegation, contract, account, gas-cost, and deposit policies. See the [Verifying Paymaster documentation](docs/features/verifying-paymaster.md).
 - **Gas Tank**: prepares and signs ERC20 paymaster data using the `REFUND` mechanism. Users must deposit ERC20 tokens into the Gas Tank paymaster in advance, and the backend validates the available balance before signing. See the [Gas Tank documentation](docs/features/gas-tank.md).
-- **Token Pay**: sponsors native gas for a pair of user-signed transactions, one ERC20 payment and one business transaction. See the [Token Pay documentation](docs/features/token-pay.md).
+
+## Legacy Features
+
+**Token Pay** was an early interim solution and is no longer used in production. Its code, API, and CLI helpers remain in the repository for legacy reference and non-production use. Leave `APP_SERVICE_TOKENPAY_RECIPIENT` unset or zero in production to keep its service and routes disabled. See the [legacy Token Pay documentation](docs/features/token-pay.md).
 
 ## Configuration
 
@@ -52,7 +55,7 @@ When `SwaggerEnabled` is enabled in the API configuration, the interactive Swagg
 
 - [Architecture](docs/architecture.md)
 - [Gas Tank](docs/features/gas-tank.md)
-- [Token Pay](docs/features/token-pay.md)
+- [Legacy Token Pay](docs/features/token-pay.md)
 - [Verifying Paymaster](docs/features/verifying-paymaster.md)
 
 ## Business Errors

@@ -86,7 +86,7 @@ func New(config Config, store *store.Store) (Services, error) {
 			}
 		}
 
-		// create token pay service if the recipient is specified
+		// Legacy non-production flow; production must leave the recipient unset or zero.
 		if config.TokenPay.Recipient != (common.Address{}) {
 			txSender, err := NewTxSender(client)
 			if err != nil {
