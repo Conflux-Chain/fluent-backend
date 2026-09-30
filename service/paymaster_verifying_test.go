@@ -38,10 +38,8 @@ func newTestVerifyingPaymaster() *VerifyingPaymaster {
 			caller: nil,
 			signer: signers.MustNewRandomPrivateKeySigner(),
 		},
-		config: testVerifyingPaymasterConfig,
-		executionPolicy: CompositeExecutionPolicy{
-			TargetContractExecutionPolicy{},
-		},
+		config:          testVerifyingPaymasterConfig,
+		executionPolicy: CompositeExecutionPolicy(make(map[common.Address]ExecutionPolicy)),
 	}
 }
 

@@ -206,18 +206,18 @@ func (paymaster *VerifyingPaymaster) validateCallData(callData []byte) error {
 		// single execute
 		var execution contract.Execution
 
-		if err := UnpackArguments(method.Inputs, args, &execution); err != nil {
+		if err = UnpackArguments(method.Inputs, args, &execution); err != nil {
 			return api.ErrValidation(errors.WithMessage(err, "Failed to unpack callData for execute method"))
 		}
 
-		if !paymaster.executionPolicy.IsAllowed(execution, paymaster.config.contractMap) {
-			return ErrVerifyingPaymasterContractNotWhitelisted.WithData(execution.Target)
+		if err = paymaster.executionPolicy.Validate(execution, paymaster.config.contractMap); err != nil {
+			return err
 		}
 	case "executeBatch":
 		// batch execute
 		var executions []contract.Execution
 
-		if err := UnpackArguments(method.Inputs, args, &executions); err != nil {
+		if err = UnpackArguments(method.Inputs, args, &executions); err != nil {
 			return api.ErrValidation(errors.WithMessage(err, "Failed to unpack callData for executeBatch method"))
 		}
 
@@ -226,8 +226,8 @@ func (paymaster *VerifyingPaymaster) validateCallData(callData []byte) error {
 		}
 
 		for _, execution := range executions {
-			if !paymaster.executionPolicy.IsAllowed(execution, paymaster.config.contractMap) {
-				return ErrVerifyingPaymasterContractNotWhitelisted.WithData(execution.Target)
+			if err = paymaster.executionPolicy.Validate(execution, paymaster.config.contractMap); err != nil {
+				return err
 			}
 		}
 	default:
