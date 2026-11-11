@@ -2,6 +2,7 @@ package worker
 
 import (
 	"fmt"
+	"math"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -16,6 +17,10 @@ const errNarrowDownPattern = "narrow down"
 //
 // Now, its implementation depends on the Confura that do not limit the block number range, and support to index by address + topic0.
 func getLogs(client *web3go.Client, contract common.Address, blockFrom, blockTo uint64, topic0 ...common.Hash) ([]types.Log, error) {
+	if blockFrom > math.MaxInt64 || blockTo > math.MaxInt64 {
+		return nil, fmt.Errorf("block range exceeds int64 limit: from=%d, to=%d", blockFrom, blockTo)
+	}
+
 	// address filter
 	filter := types.FilterQuery{
 		Addresses: []common.Address{contract},
